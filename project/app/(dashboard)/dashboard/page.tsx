@@ -1,3 +1,4 @@
+// app/dashboard/page.tsx
 import { TrendingUp, Users, CheckCircle, Clock, Plus } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 
@@ -8,7 +9,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Dashboard</h1>
           <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">
-            Welcome back! Here's an overview of your projects and tasks.
+            Welcome back! Here's an overview of your projects and tasks. Time to lock in!
           </p>
         </div>
 
