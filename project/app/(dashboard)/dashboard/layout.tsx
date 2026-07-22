@@ -1,3 +1,4 @@
+// app/(dashboard)/dashboard/layout.tsx
 "use client"
 
 import type React from "react"
@@ -5,6 +6,7 @@ import type React from "react"
 import { useState, Suspense } from "react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UserButton } from "@clerk/nextjs"
 import { Home, FolderOpen, Users, Settings, Menu, X, BarChart3, Calendar, Bell, Search } from "lucide-react"
 
 const navigation = [
@@ -47,12 +49,6 @@ export default function DashboardLayout({
         </div>
 
         <nav className="mt-6 px-3">
-          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-            <p className="text-xs text-yellow-800 dark:text-yellow-200">
-              📋 <strong>Task 2.6:</strong> Create protected dashboard layout
-            </p>
-          </div>
-
           <ul className="space-y-1">
             {navigation.map((item) => (
               <li key={item.name}>
@@ -85,7 +81,7 @@ export default function DashboardLayout({
           </button>
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            {/* Search bar placeholder */}
+            {/* Search bar */}
             <div className="flex flex-1 items-center">
               <div className="relative flex-1 max-w-md">
                 <Search
@@ -107,9 +103,8 @@ export default function DashboardLayout({
 
               <ThemeToggle />
 
-              <div className="w-8 h-8 bg-blue_munsell-500 rounded-full flex items-center justify-center text-white font-semibold">
-                U
-              </div>
+              {/* Clerk User Avatar & Sign Out Control */}
+              <UserButton userProfileMode="modal" />
             </div>
           </div>
         </div>
