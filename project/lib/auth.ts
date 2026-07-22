@@ -1,14 +1,9 @@
 // lib/auth.ts
 import { currentUser } from "@clerk/nextjs/server"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/db"
+import { users } from "@/lib/db/schema"
+import { eq } from "drizzle-orm"
 
-/**
- * Syncs the currently authenticated Clerk user with our Neon PostgreSQL database.
- * If the user exists in the database, it updates their email, name, and image URL.
- * If the user does not exist, it creates a new User record.
- * 
- * @returns The database User record, or null if unauthenticated.
- */
 export async function getOrCreateDbUser() {
   const clerkUser = await currentUser()
 
@@ -16,26 +11,44 @@ export async function getOrCreateDbUser() {
     return null
   }
 
-  const primaryEmail = clerkUser.emailAddresses.find(
-    (email) => email.id === clerkUser.primaryEmailAddressId
-  )?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress ?? ""
+  const primaryEmail =
+    clerkUser.emailAddresses.find(
+      (email) => email.id === clerkUser.primaryEmailAddressId
+    )?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress ?? ""
 
   const fullName = `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`.trim() || null
 
-  const dbUser = await prisma.user.upsert({
-    where: { clerkId: clerkUser.id },
-    update: {
-      email: primaryEmail,
-      name: fullName,
-      imageUrl: clerkUser.imageUrl,
-    },
-    create: {
+  // Check if user exists
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.clerkId, clerkUser.id),
+  })
+
+  if (existingUser) {
+    // Update existing user
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        email: primaryEmail,
+        name: fullName,
+        imageUrl: clerkUser.imageUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.clerkId, clerkUser.id))
+      .returning()
+
+    return updatedUser
+  }
+
+  // Insert new user
+  const [newUser] = await db
+    .insert(users)
+    .values({
       clerkId: clerkUser.id,
       email: primaryEmail,
       name: fullName,
       imageUrl: clerkUser.imageUrl,
-    },
-  })
+    })
+    .returning()
 
-  return dbUser
+  return newUser
 }
