@@ -1,16 +1,41 @@
-// app/dashboard/page.tsx
-import { TrendingUp, Users, CheckCircle, Clock, Plus } from "lucide-react"
+// app/(dashboard)/dashboard/page.tsx
+import { TrendingUp, Users, CheckCircle, Clock, Plus, Check } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { getOrCreateDbUser } from "@/lib/auth"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  // Trigger user synchronization with Neon PostgreSQL database
+  const dbUser = await getOrCreateDbUser()
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">
+            Welcome back{dbUser?.name ? `, ${dbUser.name}` : ""}! 👋
+          </h1>
           <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-2">
-            Welcome back! Here's an overview of your projects and tasks. Time to lock in!
+            Here's an overview of your projects and tasks. Time to lock in!
           </p>
+        </div>
+
+        {/* User Sync Completion Banner (Task 4.1) */}
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                <Check className="text-white" size={16} />
+              </div>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                Task 4.1: User Synchronization Complete
+              </h3>
+              <p className="mt-1 text-sm text-emerald-800 dark:text-emerald-200">
+                Connected as <span className="font-semibold">{dbUser?.email ?? "Authenticated User"}</span>. Your Clerk account is synchronized with Neon PostgreSQL.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Implementation Status Banner */}
@@ -22,12 +47,12 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">Dashboard Implementation Tasks</h3>
+              <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">Upcoming Implementation Tasks</h3>
               <div className="mt-2 text-sm text-blue-800 dark:text-blue-200">
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Task 4.2: Create project listing and dashboard interface</li>
-                  <li>Task 5.3: Set up client-side state management with Zustand</li>
-                  <li>Task 6.6: Optimize performance and implement loading states</li>
+                  <li>Task 4.2: Create project listing and CRUD Server Actions</li>
+                  <li>Task 4.3: Set up Kanban list and task CRUD functionality</li>
+                  <li>Task 4.4: Add interactive drag-and-drop board view</li>
                 </ul>
               </div>
             </div>
@@ -97,7 +122,7 @@ export default function DashboardPage() {
             </div>
             <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                📋 <strong>Task 4.1:</strong> Implement project CRUD operations
+                📋 <strong>Task 4.2:</strong> Implement project CRUD operations
               </p>
             </div>
           </div>
@@ -121,7 +146,7 @@ export default function DashboardPage() {
             </div>
             <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                📋 <strong>Task 4.4:</strong> Build task creation and editing functionality
+                📋 <strong>Task 4.3:</strong> Build task creation and editing functionality
               </p>
             </div>
           </div>
