@@ -58,6 +58,7 @@ export async function updateTask(
     title?: string
     description?: string | null
     dueDate?: Date | null
+    userId?: string | null
   }
 ) {
   try {
@@ -164,3 +165,4 @@ export async function deleteTask(taskId: string, projectId: string) {
     return { success: false, error: "Failed to delete task" }
   }
 }
+
