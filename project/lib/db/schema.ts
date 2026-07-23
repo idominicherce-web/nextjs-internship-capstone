@@ -1,5 +1,6 @@
 // lib/db/schema.ts
 import { pgTable, text, timestamp, integer } from "drizzle-orm/pg-core"
+import { relations } from "drizzle-orm"
 
 // USERS TABLE
 export const users = pgTable("users", {
@@ -50,3 +51,34 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
+
+// ==========================================
+// DRIZZLE RELATIONS (Required for db.query)
+// ==========================================
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  user: one(users, {
+    fields: [projects.userId],
+    references: [users.id],
+  }),
+  lists: many(lists),
+}))
+
+export const listsRelations = relations(lists, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [lists.projectId],
+    references: [projects.id],
+  }),
+  tasks: many(tasks),
+}))
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  list: one(lists, {
+    fields: [tasks.listId],
+    references: [lists.id],
+  }),
+  user: one(users, {
+    fields: [tasks.userId],
+    references: [users.id],
+  }),
+}))
