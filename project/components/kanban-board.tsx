@@ -3,8 +3,10 @@
 
 import { useState, useEffect } from "react"
 import { createList, deleteList } from "@/actions/lists"
-import { createTask, deleteTask, updateTaskPosition } from "@/actions/tasks"
-import { Plus, Trash2, Loader2, GripVertical } from "lucide-react"
+import { createTask, deleteTask, reorderTasks } from "@/actions/tasks"
+import { TaskCard, TaskCardData } from "@/components/task-card"
+import { TaskDetailModal } from "@/components/modals/task-detail-modal"
+import { Plus, Trash2, Loader2 } from "lucide-react"
 
 import {
   DndContext,
@@ -22,22 +24,12 @@ import {
 import {
   SortableContext,
   verticalListSortingStrategy,
-  useSortable,
 } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-
-interface Task {
-  id: string
-  title: string
-  description: string | null
-  listId: string
-  position: number
-}
 
 interface List {
   id: string
   name: string
-  tasks: Task[]
+  tasks: TaskCardData[]
 }
 
 interface KanbanBoardProps {
@@ -45,60 +37,6 @@ interface KanbanBoardProps {
   initialLists?: List[]
 }
 
-// Draggable Task Card Component
-function TaskCard({ task, projectId }: { task: Task; projectId: string }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id, data: { task } })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="group p-3 bg-white dark:bg-outer_space-300 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 shadow-sm flex items-start justify-between gap-2 hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-start gap-2 flex-1">
-        <button
-          {...attributes}
-          {...listeners}
-          className="mt-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-platinum-500 cursor-grab active:cursor-grabbing"
-          title="Drag to reorder"
-        >
-          <GripVertical size={14} />
-        </button>
-        <div>
-          <h4 className="font-medium text-slate-800 dark:text-platinum-500 text-sm">
-            {task.title}
-          </h4>
-          {task.description && (
-            <p className="text-xs text-slate-500 dark:text-french_gray-400 mt-1">
-              {task.description}
-            </p>
-          )}
-        </div>
-      </div>
-      <button
-        onClick={() => deleteTask(task.id, projectId)}
-        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-opacity"
-      >
-        <Trash2 size={14} />
-      </button>
-    </div>
-  )
-}
-
-// Droppable Column Component (Allows dropping into empty columns!)
 function KanbanColumn({
   list,
   projectId,
@@ -106,6 +44,7 @@ function KanbanColumn({
   setTaskInputs,
   deleteList,
   handleAddTask,
+  onTaskClick,
 }: {
   list: List
   projectId: string
@@ -113,6 +52,7 @@ function KanbanColumn({
   setTaskInputs: React.Dispatch<React.SetStateAction<Record<string, string>>>
   deleteList: (id: string, projectId: string) => void
   handleAddTask: (listId: string) => void
+  onTaskClick: (task: TaskCardData) => void
 }) {
   const { setNodeRef } = useDroppable({
     id: list.id,
@@ -122,7 +62,6 @@ function KanbanColumn({
   return (
     <div className="flex-shrink-0 w-80">
       <div className="bg-slate-100 dark:bg-outer_space-400 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400">
-        {/* Column Header */}
         <div className="p-4 border-b border-french_gray-300 dark:border-payne's_gray-400">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-slate-800 dark:text-platinum-500 flex items-center">
@@ -141,17 +80,21 @@ function KanbanColumn({
           </div>
         </div>
 
-        {/* Droppable Task Area */}
         <SortableContext
           items={list.tasks.map((t) => t.id)}
           strategy={verticalListSortingStrategy}
         >
           <div ref={setNodeRef} className="p-4 space-y-3 min-h-[250px]">
             {list.tasks.map((task) => (
-              <TaskCard key={task.id} task={task} projectId={projectId} />
+              <TaskCard
+                key={task.id}
+                task={task}
+                projectId={projectId}
+                onTaskClick={onTaskClick}
+                onDeleteTask={deleteTask}
+              />
             ))}
 
-            {/* Add Task Input */}
             <div className="pt-2">
               <input
                 type="text"
@@ -181,13 +124,13 @@ function KanbanColumn({
 
 export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) {
   const [listsState, setListsState] = useState<List[]>(initialLists)
-  const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [activeTask, setActiveTask] = useState<TaskCardData | null>(null)
+  const [editingTask, setEditingTask] = useState<TaskCardData | null>(null)
   const [newListName, setNewListName] = useState("")
   const [taskInputs, setTaskInputs] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
 
-  // Prevent SSR hydration mismatch for dnd-kit auto-generated IDs
   useEffect(() => {
     setIsMounted(true)
   }, [])
@@ -222,7 +165,7 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
   }
 
   const handleDragStart = (event: DragStartEvent) => {
-    const taskData = event.active.data.current?.task as Task | undefined
+    const taskData = event.active.data.current?.task as TaskCardData | undefined
     if (taskData) {
       setActiveTask(taskData)
     }
@@ -235,7 +178,6 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
     const activeTaskId = active.id as string
     const overId = over.id as string
 
-    // Find source and target lists
     const sourceList = listsState.find((l) =>
       l.tasks.some((t) => t.id === activeTaskId)
     )
@@ -245,7 +187,6 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
 
     if (!sourceList || !targetList || sourceList.id === targetList.id) return
 
-    // Optimistically update client state while dragging over different columns
     setListsState((prevLists) => {
       const activeTaskItem = sourceList.tasks.find((t) => t.id === activeTaskId)
       if (!activeTaskItem) return prevLists
@@ -277,25 +218,25 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
     const activeTaskId = active.id as string
     const overId = over.id as string
 
-    // Find target column list
     const targetList = listsState.find(
       (l) => l.id === overId || l.tasks.some((t) => t.id === overId)
     )
 
     if (!targetList) return
 
-    const overTaskIndex = targetList.tasks.findIndex((t) => t.id === overId)
-    const newPosition = overTaskIndex >= 0 ? overTaskIndex : targetList.tasks.length
+    const taskUpdates = targetList.tasks.map((task, index) => ({
+      id: task.id,
+      listId: targetList.id,
+      position: index,
+    }))
 
-    // Persist position update to PostgreSQL database
-    await updateTaskPosition(activeTaskId, targetList.id, newPosition, projectId)
+    await reorderTasks(taskUpdates, projectId)
   }
 
   if (!isMounted) return null
 
   return (
     <div className="space-y-6">
-      {/* Create New Column Control */}
       <div className="bg-white dark:bg-outer_space-500 p-4 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 shadow-sm">
         <form onSubmit={handleAddList} className="flex gap-2 max-w-md">
           <input
@@ -315,7 +256,6 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
         </form>
       </div>
 
-      {/* DndContext Wrapping Kanban Columns */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -344,13 +284,13 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
                   setTaskInputs={setTaskInputs}
                   deleteList={deleteList}
                   handleAddTask={handleAddTask}
+                  onTaskClick={(task) => setEditingTask(task)}
                 />
               ))}
             </div>
           )}
         </div>
 
-        {/* Floating Overlay while dragging */}
         <DragOverlay>
           {activeTask ? (
             <div className="p-3 bg-white dark:bg-outer_space-300 rounded-lg border border-blue_munsell-500 shadow-xl opacity-90">
@@ -361,6 +301,14 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Editing Modal */}
+      <TaskDetailModal
+        task={editingTask}
+        projectId={projectId}
+        isOpen={!!editingTask}
+        onClose={() => setEditingTask(null)}
+      />
     </div>
   )
 }
