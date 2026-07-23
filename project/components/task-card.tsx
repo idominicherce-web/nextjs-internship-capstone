@@ -1,48 +1,85 @@
-// TODO: Task 5.6 - Create task detail modals and editing interfaces
+// components/task-card.tsx
+"use client"
 
-/*
-TODO: Implementation Notes for Interns:
+import { useSortable } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { GripVertical, Trash2 } from "lucide-react"
 
-This component should display:
-- Task title and description
-- Priority indicator
-- Assignee avatar
-- Due date
-- Labels/tags
-- Comments count
-- Drag handle for reordering
-
-Props interface:
-interface TaskCardProps {
-  task: {
-    id: string
-    title: string
-    description?: string
-    priority: 'low' | 'medium' | 'high'
-    assignee?: User
-    dueDate?: Date
-    labels: string[]
-    commentsCount: number
-  }
-  isDragging?: boolean
-  onEdit?: (id: string) => void
-  onDelete?: (id: string) => void
+export interface TaskCardData {
+  id: string
+  title: string
+  description: string | null
+  listId: string
+  position: number
+  dueDate?: Date | null
 }
 
-Features to implement:
-- Drag and drop support
-- Click to open task modal
-- Priority color coding
-- Overdue indicators
-- Responsive design
-*/
+interface TaskCardProps {
+  task: TaskCardData
+  projectId: string
+  onTaskClick: (task: TaskCardData) => void
+  onDeleteTask: (taskId: string, projectId: string) => void
+}
 
-export function TaskCard() {
+export function TaskCard({
+  task,
+  projectId,
+  onTaskClick,
+  onDeleteTask,
+}: TaskCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id, data: { task } })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
+
   return (
-    <div className="bg-white dark:bg-outer_space-300 p-4 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400">
-      <p className="text-center text-payne's_gray-500 dark:text-french_gray-400 text-sm">
-        TODO: Implement TaskCard component
-      </p>
+    <div
+      ref={setNodeRef}
+      style={style}
+      onClick={() => onTaskClick(task)}
+      className="group p-3 bg-white dark:bg-outer_space-300 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 shadow-sm flex items-start justify-between gap-2 hover:shadow-md transition-shadow cursor-pointer"
+    >
+      <div className="flex items-start gap-2 flex-1">
+        <button
+          {...attributes}
+          {...listeners}
+          onClick={(e) => e.stopPropagation()} // Prevent modal opening when dragging
+          className="mt-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-platinum-500 cursor-grab active:cursor-grabbing"
+          title="Drag to reorder"
+        >
+          <GripVertical size={14} />
+        </button>
+        <div>
+          <h4 className="font-medium text-slate-800 dark:text-platinum-500 text-sm">
+            {task.title}
+          </h4>
+          {task.description && (
+            <p className="text-xs text-slate-500 dark:text-french_gray-400 mt-1 line-clamp-2">
+              {task.description}
+            </p>
+          )}
+        </div>
+      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation() // Prevent modal opening when deleting
+          onDeleteTask(task.id, projectId)
+        }}
+        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-opacity p-1 rounded"
+        title="Delete task"
+      >
+        <Trash2 size={14} />
+      </button>
     </div>
   )
 }

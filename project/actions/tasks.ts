@@ -51,21 +51,36 @@ export async function createTask(
   }
 }
 
-export async function deleteTask(taskId: string, projectId: string) {
+export async function updateTask(
+  taskId: string,
+  projectId: string,
+  updates: {
+    title?: string
+    description?: string | null
+    dueDate?: Date | null
+  }
+) {
   try {
     const dbUser = await getOrCreateDbUser()
     if (!dbUser) {
       return { success: false, error: "Unauthorized" }
     }
 
-    await db.delete(tasks).where(eq(tasks.id, taskId))
+    const [updatedTask] = await db
+      .update(tasks)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(tasks.id, taskId))
+      .returning()
 
     revalidatePath(`/projects/${projectId}`)
 
-    return { success: true }
+    return { success: true, data: updatedTask }
   } catch (error) {
-    console.error("Failed to delete task:", error)
-    return { success: false, error: "Failed to delete task" }
+    console.error("Failed to update task:", error)
+    return { success: false, error: "Failed to update task" }
   }
 }
 
@@ -96,5 +111,56 @@ export async function updateTaskPosition(
   } catch (error) {
     console.error("Failed to update task position:", error)
     return { success: false, error: "Failed to update task position" }
+  }
+}
+
+export async function reorderTasks(
+  taskUpdates: { id: string; listId: string; position: number }[],
+  projectId: string
+) {
+  try {
+    const dbUser = await getOrCreateDbUser()
+    if (!dbUser) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    // Batch update all task positions in PostgreSQL
+    await Promise.all(
+      taskUpdates.map((item) =>
+        db
+          .update(tasks)
+          .set({
+            listId: item.listId,
+            position: item.position,
+            updatedAt: new Date(),
+          })
+          .where(eq(tasks.id, item.id))
+      )
+    )
+
+    revalidatePath(`/projects/${projectId}`)
+
+    return { success: true }
+  } catch (error) {
+    console.error("Failed to reorder tasks:", error)
+    return { success: false, error: "Failed to reorder tasks" }
+  }
+}
+
+export async function deleteTask(taskId: string, projectId: string) {
+  try {
+    const dbUser = await getOrCreateDbUser()
+    if (!dbUser) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    await db.delete(tasks).where(eq(tasks.id, taskId))
+
+    revalidatePath(`/projects/${projectId}`)
+
+    return { success: true }
+  } catch (error) {
+    console.error("Failed to delete task:", error)
+    return { success: false, error: "Failed to delete task" }
   }
 }
