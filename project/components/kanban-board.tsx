@@ -7,6 +7,7 @@ import { createTask, deleteTask, reorderTasks } from "@/actions/tasks"
 import { TaskCard, TaskCardData } from "@/components/task-card"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
 import { Plus, Trash2, Loader2 } from "lucide-react"
+import { getUsers } from "@/actions/users"
 
 import {
   DndContext,
@@ -130,6 +131,7 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
   const [taskInputs, setTaskInputs] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [usersList, setUsersList] = useState<{ id: string; name: string | null; email: string }[]>([])
 
   useEffect(() => {
     setIsMounted(true)
@@ -138,6 +140,19 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
   useEffect(() => {
     setListsState(initialLists)
   }, [initialLists])
+
+  useEffect(() => {
+    setIsMounted(true)
+
+    async function fetchUsers() {
+      const res = await getUsers()
+      if (res.success && res.data) {
+        setUsersList(res.data)
+      }
+    }
+
+    fetchUsers()
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -306,6 +321,7 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
       <TaskDetailModal
         task={editingTask}
         projectId={projectId}
+        users={usersList}
         isOpen={!!editingTask}
         onClose={() => setEditingTask(null)}
       />

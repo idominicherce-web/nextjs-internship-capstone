@@ -3,19 +3,27 @@
 
 import { useState, useEffect } from "react"
 import { updateTask } from "@/actions/tasks"
-import { X, Loader2, Calendar, FileText, CheckCircle } from "lucide-react"
+import { X, Loader2, Calendar, FileText, CheckCircle, User as UserIcon } from "lucide-react"
 
 interface Task {
   id: string
   title: string
   description: string | null
-  dueDate?: Date | null
+  dueDate?: Date | string | null
+  userId?: string | null
+}
+
+interface UserOption {
+  id: string
+  name: string | null
+  email: string
 }
 
 interface TaskDetailModalProps {
   task: Task | null
   projectId: string
   isOpen: boolean
+  users?: UserOption[]
   onClose: () => void
 }
 
@@ -23,11 +31,13 @@ export function TaskDetailModal({
   task,
   projectId,
   isOpen,
+  users = [],
   onClose,
 }: TaskDetailModalProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [dueDate, setDueDate] = useState("")
+  const [assignedUserId, setAssignedUserId] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
   const [successMsg, setSuccessMsg] = useState("")
 
@@ -40,6 +50,7 @@ export function TaskDetailModal({
           ? new Date(task.dueDate).toISOString().split("T")[0]
           : ""
       )
+      setAssignedUserId(task.userId || "")
     }
   }, [task])
 
@@ -56,6 +67,7 @@ export function TaskDetailModal({
       title: title.trim(),
       description: description.trim() || null,
       dueDate: dueDate ? new Date(dueDate) : null,
+      userId: assignedUserId || null,
     })
 
     setIsLoading(false)
@@ -110,22 +122,42 @@ export function TaskDetailModal({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={4}
+              rows={3}
               placeholder="Add more details about this task..."
               className="w-full rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-3 py-2 text-sm bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500 resize-none"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-1 items-center gap-1.5">
-              <Calendar size={14} /> Due Date
-            </label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-3 py-2 text-sm bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-1 items-center gap-1.5">
+                <UserIcon size={14} /> Assignee
+              </label>
+              <select
+                value={assignedUserId}
+                onChange={(e) => setAssignedUserId(e.target.value)}
+                className="w-full rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-3 py-2 text-sm bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500"
+              >
+                <option value="">Unassigned</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name || u.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-1 items-center gap-1.5">
+                <Calendar size={14} /> Due Date
+              </label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="w-full rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-3 py-2 text-sm bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
