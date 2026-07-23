@@ -1,24 +1,58 @@
 // app/(dashboard)/projects/projects-client.tsx
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { CreateProjectModal } from "@/components/modals/create-project-modal"
 import { ProjectCard, ProjectData } from "@/components/project-card"
-import { Plus, Search, Filter, Folder } from "lucide-react"
+import { Plus, Search, Filter, Folder, X, ArrowUpDown } from "lucide-react"
 
 interface ProjectsClientProps {
   initialProjects: ProjectData[]
 }
 
+type SortOption = "newest" | "oldest" | "alphabetical"
+
 export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [sortBy, setSortBy] = useState<SortOption>("newest")
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
-  const filteredProjects = initialProjects.filter(
-    (project) =>
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Combined search & filter memoization
+  const filteredProjects = useMemo(() => {
+    let result = [...initialProjects]
+
+    // 1. Text Search Filter (Matches Title or Description)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(
+        (project) =>
+          project.name.toLowerCase().includes(q) ||
+          project.description?.toLowerCase().includes(q)
+      )
+    }
+
+    // 2. Sorting Logic
+    result.sort((a, b) => {
+      if (sortBy === "newest") {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      }
+      if (sortBy === "oldest") {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      }
+      if (sortBy === "alphabetical") {
+        return a.name.localeCompare(b.name)
+      }
+      return 0
+    })
+
+    return result
+  }, [initialProjects, searchQuery, sortBy])
+
+  const handleResetFilters = () => {
+    setSearchQuery("")
+    setSortBy("newest")
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-6">
@@ -51,12 +85,13 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
           <li>• Task 4.1: Implement project CRUD operations</li>
           <li>• Task 4.2: Create project listing and dashboard interface</li>
           <li>• Task 4.5: Design and implement project cards and layouts</li>
-          <li>• Task 4.6: Add project and task search/filtering capabilities</li>
+          <li>• Task 4.6 / 5.4: Add project search, filtering, and sorting capabilities</li>
         </ul>
       </div>
 
-      {/* Search and Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Search and Filter Control Bar */}
+      <div className="flex flex-col sm:flex-row gap-4 relative">
+        {/* Input Field */}
         <div className="relative flex-1">
           <Search
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-payne's_gray-500 dark:text-french_gray-400"
@@ -66,15 +101,88 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search projects..."
-            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-outer_space-500 border border-french_gray-300 dark:border-payne's_gray-400 rounded-lg text-outer_space-500 dark:text-platinum-500 placeholder-payne's_gray-500 dark:placeholder-french_gray-400 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500 text-sm"
+            placeholder="Search projects by name or description..."
+            className="w-full pl-10 pr-10 py-2 bg-white dark:bg-outer_space-500 border border-french_gray-300 dark:border-payne's_gray-400 rounded-lg text-outer_space-500 dark:text-platinum-500 placeholder-payne's_gray-500 dark:placeholder-french_gray-400 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500 text-sm"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-platinum-500"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
-        <button className="inline-flex items-center justify-center px-4 py-2 border border-french_gray-300 dark:border-payne's_gray-400 text-outer_space-500 dark:text-platinum-500 rounded-lg hover:bg-gray-100 dark:hover:bg-outer_space-400 transition-colors text-sm font-medium">
-          <Filter size={16} className="mr-2" />
-          Filter
-        </button>
+
+        {/* Filter / Sort Button Toggle */}
+        <div className="relative">
+          <button
+            onClick={() => setIsFilterOpen((prev) => !prev)}
+            className={`inline-flex items-center justify-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors w-full sm:w-auto ${
+              isFilterOpen || sortBy !== "newest"
+                ? "border-blue_munsell-500 text-blue_munsell-500 bg-blue-50 dark:bg-blue-900/20"
+                : "border-french_gray-300 dark:border-payne's_gray-400 text-outer_space-500 dark:text-platinum-500 hover:bg-gray-100 dark:hover:bg-outer_space-400"
+            }`}
+          >
+            <Filter size={16} className="mr-2" />
+            Sort & Filter
+          </button>
+
+          {/* Filter Dropdown Popover */}
+          {isFilterOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-4 shadow-xl z-20 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-payne's_gray-500 dark:text-french_gray-400 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                  <ArrowUpDown size={12} /> Sort By
+                </label>
+                <div className="space-y-1">
+                  {[
+                    { id: "newest", label: "Newest First" },
+                    { id: "oldest", label: "Oldest First" },
+                    { id: "alphabetical", label: "Alphabetical (A-Z)" },
+                  ].map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={() => setSortBy(option.id as SortOption)}
+                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+                        sortBy === option.id
+                          ? "bg-blue_munsell-500 text-white font-medium"
+                          : "text-outer_space-500 dark:text-platinum-500 hover:bg-slate-100 dark:hover:bg-outer_space-400"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {(searchQuery || sortBy !== "newest") && (
+                <div className="pt-2 border-t border-french_gray-300 dark:border-payne's_gray-400">
+                  <button
+                    onClick={handleResetFilters}
+                    className="w-full text-center text-xs text-red-500 hover:text-red-600 font-medium py-1"
+                  >
+                    Reset all filters
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Filter Status Badge */}
+      {(searchQuery || sortBy !== "newest") && (
+        <div className="flex items-center gap-2 text-xs text-payne's_gray-500 dark:text-french_gray-400">
+          <span>Showing {filteredProjects.length} of {initialProjects.length} projects</span>
+          <button
+            onClick={handleResetFilters}
+            className="text-blue_munsell-500 hover:underline font-medium"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
 
       {/* Projects Grid */}
       {filteredProjects.length === 0 ? (
@@ -85,10 +193,17 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
           </h3>
           <p className="text-sm text-payne's_gray-500 dark:text-french_gray-400 mt-1 mb-4">
             {searchQuery
-              ? "Try matching a different search term"
+              ? `No projects matching "${searchQuery}"`
               : "Get started by creating your first project!"}
           </p>
-          {!searchQuery && (
+          {searchQuery ? (
+            <button
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-2 rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-4 py-2 text-sm font-medium text-outer_space-500 dark:text-platinum-500 hover:bg-slate-100 dark:hover:bg-outer_space-400"
+            >
+              Clear Search
+            </button>
+          ) : (
             <button
               onClick={() => setIsModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-md bg-blue_munsell-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue_munsell-600"
@@ -104,31 +219,6 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
           ))}
         </div>
       )}
-
-      {/* Component Reference Guide */}
-      <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
-          📁 Components to Implement
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-400">
-          <div>
-            <strong>components/project-card.tsx</strong>
-            <p>Project display component with progress, members, and actions</p>
-          </div>
-          <div>
-            <strong>components/modals/create-project-modal.tsx</strong>
-            <p>Modal for creating new projects with form validation</p>
-          </div>
-          <div>
-            <strong>hooks/use-projects.ts</strong>
-            <p>Custom hook for project data fetching and mutations</p>
-          </div>
-          <div>
-            <strong>lib/db/schema.ts</strong>
-            <p>Database schema for projects, lists, and tasks</p>
-          </div>
-        </div>
-      </div>
 
       {/* Create Project Modal */}
       <CreateProjectModal
