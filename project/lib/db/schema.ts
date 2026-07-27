@@ -1,5 +1,5 @@
 // lib/db/schema.ts
-import { pgTable, text, timestamp, integer } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
 
 // USERS TABLE
@@ -50,6 +50,17 @@ export const tasks = pgTable("tasks", {
   dueDate: timestamp("due_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+})
+
+// ACTIVITY LOGS TABLE
+export const activityLogs = pgTable("activity_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityName: text("entity_name").notNull(),
+  details: text("details"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 })
 
 // ==========================================
