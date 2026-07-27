@@ -1,129 +1,141 @@
-// components/modals/create-project-modal.tsx
 "use client"
 
-import { useState } from "react"
-import { useProjects } from "@/hooks/use-projects"
-import { createProjectSchema } from "@/lib/validations"
-import { Plus, Loader2, X } from "lucide-react"
+import type React from "react"
+import { useActionState, useEffect } from "react"
+import { useFormStatus } from "react-dom"
+import { createProject, type ActionResponse } from "@/actions/projects"
+import { Scroll, X, Loader2, Compass } from "lucide-react"
 
 interface CreateProjectModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
+// Reusable submit button using React 19's useFormStatus
+function SubmitButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] hover:shadow-[0_0_20px_rgba(215,176,92,0.4)] transition-all cursor-pointer disabled:opacity-50"
+    >
+      {pending ? (
+        <Loader2 size={16} className="animate-spin text-[#D7B05C]" />
+      ) : (
+        <Compass size={16} className="text-[#D7B05C]" />
+      )}
+      <span>{pending ? "Commissioning..." : "Create Project"}</span>
+    </button>
+  )
+}
+
 export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
-  const [fieldErrors, setFieldErrors] = useState<{ name?: string; description?: string }>({})
-  
-  const { createProject, isLoading, error: serverError } = useProjects()
+  // React 19 useActionState hook for Server Action wiring
+  const [state, formAction] = useActionState<ActionResponse, FormData>(
+    createProject,
+    { success: false }
+  )
+
+  // Automatically close modal when project creation succeeds
+  useEffect(() => {
+    if (state.success) {
+      onClose()
+    }
+  }, [state.success, onClose])
 
   if (!isOpen) return null
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setFieldErrors({})
-
-    // Client-side Zod validation
-    const validationResult = createProjectSchema.safeParse({ name, description })
-
-    if (!validationResult.success) {
-      const formattedErrors = validationResult.error.format()
-      setFieldErrors({
-        name: formattedErrors.name?._errors[0],
-        description: formattedErrors.description?._errors[0],
-      })
-      return
-    }
-
-    // Call project creation Server Action via useProjects hook
-    const result = await createProject(validationResult.data)
-
-    if (result.success) {
-      setName("")
-      setDescription("")
-      setFieldErrors({})
-      onClose()
-    }
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md mx-4 rounded-lg bg-white p-6 shadow-xl dark:bg-outer_space-500 border border-french_gray-300 dark:border-payne's_gray-400">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500">
-            Create New Project
-          </h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs">
+      <div className="relative w-full max-w-lg rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden text-[#F8EEDB] font-serif">
+        
+        {/* Forged Brass Corner Brackets */}
+        <div className="absolute left-1 top-1 w-4 h-4 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+        <div className="absolute right-1 top-1 w-4 h-4 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+        <div className="absolute bottom-1 left-1 w-4 h-4 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+        <div className="absolute bottom-1 right-1 w-4 h-4 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b-2 border-[#4A2C1D] pb-4 mb-5">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C]">
+              <Scroll size={22} />
+            </div>
+            <div>
+              <div className="text-[9px] font-sans font-black uppercase tracking-[0.25em] text-[#D7B05C]">
+                New Project • <span className="italic font-serif text-[#D7B05C]/70">Commission Campaign</span>
+              </div>
+              <h2 className="text-xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
+                Create Project
+              </h2>
+            </div>
+          </div>
+
           <button
+            type="button"
             onClick={onClose}
-            className="text-payne's_gray-500 hover:text-outer_space-500 dark:text-french_gray-400 dark:hover:text-platinum-500 transition-colors"
+            className="p-1.5 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         </div>
 
-        {serverError && (
-          <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800">
-            {serverError}
-          </div>
-        )}
+        {/* React 19 Form Submission */}
+        <form action={formAction} className="space-y-4">
+          {/* Validation or Action Error Alert */}
+          {state.error && (
+            <div className="p-3 rounded-xs border border-rose-600 bg-rose-950/80 text-rose-300 text-xs font-sans font-bold">
+              {state.error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-1">
-              Project Name <span className="text-red-500">*</span>
+          {/* Project Name Input */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+              Project Name <span className="text-rose-400">*</span>
             </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              name="name"
               placeholder="e.g. Website Redesign"
-              className="w-full rounded-md border border-french_gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue_munsell-500 dark:border-payne's_gray-400 dark:bg-outer_space-400 dark:text-platinum-500"
+              required
+              className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner"
+              autoFocus
             />
-            {fieldErrors.name && (
-              <p className="mt-1 text-xs text-red-500">{fieldErrors.name}</p>
+            {state.fieldErrors?.name && (
+              <p className="text-[10px] font-sans font-bold text-rose-400 mt-1">
+                {state.fieldErrors.name[0]}
+              </p>
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-1">
-              Description (Optional)
+          {/* Description Input */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+              Description (Mission Brief)
             </label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of the project..."
+              name="description"
+              placeholder="Describe project objectives and scope..."
               rows={3}
-              className="w-full rounded-md border border-french_gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue_munsell-500 dark:border-payne's_gray-400 dark:bg-outer_space-400 dark:text-platinum-500 resize-none"
+              className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
             />
-            {fieldErrors.description && (
-              <p className="mt-1 text-xs text-red-500">{fieldErrors.description}</p>
-            )}
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          {/* Actions */}
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-[#4A2C1D]">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md px-4 py-2 text-sm font-medium text-payne's_gray-500 hover:bg-platinum-800 dark:text-french_gray-400 dark:hover:bg-outer_space-400 transition-colors"
+              className="px-4 py-2 border border-[#8F6236] bg-[#15100C] text-[#D7B05C] hover:text-white rounded-xs text-xs font-sans font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex items-center gap-2 rounded-md bg-blue_munsell-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue_munsell-600 disabled:opacity-50 transition-colors"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="animate-spin" size={16} /> Creating...
-                </>
-              ) : (
-                <>
-                  <Plus size={16} /> Create Project
-                </>
-              )}
-            </button>
+
+            {/* React 19 Pending State Submit Button */}
+            <SubmitButton />
           </div>
         </form>
       </div>

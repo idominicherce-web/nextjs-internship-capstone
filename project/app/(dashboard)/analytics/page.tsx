@@ -3,17 +3,14 @@ import { db } from "@/lib/db"
 import { projects, activityLogs } from "@/lib/db/schema"
 import { getOrCreateDbUser } from "@/lib/auth"
 import { eq, desc } from "drizzle-orm"
-import {
-  BarChart3,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  TrendingUp,
-  FolderOpen,
-  Activity,
-  FileText,
-  PlusCircle,
-} from "lucide-react"
+import { Shield } from "lucide-react"
+
+import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container"
+import { DashboardPageHeader } from "@/components/layout/dashboard-page-header"
+import { IntelligenceStats } from "@/components/analytics/intelligence-stats"
+import { WorkspaceHealth } from "@/components/analytics/workspace-health"
+import { ProjectPerformance } from "@/components/analytics/project-performance"
+import { ActivityArchive } from "@/components/analytics/activity-archive"
 
 export const dynamic = "force-dynamic"
 
@@ -22,8 +19,16 @@ export default async function AnalyticsPage() {
 
   if (!dbUser) {
     return (
-      <div className="p-6 text-center text-payne's_gray-500 dark:text-french_gray-400">
-        Unauthorized. Please sign in.
+      <div className="min-h-screen bg-[#15100C] flex items-center justify-center p-6 text-center text-[#D7B05C] font-serif">
+        <div className="p-8 border-2 border-[#8F6236] bg-[#2D1B10] rounded-xs shadow-2xl">
+          <Shield className="mx-auto mb-3 text-[#D7B05C]" size={32} />
+          <h2 className="text-xl font-black uppercase tracking-widest text-[#F8EEDB]">
+            Access Denied
+          </h2>
+          <p className="text-xs font-sans text-[#D7B05C]/70 mt-2">
+            Unauthorized traveler. Please sign in to access the Intelligence Chamber.
+          </p>
+        </div>
       </div>
     )
   }
@@ -94,164 +99,55 @@ export default async function AnalyticsPage() {
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto p-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500 flex items-center gap-3">
-          <BarChart3 className="text-blue_munsell-500" size={32} />
-          Analytics & Performance
-        </h1>
-        <p className="text-payne's_gray-500 dark:text-french_gray-400 mt-1">
-          Track project completion rates, task productivity, and live workspace activity.
-        </p>
-      </div>
-
-      {/* Top Metric Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6 shadow-sm">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <TrendingUp className="text-blue_munsell-500" size={20} />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-payne's_gray-500 dark:text-french_gray-400">
-                Overall Efficiency
-              </p>
-              <p className="text-2xl font-bold text-outer_space-500 dark:text-platinum-500">
-                {overallCompletionRate}%
-              </p>
-            </div>
+    <DashboardLayoutContainer>
+      {/* Hero Header */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6 relative">
+        <div>
+          <div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
+            <span>⚔</span>
+            <span>Intelligence Chamber</span>
+            <span>⚔</span>
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6 shadow-sm">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="text-emerald-500" size={20} />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-payne's_gray-500 dark:text-french_gray-400">
-                Completed Tasks
-              </p>
-              <p className="text-2xl font-bold text-outer_space-500 dark:text-platinum-500">
-                {completedTasks} / {totalTasks}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6 shadow-sm">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="text-amber-500" size={20} />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-payne's_gray-500 dark:text-french_gray-400">
-                In Progress
-              </p>
-              <p className="text-2xl font-bold text-outer_space-500 dark:text-platinum-500">
-                {inProgressTasks}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6 shadow-sm">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-rose-100 dark:bg-rose-900/30 rounded-lg flex items-center justify-center">
-              <AlertCircle className="text-rose-500" size={20} />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-payne's_gray-500 dark:text-french_gray-400">
-                Overdue Tasks
-              </p>
-              <p className="text-2xl font-bold text-outer_space-500 dark:text-platinum-500">
-                {overdueTasks}
-              </p>
-            </div>
-          </div>
+          <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+            Analytics & Performance
+          </h1>
+          <p className="text-xs sm:text-sm font-sans text-[#D7B05C]/80 mt-2 italic max-w-2xl leading-relaxed">
+            Track project completion rates, workspace productivity, and live operational activity.
+          </p>
         </div>
       </div>
+      
 
-      {/* Main Grid: Project Breakdown & Activity Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Project Breakdown Chart */}
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-6 flex items-center gap-2">
-            <FolderOpen size={20} className="text-blue_munsell-500" />
-            Project Breakdown
-          </h3>
+      {/* Handcrafted Mounted Plaques Metrics */}
+      <IntelligenceStats
+        overallEfficiency={overallCompletionRate}
+        completedTasks={completedTasks}
+        totalTasks={totalTasks}
+        inProgressTasks={inProgressTasks}
+        overdueTasks={overdueTasks}
+      />
 
-          {projectAnalytics.length === 0 ? (
-            <p className="text-sm text-payne's_gray-500 dark:text-french_gray-400 text-center py-8">
-              No active projects found.
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {projectAnalytics.map((proj) => (
-                <div key={proj.id} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-outer_space-500 dark:text-platinum-500">
-                      {proj.name}
-                    </span>
-                    <span className="text-payne's_gray-500 dark:text-french_gray-400 font-medium">
-                      {proj.completionRate}% ({proj.completedTasks}/{proj.totalTasks} tasks)
-                    </span>
-                  </div>
-                  <div className="w-full bg-french_gray-300 dark:bg-payne's_gray-400 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="bg-blue_munsell-500 h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${proj.completionRate}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Workspace Health Executive Briefing */}
+      <WorkspaceHealth
+        totalProjects={userProjects.length}
+        overallEfficiency={overallCompletionRate}
+        completedTasks={completedTasks}
+        totalTasks={totalTasks}
+        overdueTasks={overdueTasks}
+      />
 
-        {/* Activity Timeline / Audit Log */}
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-6 flex items-center gap-2">
-            <Activity size={20} className="text-blue_munsell-500" />
-            Activity Timeline
-          </h3>
-
-          {recentActivities.length === 0 ? (
-            <div className="text-center py-8 text-payne's_gray-500 dark:text-french_gray-400 space-y-2">
-              <FileText size={32} className="mx-auto text-slate-400" />
-              <p className="text-sm">No recent activity logged yet.</p>
-              <p className="text-xs text-slate-400">
-                Actions like creating projects or updating tasks will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-french_gray-300 dark:before:bg-payne's_gray-400">
-              {recentActivities.map((log) => (
-                <div key={log.id} className="relative flex items-start gap-3">
-                  <span className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-blue_munsell-500 ring-4 ring-white dark:ring-outer_space-500" />
-                  <div>
-                    <p className="text-sm font-medium text-outer_space-500 dark:text-platinum-500">
-                      <span className="capitalize font-semibold">{log.action}</span>{" "}
-                      <span className="text-blue_munsell-500 font-medium">
-                        "{log.entityName}"
-                      </span>
-                    </p>
-                    {log.details && (
-                      <p className="text-xs text-payne's_gray-500 dark:text-french_gray-400 mt-0.5">
-                        {log.details}
-                      </p>
-                    )}
-                    <span className="text-[11px] text-slate-400 mt-1 block">
-                      {new Date(log.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Decorative Divider */}
+      <div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
+        <div className="h-px w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
+        <span>⚔ ──── ❦ ──── ⚔</span>
+        <div className="h-px w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
       </div>
-    </div>
+
+      {/* Main Grid: Project Reports & Activity Archive */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ProjectPerformance projects={projectAnalytics} />
+        <ActivityArchive activities={recentActivities} />
+      </div>
+    </DashboardLayoutContainer>
   )
 }

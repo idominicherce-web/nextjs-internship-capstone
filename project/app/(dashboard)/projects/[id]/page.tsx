@@ -1,12 +1,12 @@
-// app/(dashboard)/projects/[id]/page.tsx
 import { notFound } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft, Settings, Users, Calendar, MoreHorizontal } from "lucide-react"
 import { db } from "@/lib/db"
 import { projects, lists, tasks } from "@/lib/db/schema"
 import { getOrCreateDbUser } from "@/lib/auth"
 import { eq, asc } from "drizzle-orm"
-import { KanbanBoard } from "@/components/kanban-board"
+
+import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container"
+import { WarRoomToolbar } from "@/components/kanban/war-room-toolbar"
+import { KanbanBoard } from "@/components/kanban/kanban-board"
 
 export const dynamic = "force-dynamic"
 
@@ -43,44 +43,32 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   })
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-6">
-      {/* Project Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link
-            href="/projects"
-            className="p-2 hover:bg-gray-100 dark:hover:bg-outer_space-400 rounded-lg transition-colors text-outer_space-500 dark:text-platinum-500"
-          >
-            <ArrowLeft size={20} />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">
-              {project.name}
-            </h1>
-            <p className="text-payne's_gray-500 dark:text-french_gray-400 mt-1">
-              {project.description || "Kanban board view for project management"}
-            </p>
+    <DashboardLayoutContainer>
+      {/* Inline Header Bar */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6 relative">
+        <div>
+          <div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
+            <span>⚔</span>
+            <span>War Room Strategy Board</span>
+            <span>⚔</span>
           </div>
+          <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+            {project.name}
+          </h1>
+          <p className="text-xs sm:text-sm font-sans text-[#D7B05C]/80 mt-2 italic max-w-2xl leading-relaxed">
+            {project.description || "Interactive Kanban board for project operations and task strategy."}
+          </p>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-outer_space-400 rounded-lg transition-colors text-payne's_gray-500 dark:text-french_gray-400 hover:text-outer_space-500 dark:hover:text-platinum-500">
-            <Users size={20} />
-          </button>
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-outer_space-400 rounded-lg transition-colors text-payne's_gray-500 dark:text-french_gray-400 hover:text-outer_space-500 dark:hover:text-platinum-500">
-            <Calendar size={20} />
-          </button>
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-outer_space-400 rounded-lg transition-colors text-payne's_gray-500 dark:text-french_gray-400 hover:text-outer_space-500 dark:hover:text-platinum-500">
-            <Settings size={20} />
-          </button>
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-outer_space-400 rounded-lg transition-colors text-payne's_gray-500 dark:text-french_gray-400 hover:text-outer_space-500 dark:hover:text-platinum-500">
-            <MoreHorizontal size={20} />
-          </button>
+        <div className="shrink-0">
+          <WarRoomToolbar />
         </div>
       </div>
 
-      {/* Dynamic Kanban Board */}
-      <KanbanBoard projectId={project.id} initialLists={projectLists as any} />
-    </div>
+      {/* Dynamic Strategy Kanban Board */}
+      <div className="mt-6 rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-4 sm:p-6 shadow-2xl relative overflow-hidden">
+        <KanbanBoard projectId={project.id} initialLists={projectLists as any} />
+      </div>
+    </DashboardLayoutContainer>
   )
 }

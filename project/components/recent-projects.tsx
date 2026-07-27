@@ -1,10 +1,11 @@
-// components/recent-projects.tsx
 "use client"
 
 import Link from "next/link"
-import { Users, Calendar, Folder } from "lucide-react"
+import { DashboardSection } from "@/components/layout/dashboard-section"
+import { DashboardCard } from "@/components/layout/dashboard-card"
+import { FolderKanban, ArrowRight, Shield, Users, Clock } from "lucide-react"
 
-export interface RecentProjectData {
+interface ProjectItem {
   id: string
   name: string
   description: string | null
@@ -14,84 +15,107 @@ export interface RecentProjectData {
 }
 
 interface RecentProjectsProps {
-  projects: RecentProjectData[]
+  projects: ProjectItem[]
 }
 
 export function RecentProjects({ projects }: RecentProjectsProps) {
   return (
-    <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500">
-          Recent Projects
-        </h3>
+    <DashboardSection>
+      <div className="flex items-center justify-between border-b border-[#4A2C1D] pb-3 mb-4">
+        <div className="flex items-center gap-2 text-[#D7B05C]">
+          <FolderKanban size={20} />
+          <h2 className="font-serif font-black uppercase text-base tracking-widest text-[#F8EEDB]">
+            Active Campaign Dossiers
+          </h2>
+        </div>
         <Link
           href="/projects"
-          className="text-blue_munsell-500 hover:text-blue_munsell-600 text-sm font-medium transition-colors"
+          className="text-xs font-sans font-bold text-[#D7B05C] hover:underline flex items-center gap-1"
         >
-          View all
+          View Archives <ArrowRight size={14} />
         </Link>
       </div>
 
       {projects.length === 0 ? (
-        <div className="text-center py-8 text-payne's_gray-500 dark:text-french_gray-400">
-          <Folder className="mx-auto h-8 w-8 mb-2 text-slate-400" />
-          <p className="text-sm">No active projects found.</p>
+        <div className="p-8 text-center text-[#D7B05C]/70 font-serif italic border border-dashed border-[#8F6236]/40 rounded-xs">
+          No active campaign dossiers recorded in the ledger.
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-3.5">
           {projects.map((project) => {
             const progress =
               project.totalTasks > 0
                 ? Math.round((project.completedTasks / project.totalTasks) * 100)
                 : 0
 
-            return (
-              <Link
-                key={project.id}
-                href={`/projects/${project.id}`}
-                className="block border border-french_gray-300 dark:border-payne's_gray-400 rounded-lg p-4 hover:border-blue_munsell-500 dark:hover:border-blue_munsell-500 transition-colors"
-              >
-                <div>
-                  <h4 className="font-medium text-outer_space-500 dark:text-platinum-500">
-                    {project.name}
-                  </h4>
-                  <p className="text-sm text-payne's_gray-500 dark:text-french_gray-400 mt-1 line-clamp-1">
-                    {project.description || "No description provided."}
-                  </p>
+            const statusBadge =
+              progress === 100
+                ? { label: "Completed", color: "bg-emerald-950 text-emerald-300 border-emerald-700" }
+                : progress > 50
+                ? { label: "In Testing", color: "bg-sky-950 text-sky-300 border-sky-700" }
+                : progress > 0
+                ? { label: "In Development", color: "bg-amber-950 text-amber-300 border-amber-700" }
+                : { label: "Planning", color: "bg-[#2D1B10] text-[#D7B05C] border-[#8F6236]" }
 
-                  <div className="flex items-center space-x-4 mt-3 text-xs text-payne's_gray-500 dark:text-french_gray-400">
-                    <div className="flex items-center">
-                      <Users size={14} className="mr-1" />
-                      1 Member
+            return (
+              <DashboardCard key={project.id}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Shield size={16} className="text-[#8F6236] shrink-0" />
+                      <h3 className="font-serif font-black text-[#1A120C] text-base truncate">
+                        {project.name}
+                      </h3>
+                      <span className={`px-2 py-0.5 text-[8.5px] font-sans font-black uppercase rounded-xs border ${statusBadge.color}`}>
+                        {statusBadge.label}
+                      </span>
                     </div>
-                    <div className="flex items-center">
-                      <Calendar size={14} className="mr-1" />
-                      Updated {new Date(project.updatedAt).toLocaleDateString()}
+
+                    <p className="text-xs font-sans text-[#3B2415] line-clamp-1 italic">
+                      {project.description || "No official mission brief recorded."}
+                    </p>
+
+                    <div className="flex items-center gap-3 text-[10px] font-sans font-bold text-[#5B3922] pt-1">
+                      <span className="flex items-center gap-1">
+                        <Users size={12} /> 1 Officer
+                      </span>
+                      <span>• {project.completedTasks}/{project.totalTasks} Objectives</span>
                     </div>
                   </div>
 
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-payne's_gray-500 dark:text-french_gray-400">
-                        Progress
-                      </span>
-                      <span className="text-outer_space-500 dark:text-platinum-500 font-medium">
-                        {progress}% ({project.completedTasks}/{project.totalTasks} tasks)
-                      </span>
+                  {/* Medieval Progress Bar & Link */}
+                  <div className="w-full sm:w-48 shrink-0 space-y-2">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] font-sans font-black text-[#2D1B10]">
+                        <span>PROGRESS</span>
+                        <span>{progress}%</span>
+                      </div>
+                      <div className="h-2.5 w-full bg-[#100A07] rounded-xs overflow-hidden border border-[#8F6236] p-0.5">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#8F6236] via-[#B78B3E] to-[#FFF5D6] transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-french_gray-300 dark:bg-payne's_gray-400 rounded-full h-1.5">
-                      <div
-                        className="bg-blue_munsell-500 h-1.5 rounded-full transition-all duration-300"
-                        style={{ width: `${progress}%` }}
-                      />
+
+                    <div className="flex items-center justify-between text-[9px] font-sans text-[#5B3922]">
+                      <span className="flex items-center gap-1">
+                        <Clock size={10} /> {new Date(project.updatedAt).toLocaleDateString()}
+                      </span>
+                      <Link
+                        href={`/projects/${project.id}`}
+                        className="font-black uppercase text-[#3B2415] hover:text-[#D7B05C] flex items-center gap-0.5"
+                      >
+                        Open <ArrowRight size={10} />
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </Link>
+              </DashboardCard>
             )
           })}
         </div>
       )}
-    </div>
+    </DashboardSection>
   )
 }

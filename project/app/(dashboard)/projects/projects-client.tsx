@@ -1,16 +1,19 @@
-// app/(dashboard)/projects/projects-client.tsx
 "use client"
 
 import { useState, useMemo } from "react"
 import { CreateProjectModal } from "@/components/modals/create-project-modal"
-import { ProjectCard, ProjectData } from "@/components/project-card"
-import { Plus, Search, Filter, Folder, X, ArrowUpDown } from "lucide-react"
+import { CreateProjectButton } from "@/components/create-project-button"
+import { Plus, Scroll } from "lucide-react"
+
+import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container"
+import { ProjectStatsSummary } from "@/components/projects/project-stats-summary"
+import { ParchmentSearch } from "@/components/projects/parchment-search"
+import { ArchiveOrderDropdown, SortOption } from "@/components/projects/archive-order-dropdown"
+import { LeatherProjectCard, ProjectData } from "@/components/projects/leather-project-card"
 
 interface ProjectsClientProps {
   initialProjects: ProjectData[]
 }
-
-type SortOption = "newest" | "oldest" | "alphabetical"
 
 export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -22,7 +25,6 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
   const filteredProjects = useMemo(() => {
     let result = [...initialProjects]
 
-    // 1. Text Search Filter (Matches Title or Description)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(
@@ -32,7 +34,6 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
       )
     }
 
-    // 2. Sorting Logic
     result.sort((a, b) => {
       if (sortBy === "newest") {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -54,168 +55,85 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
     setSortBy("newest")
   }
 
+  // Calculate totals
+  const totalCount = initialProjects.length
+  const completedCount = initialProjects.filter((p) => {
+    if (!p.lists || p.lists.length === 0) return false
+    return p.lists.every((l) => l.tasks.every((t) => t.completed))
+  }).length
+  const activeCount = totalCount - completedCount
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-6">
-      {/* Top Header Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <DashboardLayoutContainer>
+      {/* Hero Welcome Header */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6 relative">
         <div>
-          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">
+          <div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
+            <span>⚔</span>
+            <span>Royal Project Archives</span>
+            <span>⚔</span>
+          </div>
+          <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
             Projects
           </h1>
-          <p className="text-payne's_gray-500 dark:text-french_gray-500 mt-1">
-            Manage and organize your team projects
+          <p className="text-xs sm:text-sm font-sans text-[#D7B05C]/80 mt-2 italic max-w-2xl leading-relaxed">
+            Manage workspace projects, track completion progress, and organize team dossiers.
           </p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue_munsell-500 text-white rounded-lg hover:bg-blue_munsell-600 transition-colors shadow-sm font-medium text-sm"
-        >
-          <Plus size={18} />
-          New Project
-        </button>
+        <div className="shrink-0">
+          <CreateProjectButton />
+        </div>
       </div>
 
-      {/* Implementation Tasks Banner */}
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-          📋 Projects Page Implementation Tasks
-        </h3>
-        <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-          <li>• Task 4.1: Implement project CRUD operations</li>
-          <li>• Task 4.2: Create project listing and dashboard interface</li>
-          <li>• Task 4.5: Design and implement project cards and layouts</li>
-          <li>• Task 4.6 / 5.4: Add project search, filtering, and sorting capabilities</li>
-        </ul>
-      </div>
+      {/* Summary Statistics Bar */}
+      <ProjectStatsSummary
+        total={totalCount}
+        active={activeCount}
+        completed={completedCount}
+      />
 
-      {/* Search and Filter Control Bar */}
+      {/* Control Bar: Feather Search & Scroll Sort */}
       <div className="flex flex-col sm:flex-row gap-4 relative">
-        {/* Input Field */}
-        <div className="relative flex-1">
-          <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-payne's_gray-500 dark:text-french_gray-400"
-            size={16}
-          />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search projects by name or description..."
-            className="w-full pl-10 pr-10 py-2 bg-white dark:bg-outer_space-500 border border-french_gray-300 dark:border-payne's_gray-400 rounded-lg text-outer_space-500 dark:text-platinum-500 placeholder-payne's_gray-500 dark:placeholder-french_gray-400 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500 text-sm"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-platinum-500"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
+        <ParchmentSearch value={searchQuery} onChange={setSearchQuery} />
 
-        {/* Filter / Sort Button Toggle */}
-        <div className="relative">
-          <button
-            onClick={() => setIsFilterOpen((prev) => !prev)}
-            className={`inline-flex items-center justify-center px-4 py-2 border rounded-lg text-sm font-medium transition-colors w-full sm:w-auto ${
-              isFilterOpen || sortBy !== "newest"
-                ? "border-blue_munsell-500 text-blue_munsell-500 bg-blue-50 dark:bg-blue-900/20"
-                : "border-french_gray-300 dark:border-payne's_gray-400 text-outer_space-500 dark:text-platinum-500 hover:bg-gray-100 dark:hover:bg-outer_space-400"
-            }`}
-          >
-            <Filter size={16} className="mr-2" />
-            Sort & Filter
-          </button>
-
-          {/* Filter Dropdown Popover */}
-          {isFilterOpen && (
-            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-4 shadow-xl z-20 space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-payne's_gray-500 dark:text-french_gray-400 uppercase tracking-wider block mb-2 items-center gap-1.5">
-                  <ArrowUpDown size={12} /> Sort By
-                </label>
-                <div className="space-y-1">
-                  {[
-                    { id: "newest", label: "Newest First" },
-                    { id: "oldest", label: "Oldest First" },
-                    { id: "alphabetical", label: "Alphabetical (A-Z)" },
-                  ].map((option) => (
-                    <button
-                      key={option.id}
-                      onClick={() => setSortBy(option.id as SortOption)}
-                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
-                        sortBy === option.id
-                          ? "bg-blue_munsell-500 text-white font-medium"
-                          : "text-outer_space-500 dark:text-platinum-500 hover:bg-slate-100 dark:hover:bg-outer_space-400"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {(searchQuery || sortBy !== "newest") && (
-                <div className="pt-2 border-t border-french_gray-300 dark:border-payne's_gray-400">
-                  <button
-                    onClick={handleResetFilters}
-                    className="w-full text-center text-xs text-red-500 hover:text-red-600 font-medium py-1"
-                  >
-                    Reset all filters
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <ArchiveOrderDropdown
+          isOpen={isFilterOpen}
+          onToggle={() => setIsFilterOpen((prev) => !prev)}
+          sortBy={sortBy}
+          onSelectSort={(option) => {
+            setSortBy(option)
+            setIsFilterOpen(false)
+          }}
+          onReset={handleResetFilters}
+          hasActiveFilters={Boolean(searchQuery || sortBy !== "newest")}
+        />
       </div>
 
-      {/* Filter Status Badge */}
-      {(searchQuery || sortBy !== "newest") && (
-        <div className="flex items-center gap-2 text-xs text-payne's_gray-500 dark:text-french_gray-400">
-          <span>Showing {filteredProjects.length} of {initialProjects.length} projects</span>
-          <button
-            onClick={handleResetFilters}
-            className="text-blue_munsell-500 hover:underline font-medium"
-          >
-            Clear filters
-          </button>
-        </div>
-      )}
-
-      {/* Projects Grid */}
+      {/* Projects Grid or Empty Parchment Notice */}
       {filteredProjects.length === 0 ? (
-        <div className="text-center py-12 rounded-lg border border-dashed border-french_gray-300 dark:border-payne's_gray-400 bg-white dark:bg-outer_space-500">
-          <Folder className="mx-auto h-12 w-12 text-payne's_gray-500 dark:text-french_gray-400 mb-3" />
-          <h3 className="text-lg font-medium text-outer_space-500 dark:text-platinum-500">
-            No projects found
+        <div className="text-center py-16 rounded-xs border-2 border-dashed border-[#8F6236]/50 bg-[#15100C] p-8 space-y-3">
+          <Scroll className="mx-auto h-12 w-12 text-[#D7B05C]/50" />
+          <h3 className="text-xl font-serif font-black text-[#F8EEDB]">
+            Royal Archives Empty
           </h3>
-          <p className="text-sm text-payne's_gray-500 dark:text-french_gray-400 mt-1 mb-4">
+          <p className="text-xs font-sans text-[#D7B05C]/70 max-w-md mx-auto">
             {searchQuery
-              ? `No projects matching "${searchQuery}"`
-              : "Get started by creating your first project!"}
+              ? `No campaign dossiers matching "${searchQuery}" found in the archives.`
+              : "No project records found. Create your first project to begin organizing work."}
           </p>
-          {searchQuery ? (
-            <button
-              onClick={handleResetFilters}
-              className="inline-flex items-center gap-2 rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-4 py-2 text-sm font-medium text-outer_space-500 dark:text-platinum-500 hover:bg-slate-100 dark:hover:bg-outer_space-400"
-            >
-              Clear Search
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-md bg-blue_munsell-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue_munsell-600"
-            >
-              <Plus size={16} /> New Project
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-2 mt-2 px-5 py-2.5 border border-[#D7B05C] bg-[#3B2415] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-wider rounded-xs hover:bg-[#5B3922] transition-colors cursor-pointer"
+          >
+            <Plus size={16} /> New Project
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <LeatherProjectCard key={project.id} project={project} />
           ))}
         </div>
       )}
@@ -225,6 +143,6 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
-    </div>
+    </DashboardLayoutContainer>
   )
 }
