@@ -4,9 +4,9 @@
 import { useState, useEffect } from "react"
 import { createList, deleteList } from "@/actions/lists"
 import { createTask, deleteTask, reorderTasks } from "@/actions/tasks"
-import { TaskCard, TaskCardData } from "@/components/task-card"
+import { TaskCard, TaskCardData } from "@/components/kanban/task-card"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
-import { Plus, Trash2, Loader2 } from "lucide-react"
+import { Plus, Trash2, Loader2, GripVertical, ShieldAlert } from "lucide-react"
 import { getUsers } from "@/actions/users"
 
 import {
@@ -60,43 +60,68 @@ function KanbanColumn({
     data: { type: "Column", list },
   })
 
+  const isDoneColumn =
+    list.name.toLowerCase().includes("done") ||
+    list.name.toLowerCase().includes("complete")
+
   return (
     <div className="flex-shrink-0 w-80">
-      <div className="bg-slate-100 dark:bg-outer_space-400 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400">
-        <div className="p-4 border-b border-french_gray-300 dark:border-payne's_gray-400">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-slate-800 dark:text-platinum-500 flex items-center">
+      <div
+        className={`rounded-xs border-2 shadow-2xl overflow-hidden flex flex-col transition-all ${
+          isDoneColumn
+            ? "border-emerald-800/80 bg-gradient-to-b from-[#1A2E22] via-[#121F17] to-[#0D1610]"
+            : "border-[#8F6236]/80 bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#15100C]"
+        }`}
+      >
+        {/* Column Header Plank */}
+        <div className="p-3.5 border-b-2 border-[#4A2C1D] bg-[#15100C]/90 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <GripVertical size={16} className="text-[#8F6236] cursor-grab" />
+            <h3 className="font-serif font-black text-sm uppercase tracking-wider text-[#F8EEDB]">
               {list.name}
-              <span className="ml-2 px-2 py-0.5 text-xs bg-slate-200 dark:bg-payne's_gray-400 text-slate-700 dark:text-platinum-500 rounded-full font-medium">
-                {list.tasks?.length || 0}
-              </span>
             </h3>
-            <button
-              onClick={() => deleteList(list.id, projectId)}
-              className="p-1 text-slate-400 hover:text-red-500 dark:text-french_gray-400 dark:hover:text-red-400 rounded transition-colors"
-              title="Delete column"
-            >
-              <Trash2 size={16} />
-            </button>
+            <span className="px-2 py-0.5 text-[9px] font-sans font-black bg-[#3B2415] text-[#D7B05C] rounded-xs border border-[#8F6236]">
+              {list.tasks?.length || 0}
+            </span>
           </div>
+
+          <button
+            onClick={() => deleteList(list.id, projectId)}
+            className="text-[#8F6236] hover:text-rose-400 transition-colors p-1"
+            title="Delete column"
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
 
         <SortableContext
           items={list.tasks.map((t) => t.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div ref={setNodeRef} className="p-4 space-y-3 min-h-[250px]">
-            {list.tasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                projectId={projectId}
-                onTaskClick={onTaskClick}
-                onDeleteTask={deleteTask}
-              />
-            ))}
+          <div ref={setNodeRef} className="p-3 space-y-3 min-h-[260px]">
+            {list.tasks.length === 0 ? (
+              <div className="p-4 border border-dashed border-[#8F6236]/30 bg-[#15100C]/40 text-center rounded-xs my-2">
+                <p className="text-[11px] font-serif italic text-[#D7B05C]/50">
+                  No tasks assigned.
+                </p>
+                <p className="text-[9px] font-sans text-[#D7B05C]/30 mt-0.5">
+                  Drag a task here or create a new one below.
+                </p>
+              </div>
+            ) : (
+              list.tasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  projectId={projectId}
+                  onTaskClick={onTaskClick}
+                  onDeleteTask={deleteTask}
+                />
+              ))
+            )}
 
-            <div className="pt-2">
+            {/* Parchment Add Task Input */}
+            <div className="pt-2 border-t border-[#4A2C1D]">
               <input
                 type="text"
                 value={taskInputs[list.id] || ""}
@@ -112,8 +137,8 @@ function KanbanColumn({
                     handleAddTask(list.id)
                   }
                 }}
-                placeholder="+ Add task and press Enter..."
-                className="w-full px-3 py-2 text-xs rounded-lg border border-dashed border-slate-300 dark:border-payne's_gray-400 bg-white dark:bg-outer_space-300 text-slate-800 dark:text-platinum-500 placeholder-slate-400 dark:placeholder-french_gray-400 focus:outline-none focus:border-blue_munsell-500"
+                placeholder="＋ Add task and press Enter..."
+                className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/80 focus:outline-none focus:border-[#D7B05C] shadow-inner"
               />
             </div>
           </div>
@@ -252,21 +277,27 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-outer_space-500 p-4 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 shadow-sm">
-        <form onSubmit={handleAddList} className="flex gap-2 max-w-md">
+      {/* Create New Column Control Plank */}
+      <div className="p-4 rounded-xs border-2 border-[#8F6236]/70 bg-gradient-to-r from-[#2D1B10] via-[#1A120C] to-[#2D1B10] shadow-xl flex flex-col sm:flex-row items-center gap-3">
+        <form onSubmit={handleAddList} className="flex gap-3 w-full max-w-xl">
           <input
             type="text"
             value={newListName}
             onChange={(e) => setNewListName(e.target.value)}
-            placeholder="New column name (e.g. To Do)..."
-            className="flex-1 rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-3 py-2 text-sm bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500"
+            placeholder="New strategy column name (e.g. Vanguard, Operations)..."
+            className="flex-1 px-4 py-2.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs sm:text-sm font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner"
           />
           <button
             type="submit"
             disabled={isLoading}
-            className="inline-flex items-center gap-1 rounded-md bg-blue_munsell-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue_munsell-600 disabled:opacity-50 transition-colors shadow-sm"
+            className="inline-flex items-center justify-center px-5 py-2.5 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-md hover:border-[#FFF5D6] hover:shadow-[0_0_20px_rgba(215,176,92,0.4)] transition-all cursor-pointer disabled:opacity-50 shrink-0"
           >
-            {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />} Add Column
+            {isLoading ? (
+              <Loader2 className="animate-spin text-[#D7B05C] mr-1.5" size={16} />
+            ) : (
+              <Plus size={16} className="text-[#D7B05C] mr-1.5" />
+            )}
+            <span>Add Column</span>
           </button>
         </form>
       </div>
@@ -278,18 +309,27 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-6 shadow-sm">
+        {/* Strategy War Board Outer Frame */}
+        <div className="relative rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#4A2C1D] via-[#2D1B10] to-[#15100C] p-4 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden">
+          
+          {/* Inner Bevel Corner Fittings */}
+          <div className="absolute left-1 top-1 z-30 h-3.5 w-3.5 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
+          <div className="absolute right-1 top-1 z-30 h-3.5 w-3.5 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
+          <div className="absolute bottom-1 left-1 z-30 h-3.5 w-3.5 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
+          <div className="absolute bottom-1 right-1 z-30 h-3.5 w-3.5 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
+
           {listsState.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 mb-2">
-                No columns created yet
+            <div className="text-center py-16 border-2 border-dashed border-[#8F6236]/40 bg-[#15100C] rounded-xs space-y-2">
+              <ShieldAlert size={32} className="mx-auto text-[#D7B05C]/50" />
+              <h3 className="text-lg font-serif font-black text-[#F8EEDB]">
+                No Strategy Columns Created Yet
               </h3>
-              <p className="text-sm text-payne's_gray-500 dark:text-french_gray-400">
-                Type a column name above to start organizing your project tasks.
+              <p className="text-xs font-sans text-[#D7B05C]/70 max-w-sm mx-auto">
+                Type a column name above to start organizing your project tasks on the war table.
               </p>
             </div>
           ) : (
-            <div className="flex space-x-6 overflow-x-auto pb-4">
+            <div className="flex space-x-6 overflow-x-auto pb-4 relative z-20 scrollbar-thin scrollbar-thumb-[#8F6236]">
               {listsState.map((list) => (
                 <KanbanColumn
                   key={list.id}
@@ -306,10 +346,11 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
           )}
         </div>
 
+        {/* Drag Overlay parchment note feel */}
         <DragOverlay>
           {activeTask ? (
-            <div className="p-3 bg-white dark:bg-outer_space-300 rounded-lg border border-blue_munsell-500 shadow-xl opacity-90">
-              <h4 className="font-medium text-slate-800 dark:text-platinum-500 text-sm">
+            <div className="p-3 bg-[#FAF0D7] border-2 border-[#D7B05C] text-[#1A120C] rounded-xs shadow-2xl opacity-95 -rotate-2 scale-105">
+              <h4 className="font-serif font-black text-xs">
                 {activeTask.title}
               </h4>
             </div>
@@ -317,7 +358,7 @@ export function KanbanBoard({ projectId, initialLists = [] }: KanbanBoardProps) 
         </DragOverlay>
       </DndContext>
 
-      {/* Editing Modal */}
+      {/* Task Editing Detail Modal */}
       <TaskDetailModal
         task={editingTask}
         projectId={projectId}

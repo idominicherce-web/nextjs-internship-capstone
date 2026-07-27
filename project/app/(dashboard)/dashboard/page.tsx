@@ -1,13 +1,18 @@
-// app/(dashboard)/dashboard/page.tsx
 import { db } from "@/lib/db"
-import { projects } from "@/lib/db/schema"
+import { projects, activityLogs } from "@/lib/db/schema"
 import { getOrCreateDbUser } from "@/lib/auth"
 import { eq, desc } from "drizzle-orm"
-import { DashboardStats } from "@/components/dashboard-stats"
-import { RecentProjects } from "@/components/recent-projects"
+import { Shield } from "lucide-react"
+
+import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container"
 import { CreateProjectButton } from "@/components/create-project-button"
-import { TaskOverview } from "@/components/task-overview"
-import { Check } from "lucide-react"
+import { CommandAlerts } from "@/components/dashboard/command-alerts"
+import { KingdomOverviewStats } from "@/components/dashboard/kingdom-overview-stats"
+import { RecentProjects } from "@/components/recent-projects"
+import { ActivityArchive } from "@/components/analytics/activity-archive"
+import { QuickActionsPanel } from "@/components/dashboard/quick-actions-panel"
+import { KingdomHealthWidget } from "@/components/dashboard/kingdom-health-widget"
+import { OnboardingDashboard } from "@/components/dashboard/onboarding-dashboard"
 
 export const dynamic = "force-dynamic"
 
@@ -16,8 +21,16 @@ export default async function DashboardPage() {
 
   if (!dbUser) {
     return (
-      <div className="p-6 text-center text-payne's_gray-500">
-        Unauthorized. Please sign in.
+      <div className="min-h-screen bg-[#15100C] flex items-center justify-center p-6 text-center text-[#D7B05C] font-serif">
+        <div className="p-8 border-2 border-[#8F6236] bg-[#2D1B10] rounded-xs shadow-2xl">
+          <Shield className="mx-auto mb-3 text-[#D7B05C]" size={32} />
+          <h2 className="text-xl font-black uppercase tracking-widest text-[#F8EEDB]">
+            Access Denied
+          </h2>
+          <p className="text-xs font-sans text-[#D7B05C]/70 mt-2">
+            Unauthorized traveler. Please sign in to enter the High Command Chamber.
+          </p>
+        </div>
       </div>
     )
   }
@@ -35,10 +48,19 @@ export default async function DashboardPage() {
     },
   })
 
-  // 2. Compute dynamic stats from PostgreSQL records
+  // 2. Fetch live recent activity logs
+  const recentActivities = await db.query.activityLogs.findMany({
+    where: eq(activityLogs.userId, dbUser.id),
+    orderBy: [desc(activityLogs.createdAt)],
+    limit: 5,
+  })
+
+  // 3. Compute live metrics
   const totalProjects = userProjects.length
   let totalTasks = 0
   let completedTasks = 0
+  let overdueTasks = 0
+  const today = new Date(new Date().setHours(0, 0, 0, 0))
 
   const recentProjectsData = userProjects.slice(0, 4).map((proj) => {
     let projTotalTasks = 0
@@ -49,12 +71,14 @@ export default async function DashboardPage() {
         list.name.toLowerCase().includes("done") ||
         list.name.toLowerCase().includes("complete")
 
-      list.tasks.forEach(() => {
+      list.tasks.forEach((task) => {
         projTotalTasks++
         totalTasks++
         if (isDoneList) {
           projCompletedTasks++
           completedTasks++
+        } else if (task.dueDate && new Date(task.dueDate) < today) {
+          overdueTasks++
         }
       })
     })
@@ -70,61 +94,87 @@ export default async function DashboardPage() {
   })
 
   const pendingTasks = totalTasks - completedTasks
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+  const overdueRate = totalTasks > 0 ? Math.round((overdueTasks / totalTasks) * 100) : 0
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-6">
-      {/* Header section with Create Project Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <DashboardLayoutContainer>
+      {/* Header Bar */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6 relative">
         <div>
-          <h1 className="text-3xl font-bold text-outer_space-500 dark:text-platinum-500">
-            Welcome back{dbUser?.name ? `, ${dbUser.name}` : ""}! 👋
+          <div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
+            <span>⚔</span>
+            <span>Royal Command Center</span>
+            <span>⚔</span>
+          </div>
+
+          {/* Clean Main Title */}
+          <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+            Dashboard
           </h1>
-          <p className="text-payne's_gray-500 dark:text-french_gray-400 mt-1">
-            Here's an overview of your projects and task progress.
+
+          {/* Dedicated Welcome Subheading */}
+          {dbUser?.name && (
+            <p className="text-sm sm:text-base font-serif font-extrabold text-[#F8EEDB] mt-1 tracking-wide">
+              Welcome back, <span className="text-[#D7B05C]">{dbUser.name}</span>
+            </p>
+          )}
+
+          <p className="text-xs sm:text-sm font-sans text-[#D7B05C]/80 mt-1 italic max-w-2xl leading-relaxed">
+            Review workspace operations, active project progress, and strategic priorities.
           </p>
         </div>
 
-        <CreateProjectButton />
+        <div className="shrink-0">
+          <CreateProjectButton />
+        </div>
       </div>
 
-      {/* User Sync Completion Status */}
-      <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-              <Check className="text-white" size={16} />
+      {/* Onboarding State if No Projects Exist */}
+      {totalProjects === 0 ? (
+        <OnboardingDashboard />
+      ) : (
+        <div className="space-y-8">
+          {/* Command Urgency Alerts */}
+          <CommandAlerts
+            overdueCount={overdueTasks}
+            totalTasks={totalTasks}
+            pendingTasks={pendingTasks}
+          />
+
+          {/* Kingdom Overview Report Plaques */}
+          <KingdomOverviewStats
+            activeProjects={totalProjects}
+            totalMembers={1}
+            completedTasks={completedTasks}
+            pendingTasks={pendingTasks}
+          />
+
+          {/* Decorative Divider */}
+          <div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
+            <div className="h-px w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
+            <span>⚔ ──── ❦ ──── ⚔</span>
+            <div className="h-px w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
+          </div>
+
+          {/* Main Grid: Recent Projects & Activity Feed + Quick Panels */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <RecentProjects projects={recentProjectsData} />
+              <ActivityArchive activities={recentActivities} />
+            </div>
+
+            <div className="space-y-6">
+              <QuickActionsPanel />
+              <KingdomHealthWidget
+                completionRate={completionRate}
+                overdueRate={overdueRate}
+                overdueTasksCount={overdueTasks}
+              />
             </div>
           </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
-              User Synchronization Active
-            </h3>
-            <p className="mt-1 text-sm text-emerald-800 dark:text-emerald-200">
-              Connected as <span className="font-semibold">{dbUser?.email}</span>. Your workspace is synchronized with Neon PostgreSQL.
-            </p>
-          </div>
         </div>
-      </div>
-
-      {/* Dynamic Stats Grid */}
-      <DashboardStats
-        stats={{
-          activeProjects: totalProjects,
-          totalMembers: 1,
-          completedTasks,
-          pendingTasks,
-        }}
-      />
-
-      {/* Main Grid: Recent Projects & Task Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <RecentProjects projects={recentProjectsData} />
-        </div>
-        <div>
-          <TaskOverview />
-        </div>
-      </div>
-    </div>
+      )}
+    </DashboardLayoutContainer>
   )
 }

@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Project Management Tool",
+  title: "Roundtable: Project Management Tool",
   description: "Team collaboration and project management platform",
   generator: "v0.dev",
 }

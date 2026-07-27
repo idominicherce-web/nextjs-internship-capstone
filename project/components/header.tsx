@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Shield } from "lucide-react";
 import {
   SignInButton,
   SignUpButton,
@@ -17,49 +17,35 @@ export function Header() {
   const { isSignedIn } = useAuth();
 
   return (
-    <header className="border-b border-french_gray-300 dark:border-payne's_gray-400 bg-white/80 dark:bg-outer_space-500/80 backdrop-blur-sm">
+    <header className="relative z-30 border-b-2 border-amber-950/60 bg-linear-to-b from-[#211610] via-[#1a120d] to-[#120a05] text-amber-100 shadow-[0_10px_30px_rgba(0,0,0,0.8)] font-serif">
+      {/* Top Gold Accent Line */}
+      <div className="absolute top-0 inset-x-0 h-0.5 bg-linear-to-r from-transparent via-amber-500/50 to-transparent" />
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center">
+          {/* Branding Logo */}
+          <div className="flex items-center space-x-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-600/60 bg-linear-to-br from-amber-900 to-amber-950 shadow-md">
+              <Shield className="h-5 w-5 text-amber-400" />
+            </div>
             <Link
               href="/"
-              className="text-2xl font-bold text-blue_munsell-500"
+              className="bg-linear-to-b from-amber-100 via-amber-200 to-amber-500 bg-clip-text text-xl font-black tracking-[0.2em] text-transparent drop-shadow-[0_0_15px_rgba(245,158,11,0.2)]"
             >
-              ProjectFlow
+              THE ROUNDTABLE
             </Link>
           </div>
 
-          <nav className="hidden space-x-8 md:flex">
-            <Link
-              href="#features"
-              className="text-outer_space-500 transition-colors hover:text-blue_munsell-500 dark:text-platinum-500"
-            >
-              Features
-            </Link>
-
-            <Link
-              href="#pricing"
-              className="text-outer_space-500 transition-colors hover:text-blue_munsell-500 dark:text-platinum-500"
-            >
-              Pricing
-            </Link>
-
-            <Link
-              href="#about"
-              className="text-outer_space-500 transition-colors hover:text-blue_munsell-500 dark:text-platinum-500"
-            >
-              About
-            </Link>
-          </nav>
-
+          {/* Controls & Navigation */}
           <div className="flex items-center space-x-4">
+            {/* Theme Toggle Button */}
             <button
               type="button"
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-              className="rounded-lg bg-platinum-500 p-2 text-outer_space-500 transition-colors hover:bg-french_gray-500 dark:bg-payne's_gray-500 dark:text-platinum-500 dark:hover:bg-payne's_gray-400"
+              className="rounded-xs border border-amber-950/60 bg-[#0d0704] p-2 text-amber-400 hover:text-amber-200 hover:border-amber-500/50 transition-colors shadow-inner cursor-pointer"
               aria-label="Toggle theme"
             >
-              {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
+              {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
             {!isSignedIn ? (
@@ -67,18 +53,18 @@ export function Header() {
                 <SignInButton mode="modal">
                   <button
                     type="button"
-                    className="text-sm font-medium text-outer_space-500 transition-colors hover:text-blue_munsell-500 dark:text-platinum-500"
+                    className="font-sans text-xs font-bold uppercase tracking-[0.15em] text-amber-300 hover:text-amber-100 transition-colors cursor-pointer"
                   >
-                    Sign In
+                    Enter Gate
                   </button>
                 </SignInButton>
 
                 <SignUpButton mode="modal">
                   <button
                     type="button"
-                    className="rounded-lg bg-blue_munsell-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue_munsell-600"
+                    className="rounded-xs border border-amber-500/40 bg-linear-to-b from-[#4e2a14] via-[#2d180b] to-[#1a0e06] px-4 py-2 font-sans text-xs font-extrabold uppercase tracking-[0.2em] text-amber-400 hover:text-amber-200 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all cursor-pointer shadow-md"
                   >
-                    Get Started
+                    Join Guild
                   </button>
                 </SignUpButton>
               </>
@@ -86,7 +72,7 @@ export function Header() {
               <>
                 <Link
                   href="/dashboard"
-                  className="rounded-lg bg-blue_munsell-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue_munsell-600"
+                  className="rounded-xs border border-amber-500/40 bg-linear-to-b from-[#4e2a14] via-[#2d180b] to-[#1a0e06] px-4 py-2 font-sans text-xs font-extrabold uppercase tracking-[0.2em] text-amber-400 hover:text-amber-200 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all shadow-md"
                 >
                   Dashboard
                 </Link>
