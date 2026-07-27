@@ -10,9 +10,9 @@ interface ProjectStatsSummaryProps {
 
 export function ProjectStatsSummary({ total, active, completed }: ProjectStatsSummaryProps) {
   const cards = [
-    { label: "Total Dossiers", value: total, icon: FolderKanban, color: "text-[#D7B05C]" },
-    { label: "Active Campaigns", value: active, icon: Clock, color: "text-amber-400" },
-    { label: "Completed Operations", value: completed, icon: ShieldCheck, color: "text-emerald-400" },
+    { label: "Total Projects", value: total, icon: FolderKanban, color: "text-[#D7B05C]" },
+    { label: "Active Projects", value: active, icon: Clock, color: "text-amber-400" },
+    { label: "Completed Projects", value: completed, icon: ShieldCheck, color: "text-emerald-400" },
     { label: "Archived Records", value: 0, icon: Archive, color: "text-[#D7B05C]/60" },
   ]
 

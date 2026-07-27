@@ -1,4 +1,3 @@
-// app/(dashboard)/analytics/page.tsx
 import { db } from "@/lib/db"
 import { projects, activityLogs } from "@/lib/db/schema"
 import { getOrCreateDbUser } from "@/lib/auth"
@@ -6,10 +5,9 @@ import { eq, desc } from "drizzle-orm"
 import { Shield } from "lucide-react"
 
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container"
-import { DashboardPageHeader } from "@/components/layout/dashboard-page-header"
 import { IntelligenceStats } from "@/components/analytics/intelligence-stats"
-import { WorkspaceHealth } from "@/components/analytics/workspace-health"
-import { ProjectPerformance } from "@/components/analytics/project-performance"
+import { WorkspaceHealthScore } from "@/components/analytics/workspace-health-score"
+import { VisualPerformanceCharts } from "@/components/analytics/visual-performance-charts"
 import { ActivityArchive } from "@/components/analytics/activity-archive"
 
 export const dynamic = "force-dynamic"
@@ -49,7 +47,7 @@ export default async function AnalyticsPage() {
   const recentActivities = await db.query.activityLogs.findMany({
     where: eq(activityLogs.userId, dbUser.id),
     orderBy: [desc(activityLogs.createdAt)],
-    limit: 8,
+    limit: 6,
   })
 
   // 3. Compute live analytics metrics
@@ -105,7 +103,7 @@ export default async function AnalyticsPage() {
         <div>
           <div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
             <span>⚔</span>
-            <span>Intelligence Chamber</span>
+            <span>Strategic Briefing</span>
             <span>⚔</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
@@ -116,36 +114,43 @@ export default async function AnalyticsPage() {
           </p>
         </div>
       </div>
-      
 
-      {/* Handcrafted Mounted Plaques Metrics */}
-      <IntelligenceStats
-        overallEfficiency={overallCompletionRate}
-        completedTasks={completedTasks}
-        totalTasks={totalTasks}
-        inProgressTasks={inProgressTasks}
-        overdueTasks={overdueTasks}
-      />
+      <div className="space-y-8 mt-6">
+        {/* 1. Executive KPI Summary Cards */}
+        <IntelligenceStats
+          overallEfficiency={overallCompletionRate}
+          completedTasks={completedTasks}
+          totalTasks={totalTasks}
+          inProgressTasks={inProgressTasks}
+          overdueTasks={overdueTasks}
+        />
 
-      {/* Workspace Health Executive Briefing */}
-      <WorkspaceHealth
-        totalProjects={userProjects.length}
-        overallEfficiency={overallCompletionRate}
-        completedTasks={completedTasks}
-        totalTasks={totalTasks}
-        overdueTasks={overdueTasks}
-      />
+        {/* 2. Signature Feature: Workspace Health Score & Operational Summary */}
+        <WorkspaceHealthScore
+          totalProjects={userProjects.length}
+          overallEfficiency={overallCompletionRate}
+          completedTasks={completedTasks}
+          totalTasks={totalTasks}
+          overdueTasks={overdueTasks}
+        />
 
-      {/* Decorative Divider */}
-      <div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
-        <div className="h-px w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
-        <span>⚔ ──── ❦ ──── ⚔</span>
-        <div className="h-px w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
-      </div>
+        {/* Decorative Divider */}
+        <div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
+          <div className="h-px w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
+          <span>⚔ ──── ❦ ──── ⚔</span>
+          <div className="h-px w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
+        </div>
 
-      {/* Main Grid: Project Reports & Activity Archive */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ProjectPerformance projects={projectAnalytics} />
+        {/* 3. Visual Performance Charts */}
+        <VisualPerformanceCharts
+          projects={projectAnalytics}
+          totalTasks={totalTasks}
+          completedTasks={completedTasks}
+          inProgressTasks={inProgressTasks}
+          overdueTasks={overdueTasks}
+        />
+
+        {/* 4. Activity Chronicle Feed */}
         <ActivityArchive activities={recentActivities} />
       </div>
     </DashboardLayoutContainer>

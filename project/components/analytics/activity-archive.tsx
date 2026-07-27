@@ -39,7 +39,7 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
         <div className="flex items-center gap-2 text-[#D7B05C]">
           <Activity size={20} />
           <h2 className="font-serif font-black uppercase text-base tracking-widest text-[#F8EEDB]">
-            Royal Archive Ledger
+            QUEST LOGS
           </h2>
         </div>
         <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-[#D7B05C]/60">

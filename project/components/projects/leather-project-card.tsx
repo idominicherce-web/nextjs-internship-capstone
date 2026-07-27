@@ -57,7 +57,7 @@ export function LeatherProjectCard({ project }: LeatherProjectCardProps) {
                 {project.name}
               </h3>
               <p className="text-[10px] font-sans font-bold uppercase tracking-widest text-[#D7B05C]/70">
-                Project <span className="italic font-serif font-normal text-[#D7B05C]/50">• Campaign Dossier</span>
+                Project <span className="italic font-serif font-normal text-[#D7B05C]/50">• quest Dossier</span>
               </p>
             </div>
           </Link>

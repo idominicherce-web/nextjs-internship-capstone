@@ -70,7 +70,7 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
         <div>
           <div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
             <span>⚔</span>
-            <span>Royal Project Archives</span>
+            <span>Royal Quests Archive</span>
             <span>⚔</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
@@ -119,7 +119,7 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
           </h3>
           <p className="text-xs font-sans text-[#D7B05C]/70 max-w-md mx-auto">
             {searchQuery
-              ? `No campaign dossiers matching "${searchQuery}" found in the archives.`
+              ? `No quest dossiers matching "${searchQuery}" found in the archives.`
               : "No project records found. Create your first project to begin organizing work."}
           </p>
           <button

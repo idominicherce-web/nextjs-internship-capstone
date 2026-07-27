@@ -1,6 +1,6 @@
 "use client"
 
-import { TrendingUp, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { TrendingUp, CheckCircle2, Clock, AlertTriangle } from "lucide-react"
 
 interface IntelligenceStatsProps {
   overallEfficiency: number
@@ -17,76 +17,64 @@ export function IntelligenceStats({
   inProgressTasks,
   overdueTasks,
 }: IntelligenceStatsProps) {
-  const cards = [
+  const stats = [
     {
-      label: "Overall Efficiency",
+      title: "Workspace Efficiency",
       value: `${overallEfficiency}%`,
-      subText: "Master Campaign Rate",
+      description: "Overall completion across all active work.",
       icon: TrendingUp,
-      accent: "text-[#D7B05C]",
-      border: "border-[#D7B05C]/40",
-      bgGlow: "from-[#D7B05C]/10",
+      color: "text-amber-400",
+      borderColor: "border-[#8F6236]/60",
     },
     {
-      label: "Completed Tasks",
+      title: "Completed Tasks",
       value: `${completedTasks} / ${totalTasks}`,
-      subText: "Decrees Fulfilled",
-      icon: CheckCircle,
-      accent: "text-emerald-400",
-      border: "border-emerald-500/40",
-      bgGlow: "from-emerald-500/10",
+      description: "Tasks marked as completed.",
+      icon: CheckCircle2,
+      color: "text-emerald-400",
+      borderColor: "border-emerald-800/60",
     },
     {
-      label: "In Progress",
+      title: "Active Tasks",
       value: `${inProgressTasks}`,
-      subText: "Active Operations",
+      description: "Currently being worked on.",
       icon: Clock,
-      accent: "text-amber-400",
-      border: "border-amber-500/40",
-      bgGlow: "from-amber-500/10",
+      color: "text-sky-400",
+      borderColor: "border-sky-800/60",
     },
     {
-      label: "Overdue Tasks",
+      title: "Overdue Tasks",
       value: `${overdueTasks}`,
-      subText: "Urgent Attention Needed",
-      icon: AlertCircle,
-      accent: "text-rose-400",
-      border: "border-rose-500/40",
-      bgGlow: "from-rose-500/10",
+      description: "Past scheduled due date.",
+      icon: AlertTriangle,
+      color: overdueTasks > 0 ? "text-rose-400" : "text-[#D7B05C]",
+      borderColor: overdueTasks > 0 ? "border-rose-800/60" : "border-[#8F6236]/60",
     },
   ]
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card, idx) => {
-        const Icon = card.icon
+      {stats.map((stat) => {
+        const Icon = stat.icon
         return (
           <div
-            key={idx}
-            className={`group relative p-4 rounded-xs border-2 border-[#4A2C1D] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#15100C] shadow-xl transition-all duration-200 hover:-translate-y-1 hover:border-[#D7B05C] hover:shadow-[0_10px_25px_rgba(215,176,92,0.25)] overflow-hidden`}
+            key={stat.title}
+            className={`p-4 rounded-xs border-2 bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-xl space-y-2 relative ${stat.borderColor}`}
           >
-            {/* Forged Brass Edge Highlight */}
-            <div className={`absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#D7B05C]/40 to-transparent group-hover:via-[#D7B05C]`} />
-            
-            {/* Ambient Accent Radial Background */}
-            <div className={`pointer-events-none absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-gradient-to-br ${card.bgGlow} to-transparent blur-xl opacity-50 group-hover:opacity-100 transition-opacity`} />
-
-            <div className="flex items-center space-x-3.5 relative z-10">
-              <div className={`p-2.5 rounded-full border bg-[#15100C] ${card.border} ${card.accent} group-hover:scale-110 transition-transform`}>
-                <Icon size={22} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-sans uppercase font-black text-[#D7B05C]/70 tracking-widest truncate">
-                  {card.label}
-                </p>
-                <p className={`text-2xl font-black font-serif truncate ${card.accent}`}>
-                  {card.value}
-                </p>
-                <p className="text-[9px] font-sans text-[#D7B05C]/50 italic">
-                  {card.subText}
-                </p>
-              </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+                {stat.title}
+              </span>
+              <Icon size={18} className={stat.color} />
             </div>
+
+            <p className={`text-2xl font-serif font-black ${stat.color}`}>
+              {stat.value}
+            </p>
+
+            <p className="text-[11px] font-sans text-[#D7B05C]/70 italic">
+              {stat.description}
+            </p>
           </div>
         )
       })}

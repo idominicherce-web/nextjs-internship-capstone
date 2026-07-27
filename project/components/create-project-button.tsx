@@ -20,7 +20,7 @@ export function CreateProjectButton() {
             New Project
           </span>
           <span className="block font-serif text-[9px] italic text-[#D7B05C]/80">
-            Open New Campaign
+            Open New Quest
           </span>
         </div>
       </button>

@@ -174,7 +174,7 @@ export function CalendarGrid({
                   </>
                 ) : (
                   <div className="h-full flex items-center justify-center opacity-30 select-none">
-                    <span className="text-[9px] font-serif italic text-[#3B2415]">No campaigns</span>
+                    <span className="text-[9px] font-serif italic text-[#3B2415]">No quests</span>
                   </div>
                 )}
               </div>

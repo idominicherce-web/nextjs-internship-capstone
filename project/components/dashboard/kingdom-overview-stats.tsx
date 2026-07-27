@@ -1,80 +1,91 @@
 "use client"
 
-import { FolderKanban, Users, CheckCircle, Clock } from "lucide-react"
+import { FolderKanban, Users, Clock, CheckCircle2 } from "lucide-react"
 
 interface KingdomOverviewStatsProps {
   activeProjects: number
   totalMembers: number
-  completedTasks: number
   pendingTasks: number
+  completedTasks: number
 }
 
 export function KingdomOverviewStats({
   activeProjects,
   totalMembers,
-  completedTasks,
   pendingTasks,
+  completedTasks,
 }: KingdomOverviewStatsProps) {
-  const cards = [
+  const stats = [
     {
-      label: "Royal Dossiers",
+      label: "Active Projects",
       value: `${activeProjects} Active`,
-      subText: "↑ 8% from last moon",
+      subtext: "Royal quests in operational status",
       icon: FolderKanban,
-      color: "text-[#D7B05C]",
-      border: "border-[#D7B05C]/40",
-    },
-    {
-      label: "High Officers",
-      value: `${totalMembers} Member`,
-      subText: "Roundtable Assembled",
-      icon: Users,
-      color: "text-sky-300",
-      border: "border-sky-500/40",
-    },
-    {
-      label: "Active Operations",
-      value: `${pendingTasks} Pending`,
-      subText: "In progress across boards",
-      icon: Clock,
       color: "text-amber-400",
-      border: "border-amber-500/40",
+      borderColor: "border-[#8F6236]/60",
+      iconBg: "border-[#D7B05C]/40 bg-[#15100C]",
     },
     {
-      label: "Missions Completed",
-      value: `${completedTasks} Victories`,
-      subText: "↑ 12% this week",
-      icon: CheckCircle,
+      label: "Team Members",
+      value: `${totalMembers} ${totalMembers === 1 ? "Member" : "Members"}`,
+      subtext: "High officers assembled at the roundtable",
+      icon: Users,
+      color: "text-sky-400",
+      borderColor: "border-sky-800/60",
+      iconBg: "border-sky-500/40 bg-[#15100C]",
+    },
+    {
+      label: "Pending Tasks",
+      value: `${pendingTasks} Pending`,
+      subtext: "Active operations in progress across boards",
+      icon: Clock,
+      color: "text-amber-300",
+      borderColor: "border-amber-800/60",
+      iconBg: "border-amber-500/40 bg-[#15100C]",
+    },
+    {
+      label: "Completed Tasks",
+      value: `${completedTasks} Completed`,
+      subtext: "Objectives fulfilled",
+      icon: CheckCircle2,
       color: "text-emerald-400",
-      border: "border-emerald-500/40",
+      borderColor: "border-emerald-800/60",
+      iconBg: "border-emerald-500/40 bg-[#15100C]",
     },
   ]
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {cards.map((card, idx) => {
-        const Icon = card.icon
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {stats.map((stat) => {
+        const Icon = stat.icon
         return (
           <div
-            key={idx}
-            className="group relative p-4 rounded-xs border-2 border-[#4A2C1D] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#15100C] shadow-lg transition-all duration-200 hover:-translate-y-1 hover:border-[#D7B05C] hover:shadow-[0_10px_25px_rgba(215,176,92,0.25)] overflow-hidden"
+            key={stat.label}
+            className={`p-4 rounded-xs border-2 bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-xl relative overflow-hidden flex items-center space-x-4 ${stat.borderColor}`}
           >
-            <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#D7B05C]/50 to-transparent group-hover:via-[#D7B05C]" />
-            <div className="flex items-center space-x-3">
-              <div className={`p-2.5 rounded-full border bg-[#15100C] ${card.border} ${card.color} group-hover:scale-110 transition-transform`}>
-                <Icon size={20} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-sans uppercase font-black text-[#D7B05C]/70 tracking-widest truncate">
-                  {card.label}
-                </p>
-                <p className={`text-lg font-black font-serif ${card.color} truncate`}>
-                  {card.value}
-                </p>
-                <p className="text-[9px] font-sans text-[#D7B05C]/50 italic truncate">
-                  {card.subText}
-                </p>
-              </div>
+            {/* Heraldic Circular Icon Badge */}
+            <div
+              className={`p-3 rounded-full border shadow-md shrink-0 text-[#D7B05C] ${stat.iconBg}`}
+            >
+              <Icon size={20} className={stat.color} />
+            </div>
+
+            {/* Content Container */}
+            <div className="min-w-0 flex-1 space-y-0.5">
+              {/* PRIMARY INDUSTRY LABEL (UPPERCASE) */}
+              <p className="text-[10px] font-sans font-black uppercase tracking-widest text-[#D7B05C]">
+                {stat.label}
+              </p>
+
+              {/* CLEAR QUANTITATIVE METRIC VALUE */}
+              <p className={`text-xl font-serif font-black truncate ${stat.color}`}>
+                {stat.value}
+              </p>
+
+              {/* KINGDOM FLAVOR SUBTEXT (ITALIC) */}
+              <p className="text-[10px] font-serif italic text-[#D7B05C]/60 truncate leading-tight">
+                {stat.subtext}
+              </p>
             </div>
           </div>
         )

@@ -15,7 +15,7 @@ export function WarRoomToolbar() {
       <button
         type="button"
         className="p-2 border border-[#4A2C1D] bg-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] rounded-xs transition-colors cursor-pointer"
-        title="Campaign Calendar"
+        title="quest Calendar"
       >
         <Calendar size={18} />
       </button>

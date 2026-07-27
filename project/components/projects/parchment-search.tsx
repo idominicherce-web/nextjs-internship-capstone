@@ -16,7 +16,7 @@ export function ParchmentSearch({ value, onChange }: ParchmentSearchProps) {
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Search campaign dossier by name or description..."
+          placeholder="Search quest dossier by name or description..."
           className="w-full bg-transparent text-xs sm:text-sm font-sans font-bold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none"
         />
         {value && (

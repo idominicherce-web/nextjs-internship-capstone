@@ -21,12 +21,12 @@ const KINGDOM_SUBTEXT_MAP: Record<string, string> = {
   backlog: "Royal Archives",
   "to do": "Awaiting Orders",
   todo: "Awaiting Orders",
-  "in progress": "Active Campaign",
-  doing: "Active Campaign",
+  "in progress": "Active quest",
+  doing: "Active quest",
   "in review": "High Council Review",
   review: "High Council Review",
-  done: "Completed Campaign",
-  completed: "Completed Campaign",
+  done: "Completed quest",
+  completed: "Completed quest",
 }
 
 function getKingdomSubtext(columnName: string): string {

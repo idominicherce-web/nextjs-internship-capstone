@@ -4,7 +4,7 @@ const features = [
   {
     icon: Kanban,
     title: "War Table Kanban Boards",
-    description: "Visualize campaign workflows on handcrafted strategy boards with interactive drag-and-drop orders.",
+    description: "Visualize quest workflows on handcrafted strategy boards with interactive drag-and-drop orders.",
   },
   {
     icon: Users,
@@ -13,13 +13,13 @@ const features = [
   },
   {
     icon: Calendar,
-    title: "Campaign Ledger",
+    title: "Quest Ledger",
     description: "Track critical deadlines, upcoming operations, and strategic milestones on parchment calendars.",
   },
   {
     icon: BarChart3,
     title: "Intelligence Chamber",
-    description: "Monitor campaign efficiency, overdue objectives, and team productivity with war room analytics.",
+    description: "Monitor quest efficiency, overdue objectives, and team productivity with war room analytics.",
   },
   {
     icon: Shield,

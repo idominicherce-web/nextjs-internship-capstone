@@ -43,7 +43,7 @@ export function WarRoomHeader({
               {name}
             </h1>
             <p className="text-xs sm:text-sm font-sans text-[#D7B05C]/80 mt-1 italic">
-              {description || "Campaign operational command and tactical planning."}
+              {description || "quest operational command and tactical planning."}
             </p>
           </div>
         </div>
