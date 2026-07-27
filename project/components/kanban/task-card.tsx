@@ -7,15 +7,19 @@ import { Trash2, Calendar, User, ShieldAlert } from "lucide-react"
 export interface TaskCardData {
   id: string
   title: string
-  description: string | null // <-- Changed from description?: string | null
+  description: string | null
+  position: number
+  listId: string
+  userId?: string | null
   dueDate?: Date | string | null
   priority?: "Low" | "Medium" | "High" | "Urgent" | null
-  listId: string
   assignee?: {
     id: string
     name: string | null
     email: string
   } | null
+  createdAt?: Date | string | null
+  updatedAt?: Date | string | null
 }
 
 interface TaskCardProps {

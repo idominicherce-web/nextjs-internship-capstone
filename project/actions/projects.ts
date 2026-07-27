@@ -1,8 +1,10 @@
+// actions/projects.ts
+
 "use server"
 
 import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
-import { projects, activityLogs } from "@/lib/db/schema"
+import { projects, lists, activityLogs } from "@/lib/db/schema"
 import { getOrCreateDbUser } from "@/lib/auth"
 import { createProjectSchema, updateProjectSchema } from "@/lib/validations"
 import { eq, and, desc } from "drizzle-orm"
@@ -15,8 +17,28 @@ export type ActionResponse<T = unknown> = {
 }
 
 /**
- * Creates a new project.
- * Compatible with React 19 useActionState and direct async invocations.
+ * Helper to transform project names into URL-friendly slugs.
+ */
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+// Universal Default Columns for every newly initialized project
+const DEFAULT_PROJECT_COLUMNS = [
+  { name: "Backlog", position: 0 },
+  { name: "To Do", position: 1 },
+  { name: "In Progress", position: 2 },
+  { name: "In Review", position: 3 },
+  { name: "Done", position: 4 },
+]
+
+/**
+ * Creates a new project along with its 5 default Kanban columns.
  */
 export async function createProject(
   prevState: unknown,
@@ -29,7 +51,6 @@ export async function createProject(
       return { success: false, error: "Unauthorized access." }
     }
 
-    // Extract input based on how the function was invoked
     let rawData: { name?: unknown; description?: unknown } = {}
 
     if (formData instanceof FormData) {
@@ -48,11 +69,11 @@ export async function createProject(
       return { success: false, error: "Invalid form payload." }
     }
 
-    // Zod safeParse validation
     const parsed = createProjectSchema.safeParse(rawData)
     if (!parsed.success) {
       const flattened = parsed.error.flatten()
-      const firstError = Object.values(flattened.fieldErrors)[0]?.[0] || "Validation failed."
+      const firstError =
+        Object.values(flattened.fieldErrors)[0]?.[0] || "Validation failed."
       return {
         success: false,
         error: firstError,
@@ -60,16 +81,31 @@ export async function createProject(
       }
     }
 
+    // Generate unique slug
+    const baseSlug = slugify(parsed.data.name) || "project"
+    const uniqueSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`
+
+    // 1. Create the project
     const [newProject] = await db
       .insert(projects)
       .values({
         name: parsed.data.name,
+        slug: uniqueSlug,
         description: parsed.data.description,
         userId: dbUser.id,
       })
       .returning()
 
-    // Record activity audit log
+    // 2. Automatically seed the 5 default columns for the new project
+    await db.insert(lists).values(
+      DEFAULT_PROJECT_COLUMNS.map((col) => ({
+        name: col.name,
+        position: col.position,
+        projectId: newProject.id,
+      }))
+    )
+
+    // 3. Record activity log
     await db.insert(activityLogs).values({
       userId: dbUser.id,
       action: "Created Project",
@@ -78,7 +114,6 @@ export async function createProject(
       details: `Commissioned campaign dossier: ${newProject.name}`,
     })
 
-    // Cache purging
     revalidatePath("/dashboard")
     revalidatePath("/projects")
     revalidatePath("/analytics")
@@ -86,7 +121,10 @@ export async function createProject(
     return { success: true, data: newProject }
   } catch (error) {
     console.error("Failed to create project:", error)
-    return { success: false, error: "An unexpected error occurred while creating the project." }
+    return {
+      success: false,
+      error: "An unexpected error occurred while creating the project.",
+    }
   }
 }
 
@@ -115,7 +153,7 @@ export async function getProjects() {
  */
 export async function updateProject(
   id: string,
-  formData: FormData | { name?: string; description?: string }
+  formData: FormData | { name?: string; description?: string | null }
 ): Promise<ActionResponse> {
   try {
     const dbUser = await getOrCreateDbUser()
@@ -136,7 +174,8 @@ export async function updateProject(
     const parsed = updateProjectSchema.safeParse(rawData)
     if (!parsed.success) {
       const flattened = parsed.error.flatten()
-      const firstError = Object.values(flattened.fieldErrors)[0]?.[0] || "Validation failed."
+      const firstError =
+        Object.values(flattened.fieldErrors)[0]?.[0] || "Validation failed."
       return {
         success: false,
         error: firstError,
@@ -144,12 +183,19 @@ export async function updateProject(
       }
     }
 
+    const updatePayload: Record<string, any> = {
+      ...parsed.data,
+      updatedAt: new Date(),
+    }
+
+    if (parsed.data.name) {
+      const baseSlug = slugify(parsed.data.name)
+      updatePayload.slug = `${baseSlug}-${Date.now().toString().slice(-4)}`
+    }
+
     const [updatedProject] = await db
       .update(projects)
-      .set({
-        ...parsed.data,
-        updatedAt: new Date(),
-      })
+      .set(updatePayload)
       .where(and(eq(projects.id, id), eq(projects.userId, dbUser.id)))
       .returning()
 
@@ -157,7 +203,6 @@ export async function updateProject(
       return { success: false, error: "Project not found or permission denied." }
     }
 
-    // Record activity audit log
     await db.insert(activityLogs).values({
       userId: dbUser.id,
       action: "Updated Project",
@@ -168,7 +213,7 @@ export async function updateProject(
 
     revalidatePath("/dashboard")
     revalidatePath("/projects")
-    revalidatePath(`/projects/${id}`)
+    revalidatePath(`/projects/${updatedProject.slug}`)
 
     return { success: true, data: updatedProject }
   } catch (error) {

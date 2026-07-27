@@ -85,6 +85,7 @@ export default async function DashboardPage() {
 
     return {
       id: proj.id,
+      slug: proj.slug, // 👈 FIX: Include project slug so RecentProjects can construct slug URLs
       name: proj.name,
       description: proj.description,
       updatedAt: proj.updatedAt,
