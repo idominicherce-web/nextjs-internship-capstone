@@ -16,7 +16,7 @@ export function ProjectPerformance({ projects }: ProjectPerformanceProps) {
         <div className="flex items-center gap-2 text-[#D7B05C]">
           <FolderOpen size={20} />
           <h2 className="font-serif font-black uppercase text-base tracking-widest text-[#F8EEDB]">
-            Campaign Intelligence Reports
+            quest Intelligence Reports
           </h2>
         </div>
         <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-[#D7B05C]/60">
@@ -54,7 +54,7 @@ export function ProjectPerformance({ projects }: ProjectPerformanceProps) {
                 {/* Carved Wooden Trough Progress Bar */}
                 <div className="space-y-1">
                   <div className="flex justify-between text-[10px] font-sans font-black text-[#2D1B10]">
-                    <span>CAMPAIGN PROGRESS</span>
+                    <span>QUEST PROGRESS</span>
                     <span className="text-[#5B3922] font-black">{proj.completionRate}%</span>
                   </div>
 

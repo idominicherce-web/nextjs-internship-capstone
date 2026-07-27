@@ -25,7 +25,7 @@ export function Hero() {
 
           {/* Subtitle */}
           <p className="text-sm sm:text-lg font-sans text-[#D7B05C]/80 max-w-2xl mx-auto italic leading-relaxed">
-            Organize campaigns, delegate strategic objectives, and unite your council using a handcrafted medieval operations board.
+            Organize quests, delegate strategic objectives, and unite your council using a handcrafted medieval operations board.
           </p>
 
           {/* Call to Action Buttons */}

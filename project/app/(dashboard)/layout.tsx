@@ -25,7 +25,7 @@ const navigation = [
   { name: "Projects", subtext: "Project Archives", href: "/projects", icon: FolderOpen },
   { name: "Team", subtext: "Roundtable Council", href: "/team", icon: Users },
   { name: "Analytics", subtext: "Intelligence Chamber", href: "/analytics", icon: BarChart3 },
-  { name: "Calendar", subtext: "Campaign Ledger", href: "/calendar", icon: Calendar },
+  { name: "Calendar", subtext: "Quest Ledger", href: "/calendar", icon: Calendar },
   { name: "Settings", subtext: "Realm Configuration", href: "/settings", icon: Settings },
 ]
 

@@ -3,23 +3,23 @@
 import { Clock, CheckCircle, Shield, User, AlertCircle } from "lucide-react"
 import { CalendarTask, TASK_TYPE_CONFIG } from "./types"
 
-interface UpcomingCampaignsProps {
+interface UpcomingquestsProps {
   tasks: CalendarTask[]
 }
 
-export function UpcomingCampaigns({ tasks }: UpcomingCampaignsProps) {
+export function Upcomingquests({ tasks }: UpcomingquestsProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 text-sm font-sans font-black uppercase tracking-[0.2em] text-[#D7B05C]">
         <span>📜</span>
-        <h2>Upcoming Campaigns & Priorities</h2>
+        <h2>Upcoming quests & Priorities</h2>
         <div className="h-px flex-1 bg-gradient-to-r from-[#4A2C1D] to-transparent" />
       </div>
 
       {tasks.length === 0 ? (
         <div className="p-8 border-2 border-dashed border-[#8F6236]/50 bg-[#15100C] text-center rounded-xs">
           <p className="font-serif italic text-[#D7B05C]/80 text-sm">
-            📜 The Royal Scribe has recorded no campaigns for this season.
+            📜 The Royal Scribe has recorded no quests for this season.
           </p>
         </div>
       ) : (

@@ -5,9 +5,9 @@ import { Plus, UserPlus, CalendarPlus, BarChart3 } from "lucide-react"
 
 export function QuickActionsPanel() {
   const actions = [
-    { primary: "New Project", sub: "Open Campaign", href: "/projects", icon: Plus, color: "text-[#D7B05C]" },
+    { primary: "New Project", sub: "Open Quest", href: "/projects", icon: Plus, color: "text-[#D7B05C]" },
     { primary: "Invite Member", sub: "Recruit Officer", href: "/team", icon: UserPlus, color: "text-sky-300" },
-    { primary: "Schedule Event", sub: "Campaign Ledger", href: "/calendar", icon: CalendarPlus, color: "text-amber-400" },
+    { primary: "Schedule Event", sub: "Quest Ledger", href: "/calendar", icon: CalendarPlus, color: "text-amber-400" },
     { primary: "View Analytics", sub: "Intelligence Chamber", href: "/analytics", icon: BarChart3, color: "text-emerald-400" },
   ]
 

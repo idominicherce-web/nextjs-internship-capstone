@@ -44,8 +44,8 @@ export function ArchiveOrderDropdown({
 
           <div className="space-y-1">
             {[
-              { id: "newest", label: "Newest Campaigns" },
-              { id: "oldest", label: "Oldest Campaigns" },
+              { id: "newest", label: "Newest quests" },
+              { id: "oldest", label: "Oldest quests" },
               { id: "alphabetical", label: "Alphabetical (A-Z)" },
             ].map((option) => (
               <button

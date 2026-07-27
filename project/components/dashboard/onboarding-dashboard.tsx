@@ -5,9 +5,9 @@ import { Scroll, Plus, Users, Calendar, BarChart3 } from "lucide-react"
 
 export function OnboardingDashboard() {
   const steps = [
-    { label: "Create Your First Campaign", href: "/projects", icon: Plus },
+    { label: "Create Your First quest", href: "/projects", icon: Plus },
     { label: "Assemble Officers to Team", href: "/team", icon: Users },
-    { label: "Schedule Campaign Deadlines", href: "/calendar", icon: Calendar },
+    { label: "Schedule quest Deadlines", href: "/calendar", icon: Calendar },
     { label: "Inspect Intelligence Reports", href: "/analytics", icon: BarChart3 },
   ]
 

@@ -1,6 +1,7 @@
 // lib/roles.ts
 
 export interface RoleTheme {
+  royalTitle: string
   shieldBg: string
   shieldBorder: string
   shieldIcon: string
@@ -10,12 +11,17 @@ export interface RoleTheme {
   bannerColor: string
 }
 
-// Color-coding helper for Heraldic Shields & Role Badges based on professional discipline
+/**
+ * Color-coding & Dual-Label helper for Heraldic Shields, Role Badges, 
+ * and Royal Titles based on professional discipline.
+ */
 export function getDisciplineTheme(role: string): RoleTheme {
-  const r = role.toLowerCase()
+  const r = role.toLowerCase().trim()
 
-  if (r.includes("admin") || r.includes("king")) {
+  // Workspace Owner / Admin / King
+  if (r.includes("owner") || r.includes("admin") || r.includes("king")) {
     return {
+      royalTitle: r.includes("owner") ? "Royal Sovereign" : "Chancellor",
       shieldBg: "from-[#D7B05C] via-[#B78B3E] to-[#5B3922]",
       shieldBorder: "border-[#FFF5D6]",
       shieldIcon: "text-[#15100C]",
@@ -26,8 +32,10 @@ export function getDisciplineTheme(role: string): RoleTheme {
     }
   }
 
+  // Project Manager / Lead
   if (r.includes("manager") || r.includes("lead")) {
     return {
+      royalTitle: "High Commander",
       shieldBg: "from-[#2A4365] via-[#1A202C] to-[#0F172A]",
       shieldBorder: "border-[#63B3ED]",
       shieldIcon: "text-[#63B3ED]",
@@ -38,8 +46,10 @@ export function getDisciplineTheme(role: string): RoleTheme {
     }
   }
 
+  // Frontend / Web Developer
   if (r.includes("frontend") || r.includes("developer")) {
     return {
+      royalTitle: "Royal Engineer",
       shieldBg: "from-[#1D4ED8] via-[#1E3A8A] to-[#0F172A]",
       shieldBorder: "border-[#93C5FD]",
       shieldIcon: "text-[#93C5FD]",
@@ -50,8 +60,10 @@ export function getDisciplineTheme(role: string): RoleTheme {
     }
   }
 
+  // Software / Systems Engineer
   if (r.includes("engineer") || r.includes("software")) {
     return {
+      royalTitle: "Royal Siege Engineer",
       shieldBg: "from-[#991B1B] via-[#450A0A] to-[#180202]",
       shieldBorder: "border-[#FCA5A5]",
       shieldIcon: "text-[#FCA5A5]",
@@ -62,8 +74,10 @@ export function getDisciplineTheme(role: string): RoleTheme {
     }
   }
 
+  // QA Engineer / Tester
   if (r.includes("qa") || r.includes("tester")) {
     return {
+      royalTitle: "Royal Inspector",
       shieldBg: "from-[#065F46] via-[#022C22] to-[#021A12]",
       shieldBorder: "border-[#6EE7B7]",
       shieldIcon: "text-[#6EE7B7]",
@@ -74,8 +88,10 @@ export function getDisciplineTheme(role: string): RoleTheme {
     }
   }
 
+  // UI/UX Designer
   if (r.includes("designer") || r.includes("ui") || r.includes("ux")) {
     return {
+      royalTitle: "Master Artisan",
       shieldBg: "from-[#6B21A8] via-[#3B0764] to-[#1E0236]",
       shieldBorder: "border-[#D8B4FE]",
       shieldIcon: "text-[#D8B4FE]",
@@ -86,8 +102,10 @@ export function getDisciplineTheme(role: string): RoleTheme {
     }
   }
 
+  // DevOps / Infrastructure
   if (r.includes("devops") || r.includes("infra")) {
     return {
+      royalTitle: "Realm Keeper",
       shieldBg: "from-[#334155] via-[#1E293B] to-[#0F172A]",
       shieldBorder: "border-[#94A3B8]",
       shieldIcon: "text-[#CBD5E1]",
@@ -100,6 +118,7 @@ export function getDisciplineTheme(role: string): RoleTheme {
 
   // Default Guild Member Theme
   return {
+    royalTitle: "Council Officer",
     shieldBg: "from-[#4A2C1D] via-[#2D1B10] to-[#15100C]",
     shieldBorder: "border-[#B78B3E]",
     shieldIcon: "text-[#D7B05C]",

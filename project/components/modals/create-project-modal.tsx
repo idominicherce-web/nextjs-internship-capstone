@@ -65,7 +65,7 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
             </div>
             <div>
               <div className="text-[9px] font-sans font-black uppercase tracking-[0.25em] text-[#D7B05C]">
-                New Project • <span className="italic font-serif text-[#D7B05C]/70">Commission Campaign</span>
+                New Project • <span className="italic font-serif text-[#D7B05C]/70">Commission quest</span>
               </div>
               <h2 className="text-xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
                 Create Project

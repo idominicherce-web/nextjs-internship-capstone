@@ -111,7 +111,7 @@ export async function createProject(
       action: "Created Project",
       entityType: "project",
       entityName: newProject.name,
-      details: `Commissioned campaign dossier: ${newProject.name}`,
+      details: `Commissioned quest dossier: ${newProject.name}`,
     })
 
     revalidatePath("/dashboard")
@@ -208,7 +208,7 @@ export async function updateProject(
       action: "Updated Project",
       entityType: "project",
       entityName: updatedProject.name,
-      details: `Updated campaign dossier details for ${updatedProject.name}`,
+      details: `Updated quest dossier details for ${updatedProject.name}`,
     })
 
     revalidatePath("/dashboard")
@@ -243,7 +243,7 @@ export async function deleteProject(id: string): Promise<ActionResponse> {
         action: "Deleted Project",
         entityType: "project",
         entityName: deletedProject.name,
-        details: `Archived campaign dossier: ${deletedProject.name}`,
+        details: `Archived quest dossier: ${deletedProject.name}`,
       })
     }
 

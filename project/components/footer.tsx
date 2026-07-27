@@ -59,7 +59,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/calendar" className="text-[#F8EEDB]/80 hover:text-[#D7B05C] transition-colors">
-                  Campaign Ledger
+                  quest Ledger
                 </Link>
               </li>
               <li>
