@@ -132,7 +132,7 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
           {isFilterOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-outer_space-500 rounded-lg border border-french_gray-300 dark:border-payne's_gray-400 p-4 shadow-xl z-20 space-y-4">
               <div>
-                <label className="text-xs font-semibold text-payne's_gray-500 dark:text-french_gray-400 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-payne's_gray-500 dark:text-french_gray-400 uppercase tracking-wider block mb-2 items-center gap-1.5">
                   <ArrowUpDown size={12} /> Sort By
                 </label>
                 <div className="space-y-1">
