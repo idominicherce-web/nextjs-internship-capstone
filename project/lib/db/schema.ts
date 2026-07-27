@@ -14,9 +14,11 @@ export const users = pgTable("users", {
 })
 
 // PROJECTS TABLE
+// lib/db/schema.ts
 export const projects = pgTable("projects", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
+  slug: text("slug").notNull().unique(), // <-- ADD SLUG COLUMN
   description: text("description"),
   userId: text("user_id")
     .notNull()
@@ -93,3 +95,4 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
     references: [users.id],
   }),
 }))
+

@@ -1,9 +1,9 @@
-// components/modals/task-detail-modal.tsx
 "use client"
 
+import type React from "react"
 import { useState, useEffect } from "react"
 import { updateTask } from "@/actions/tasks"
-import { X, Loader2, Calendar, FileText, CheckCircle, User as UserIcon } from "lucide-react"
+import { X, Loader2, Calendar, Scroll, CheckCircle, User as UserIcon, Shield } from "lucide-react"
 
 interface Task {
   id: string
@@ -73,7 +73,7 @@ export function TaskDetailModal({
     setIsLoading(false)
 
     if (result.success) {
-      setSuccessMsg("Task updated successfully!")
+      setSuccessMsg("Task decree updated successfully!")
       setTimeout(() => {
         setSuccessMsg("")
         onClose()
@@ -82,63 +82,93 @@ export function TaskDetailModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-lg mx-4 rounded-lg bg-white dark:bg-outer_space-500 p-6 shadow-xl border border-french_gray-300 dark:border-payne's_gray-400">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-outer_space-500 dark:text-platinum-500 flex items-center gap-2">
-            <FileText size={18} className="text-blue_munsell-500" /> Task Details
-          </h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs font-serif text-[#F8EEDB]">
+      <div className="relative w-full max-w-lg rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden">
+        
+        {/* Forged Brass Corner Brackets */}
+        <div className="absolute left-1 top-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+        <div className="absolute right-1 top-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+        <div className="absolute bottom-1 left-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+        <div className="absolute bottom-1 right-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+
+        {/* Modal Header Plank */}
+        <div className="flex items-center justify-between border-b-2 border-[#4A2C1D] pb-4 mb-5">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md">
+              <Scroll size={22} />
+            </div>
+            <div>
+              <div className="text-[9px] font-sans font-black uppercase tracking-[0.25em] text-[#D7B05C]">
+                Objective Ledger • <span className="italic font-serif text-[#D7B05C]/70">Task Details</span>
+              </div>
+              <h2 className="text-xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
+                Edit Objective
+              </h2>
+            </div>
+          </div>
+
           <button
+            type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-platinum-500 transition-colors"
+            className="p-1 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         </div>
 
+        {/* Success Alert Banner */}
         {successMsg && (
-          <div className="mb-4 rounded bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-300 flex items-center gap-2 border border-green-200 dark:border-green-800">
-            <CheckCircle size={16} /> {successMsg}
+          <div className="mb-4 rounded-xs bg-emerald-950/80 border border-emerald-600 p-3 text-xs font-sans font-bold text-emerald-300 flex items-center gap-2 shadow-inner">
+            <CheckCircle size={16} className="text-emerald-400" />
+            <span>{successMsg}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-1">
-              Title <span className="text-red-500">*</span>
+          
+          {/* Title Input */}
+          <div className="space-y-1">
+            <label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+              Objective Title <span className="text-rose-400">*</span>
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-3 py-2 text-sm bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500"
+              required
+              className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-1">
-              Description
+          {/* Description Input */}
+          <div className="space-y-1">
+            <label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+              Mission Brief / Description
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="Add more details about this task..."
-              className="w-full rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-3 py-2 text-sm bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500 resize-none"
+              placeholder="Add tactical details about this objective..."
+              className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-1 items-center gap-1.5">
-                <UserIcon size={14} /> Assignee
+          {/* Grid: Assignee & Due Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            
+            {/* Assignee Selection */}
+            <div className="space-y-1">
+              <label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+                <UserIcon size={14} className="text-[#D7B05C]" />
+                <span>Assigned Officer</span>
               </label>
               <select
                 value={assignedUserId}
                 onChange={(e) => setAssignedUserId(e.target.value)}
-                className="w-full rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-3 py-2 text-sm bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500"
+                className="w-full px-3 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
               >
-                <option value="">Unassigned</option>
+                <option value="">Unassigned Realm</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.name || u.email}
@@ -147,38 +177,47 @@ export function TaskDetailModal({
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-outer_space-500 dark:text-platinum-500 mb-1 items-center gap-1.5">
-                <Calendar size={14} /> Due Date
+            {/* Due Date Picker */}
+            <div className="space-y-1">
+              <label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+                <Calendar size={14} className="text-[#D7B05C]" />
+                <span>Target Deadline</span>
               </label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full rounded-md border border-french_gray-300 dark:border-payne's_gray-400 px-3 py-2 text-sm bg-white dark:bg-outer_space-400 text-outer_space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue_munsell-500"
+                className="w-full px-3 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
               />
             </div>
+
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          {/* Modal Footer Controls */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#4A2C1D]">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md px-4 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 dark:text-french_gray-400 dark:hover:bg-outer_space-400 transition-colors"
+              className="px-4 py-2 border border-[#8F6236] bg-[#15100C] text-[#D7B05C] hover:text-white rounded-xs text-xs font-sans font-black uppercase tracking-wider transition-colors cursor-pointer"
             >
               Cancel
             </button>
+
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center gap-2 rounded-md bg-blue_munsell-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue_munsell-600 disabled:opacity-50 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] hover:shadow-[0_0_20px_rgba(215,176,92,0.4)] transition-all cursor-pointer disabled:opacity-50"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="animate-spin" size={16} /> Saving...
+                  <Loader2 className="animate-spin text-[#D7B05C]" size={16} />
+                  <span>Sealing Decree...</span>
                 </>
               ) : (
-                "Save Changes"
+                <>
+                  <Shield size={16} className="text-[#D7B05C]" />
+                  <span>Save Changes</span>
+                </>
               )}
             </button>
           </div>

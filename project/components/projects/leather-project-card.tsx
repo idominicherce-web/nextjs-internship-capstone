@@ -6,6 +6,7 @@ import { Shield, ArrowRight, User, Calendar } from "lucide-react"
 export interface ProjectData {
   id: string
   name: string
+  slug?: string | null
   description: string | null
   createdAt: Date
   updatedAt: Date
@@ -33,6 +34,9 @@ export function LeatherProjectCard({ project }: LeatherProjectCardProps) {
 
   const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
+  // Fallback to project.id if project.slug is missing or null
+  const projectHref = `/projects/${project.slug || project.id}`
+
   return (
     <div className="group relative p-5 rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-2xl transition-all duration-200 hover:-translate-y-1 hover:border-[#D7B05C] hover:shadow-[0_12px_30px_rgba(215,176,92,0.3)] flex flex-col justify-between overflow-hidden">
       {/* Corner Brackets */}
@@ -44,19 +48,19 @@ export function LeatherProjectCard({ project }: LeatherProjectCardProps) {
       <div className="space-y-4 relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-[#4A2C1D] pb-3">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xs border border-[#D7B05C]/50 bg-[#15100C] text-[#D7B05C] group-hover:border-[#D7B05C] transition-colors shadow-md">
+          <Link href={projectHref} className="flex items-center space-x-3 group/title">
+            <div className="p-2.5 rounded-xs border border-[#D7B05C]/50 bg-[#15100C] text-[#D7B05C] group-hover/title:border-[#D7B05C] transition-colors shadow-md">
               <Shield size={20} />
             </div>
             <div>
-              <h3 className="font-serif font-black text-base text-[#F8EEDB] group-hover:text-[#D7B05C] transition-colors line-clamp-1">
+              <h3 className="font-serif font-black text-base text-[#F8EEDB] group-hover/title:text-[#D7B05C] transition-colors line-clamp-1">
                 {project.name}
               </h3>
               <p className="text-[10px] font-sans font-bold uppercase tracking-widest text-[#D7B05C]/70">
                 Project <span className="italic font-serif font-normal text-[#D7B05C]/50">• Campaign Dossier</span>
               </p>
             </div>
-          </div>
+          </Link>
 
           <span className="px-2 py-0.5 text-[9px] font-sans font-black uppercase bg-[#3B2415] text-[#D7B05C] rounded-xs border border-[#8F6236]">
             Active
@@ -96,7 +100,7 @@ export function LeatherProjectCard({ project }: LeatherProjectCardProps) {
       {/* Dual-Label Action Button */}
       <div className="mt-5 pt-3 border-t border-[#4A2C1D] relative z-10">
         <Link
-          href={`/projects/${project.id}`}
+          href={projectHref}
           className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 border border-[#D7B05C]/80 bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] rounded-xs group-hover:border-[#FFF5D6] group-hover:shadow-[0_0_20px_rgba(215,176,92,0.4)] transition-all cursor-pointer"
         >
           <div className="text-center">

@@ -72,15 +72,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ) : (
             /* ================= EXPANDED VIEW ================= */
             <>
-              <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden pr-2">
-                <div className="p-2 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md shrink-0">
+              <Link href="/dashboard" className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                <div className="p-1.5 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md shrink-0">
                   <Shield size={18} />
                 </div>
-                <div className="min-w-0 flex-1 truncate">
-                  <span className="block text-base font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.12em] truncate">
+                <div className="min-w-0 flex-1">
+                  <span className="block text-sm sm:text-base font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wide leading-tight truncate">
                     Roundtable
                   </span>
-                  <span className="block text-[8px] font-sans font-bold text-[#D7B05C]/70 uppercase tracking-wider truncate">
+                  <span className="block text-[7.5px] font-sans font-bold text-[#D7B05C]/70 uppercase tracking-wider truncate">
                     Royal Command Center
                   </span>
                 </div>
@@ -90,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 type="button"
                 onClick={() => setIsCollapsed(true)}
-                className="hidden lg:flex shrink-0 p-1.5 rounded-xs border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] transition-colors cursor-pointer"
+                className="hidden lg:flex shrink-0 p-1.5 rounded-xs border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] transition-colors cursor-pointer ml-1"
                 title="Collapse Sidebar"
               >
                 <PanelLeftClose size={18} />

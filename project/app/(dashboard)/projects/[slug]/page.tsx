@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { db } from "@/lib/db"
 import { projects, lists, tasks } from "@/lib/db/schema"
 import { getOrCreateDbUser } from "@/lib/auth"
-import { eq, asc } from "drizzle-orm"
+import { eq, or, and, asc } from "drizzle-orm"
 
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container"
 import { WarRoomToolbar } from "@/components/kanban/war-room-toolbar"
@@ -11,29 +11,31 @@ import { KanbanBoard } from "@/components/kanban/kanban-board"
 export const dynamic = "force-dynamic"
 
 interface ProjectPageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ slug: string }>
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
-  const { id } = await params
+  const { slug } = await params
   const dbUser = await getOrCreateDbUser()
 
   if (!dbUser) {
     return notFound()
   }
 
-  // Fetch project from database
+  // Security Hardening: Enforce user ownership (dbUser.id) alongside slug or id lookup
   const project = await db.query.projects.findFirst({
-    where: eq(projects.id, id),
+    where: and(
+      eq(projects.userId, dbUser.id),
+      or(eq(projects.slug, slug), eq(projects.id, slug))
+    ),
   })
 
   if (!project) {
     return notFound()
   }
 
-  // Fetch lists and nested tasks ordered by position
   const projectLists = await db.query.lists.findMany({
-    where: eq(lists.projectId, id),
+    where: eq(lists.projectId, project.id),
     orderBy: [asc(lists.position)],
     with: {
       tasks: {
@@ -44,8 +46,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   return (
     <DashboardLayoutContainer>
-      {/* Inline Header Bar */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6 relative">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6 relative font-serif text-[#F8EEDB]">
         <div>
           <div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
             <span>⚔</span>
@@ -65,7 +66,6 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         </div>
       </div>
 
-      {/* Dynamic Strategy Kanban Board */}
       <div className="mt-6 rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-4 sm:p-6 shadow-2xl relative overflow-hidden">
         <KanbanBoard projectId={project.id} initialLists={projectLists as any} />
       </div>
