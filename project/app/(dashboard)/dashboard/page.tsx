@@ -85,7 +85,7 @@ export default async function DashboardPage() {
 
     return {
       id: proj.id,
-      slug: proj.slug, // 👈 FIX: Include project slug so RecentProjects can construct slug URLs
+      slug: proj.slug,
       name: proj.name,
       description: proj.description,
       updatedAt: proj.updatedAt,
@@ -100,82 +100,84 @@ export default async function DashboardPage() {
 
   return (
     <DashboardLayoutContainer>
-      {/* Header Bar */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6 relative">
-        <div>
-          <div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
-            <span>⚔</span>
-            <span>Royal Command Center</span>
-            <span>⚔</span>
-          </div>
+      {/* Container wrapper with dedicated bottom padding to separate from global footer */}
+      <div className="space-y-6 sm:space-y-8 pb-12 sm:pb-16">
+        
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-[#4A2C1D] pb-6 relative">
+          <div>
+            <div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
+              <span>⚔</span>
+              <span>Royal Command Center</span>
+              <span>⚔</span>
+            </div>
 
-          {/* Clean Main Title */}
-          <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-            Dashboard
-          </h1>
+            <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+              Dashboard
+            </h1>
 
-          {/* Dedicated Welcome Subheading */}
-          {dbUser?.name && (
-            <p className="text-sm sm:text-base font-serif font-extrabold text-[#F8EEDB] mt-1 tracking-wide">
-              Welcome back, <span className="text-[#D7B05C]">{dbUser.name}</span>
+            {dbUser?.name && (
+              <p className="text-sm sm:text-base font-serif font-extrabold text-[#F8EEDB] mt-1 tracking-wide">
+                Welcome back, <span className="text-[#D7B05C]">{dbUser.name}</span>
+              </p>
+            )}
+
+            <p className="text-xs sm:text-sm font-sans text-[#D7B05C]/80 mt-1 italic max-w-2xl leading-relaxed">
+              Review workspace operations, active project progress, and strategic priorities.
             </p>
-          )}
+          </div>
 
-          <p className="text-xs sm:text-sm font-sans text-[#D7B05C]/80 mt-1 italic max-w-2xl leading-relaxed">
-            Review workspace operations, active project progress, and strategic priorities.
-          </p>
+          <div className="shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+            <CreateProjectButton />
+          </div>
         </div>
 
-        <div className="shrink-0">
-          <CreateProjectButton />
-        </div>
+        {/* Onboarding State or Main Dashboard Grid */}
+        {totalProjects === 0 ? (
+          <OnboardingDashboard />
+        ) : (
+          <>
+            {/* Command Urgency Alerts */}
+            <CommandAlerts
+              overdueCount={overdueTasks}
+              totalTasks={totalTasks}
+              pendingTasks={pendingTasks}
+            />
+
+            {/* Kingdom Overview Report Plaques */}
+            <KingdomOverviewStats
+              activeProjects={totalProjects}
+              totalMembers={1}
+              completedTasks={completedTasks}
+              pendingTasks={pendingTasks}
+            />
+
+            {/* Decorative Divider */}
+            <div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
+              <div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
+              <span>⚔ ──── ⚜ ──── ⚔</span>
+              <div className="h-px w-24 sm:w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
+            </div>
+
+            {/* Main Grid: Responsive stacking for mobile screens */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
+              <div className="lg:col-span-2 space-y-6">
+                <RecentProjects projects={recentProjectsData} />
+                <ActivityArchive activities={recentActivities} />
+              </div>
+
+              <div className="space-y-6">
+                <QuickActionsPanel />
+                <KingdomHealthWidget
+                  completionRate={completionRate}
+                  overdueRate={overdueRate}
+                  overdueTasksCount={overdueTasks}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
-
-      {/* Onboarding State if No Projects Exist */}
-      {totalProjects === 0 ? (
-        <OnboardingDashboard />
-      ) : (
-        <div className="space-y-8">
-          {/* Command Urgency Alerts */}
-          <CommandAlerts
-            overdueCount={overdueTasks}
-            totalTasks={totalTasks}
-            pendingTasks={pendingTasks}
-          />
-
-          {/* Kingdom Overview Report Plaques */}
-          <KingdomOverviewStats
-            activeProjects={totalProjects}
-            totalMembers={1}
-            completedTasks={completedTasks}
-            pendingTasks={pendingTasks}
-          />
-
-          {/* Decorative Divider */}
-          <div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
-            <div className="h-px w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
-            <span>⚔ ──── ❦ ──── ⚔</span>
-            <div className="h-px w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
-          </div>
-
-          {/* Main Grid: Recent Projects & Activity Feed + Quick Panels */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <RecentProjects projects={recentProjectsData} />
-              <ActivityArchive activities={recentActivities} />
-            </div>
-
-            <div className="space-y-6">
-              <QuickActionsPanel />
-              <KingdomHealthWidget
-                completionRate={completionRate}
-                overdueRate={overdueRate}
-                overdueTasksCount={overdueTasks}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardLayoutContainer>
   )
 }

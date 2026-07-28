@@ -45,9 +45,9 @@ export default function HomePage() {
 
           {/* Decorative Divider */}
           <div className="my-6 text-[#8F6236] text-xs flex items-center justify-center gap-2">
-            <span>❦</span>
+            <span>⚜</span>
             <div className="h-px w-32 bg-gradient-to-r from-transparent via-[#8F6236] to-transparent" />
-            <span>❦</span>
+            <span>⚜</span>
           </div>
 
           {/* HERO SCROLL CONTRACT */}
@@ -131,10 +131,10 @@ export default function HomePage() {
                 <Users className="h-6 w-6 text-[#D4A74A]" />
               </div>
               <span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[#F8EED5]">
-                Guild Team Roster
+                User Roles & Task Assignment
               </span>
               <span className="font-serif italic text-[11px] text-[#D4A74A]/80 mt-1">
-                User Roles & Assignees
+                Guild Team
               </span>
             </div>
 

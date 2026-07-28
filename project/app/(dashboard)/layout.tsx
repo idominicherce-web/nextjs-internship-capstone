@@ -180,6 +180,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="min-h-[calc(100vh-5rem)]">
           <Suspense>{children}</Suspense>
         </main>
+
+        {/* GLOBAL FOOTER */}
+        <footer className="relative z-10 py-8 text-center border-t border-[#3B2415] bg-[#1A120C] mt-auto">
+          <div className="flex items-center justify-center gap-4 text-[#8F6236] text-xs mb-2">
+            <div className="h-px w-24 bg-gradient-to-r from-transparent to-[#8F6236]" />
+            <span>══════════════════════════</span>
+            <div className="h-px w-24 bg-gradient-to-l from-transparent to-[#8F6236]" />
+          </div>
+          <p className="text-xs font-sans font-bold uppercase tracking-[0.3em] text-[#D4A74A]">
+            The Roundtable © 2026 • Crafted by Dominic Herce
+          </p>
+        </footer>
       </div>
     </div>
   )
