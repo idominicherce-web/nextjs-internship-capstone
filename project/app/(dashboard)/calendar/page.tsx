@@ -176,7 +176,7 @@ export default async function CalendarPage() {
         {/* Decorative Divider */}
         <div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
           <div className="h-px w-32 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
-          <span>⚔ ──── ❦ ──── ⚔</span>
+          <span>⚔ ──── ⚜ ──── ⚔</span>
           <div className="h-px w-32 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
         </div>
 

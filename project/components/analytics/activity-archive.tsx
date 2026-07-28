@@ -34,7 +34,7 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
   }
 
   return (
-    <DashboardSection className="h-full">
+    <DashboardSection className="">
       <div className="flex items-center justify-between border-b border-[#4A2C1D] pb-3 mb-4">
         <div className="flex items-center gap-2 text-[#D7B05C]">
           <Activity size={20} />

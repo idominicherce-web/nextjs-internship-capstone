@@ -77,7 +77,7 @@ export function getDisciplineTheme(role: string): RoleTheme {
   // QA Engineer / Tester
   if (r.includes("qa") || r.includes("tester")) {
     return {
-      royalTitle: "Royal Inspector",
+      royalTitle: "Royal Inquisitor",
       shieldBg: "from-[#065F46] via-[#022C22] to-[#021A12]",
       shieldBorder: "border-[#6EE7B7]",
       shieldIcon: "text-[#6EE7B7]",
