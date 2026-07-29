@@ -1,6 +1,6 @@
 {
-	"id": "5e3e6f13-752a-43cb-a364-f519e9365e6c",
-	"prevId": "00000000-0000-0000-0000-000000000000",
+	"id": "b3da3b60-2675-4149-95f0-119a5769eb18",
+	"prevId": "5e3e6f13-752a-43cb-a364-f519e9365e6c",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -283,6 +283,104 @@
 			"checkConstraints": {},
 			"isRLSEnabled": false
 		},
+		"public.user_settings": {
+			"name": "user_settings",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"task_assigned_in_app": {
+					"name": "task_assigned_in_app",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": true
+				},
+				"task_assigned_email": {
+					"name": "task_assigned_email",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": true
+				},
+				"due_dates_in_app": {
+					"name": "due_dates_in_app",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": true
+				},
+				"due_dates_email": {
+					"name": "due_dates_email",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": true
+				},
+				"mentions_in_app": {
+					"name": "mentions_in_app",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": true
+				},
+				"mentions_email": {
+					"name": "mentions_email",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"email_digest": {
+					"name": "email_digest",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'daily'"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"user_settings_user_id_users_id_fk": {
+					"name": "user_settings_user_id_users_id_fk",
+					"tableFrom": "user_settings",
+					"tableTo": "users",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"user_settings_user_id_unique": {
+					"name": "user_settings_user_id_unique",
+					"nullsNotDistinct": false,
+					"columns": ["user_id"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
 		"public.users": {
 			"name": "users",
 			"schema": "",
@@ -310,6 +408,13 @@
 					"type": "text",
 					"primaryKey": false,
 					"notNull": false
+				},
+				"role": {
+					"name": "role",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "'Project Manager'"
 				},
 				"image_url": {
 					"name": "image_url",
@@ -347,6 +452,69 @@
 					"columns": ["email"]
 				}
 			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.workspace_invitations": {
+			"name": "workspace_invitations",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"email": {
+					"name": "email",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"role": {
+					"name": "role",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'Project Manager'"
+				},
+				"invited_by_id": {
+					"name": "invited_by_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"status": {
+					"name": "status",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'pending'"
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"workspace_invitations_invited_by_id_users_id_fk": {
+					"name": "workspace_invitations_invited_by_id_users_id_fk",
+					"tableFrom": "workspace_invitations",
+					"tableTo": "users",
+					"columnsFrom": ["invited_by_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
 			"policies": {},
 			"checkConstraints": {},
 			"isRLSEnabled": false

@@ -1,11 +1,7 @@
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 
 export default function DashboardLoading() {
-	const projectSkeletonKeys = [
-		"proj-skel-1",
-		"proj-skel-2",
-		"proj-skel-3",
-	];
+	const projectSkeletonKeys = ["proj-skel-1", "proj-skel-2", "proj-skel-3"];
 
 	const activitySkeletonKeys = [
 		"act-skel-1",
@@ -79,10 +75,8 @@ export default function DashboardLoading() {
 
 				{/* MAIN SKELETON GRID: RECENT PROJECTS & ACTIVITIES + SIDE PANELS */}
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-					
 					{/* LEFT COLUMN: RECENT PROJECTS & ACTIVITY ARCHIVE */}
 					<div className="lg:col-span-2 space-y-6">
-						
 						{/* RECENT PROJECTS SKELETON CARD LIST */}
 						<div className="p-5 rounded-xs border-2 border-[#3B2415] bg-[#1A120C]/90 shadow-2xl space-y-4 animate-pulse">
 							<div className="flex justify-between items-center border-b border-[#4A2C1D] pb-3">
@@ -171,7 +165,6 @@ export default function DashboardLoading() {
 							</div>
 						</div>
 					</div>
-
 				</div>
 			</div>
 		</DashboardLayoutContainer>

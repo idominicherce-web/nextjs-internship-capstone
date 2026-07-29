@@ -1,11 +1,11 @@
 // app/(dashboard)/projects/page.tsx
-import { getProjects } from "@/actions/projects"
-import { ProjectsClient } from "./projects-client"
+import { getProjects } from "@/actions/projects";
+import { ProjectsClient } from "./projects-client";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 export default async function ProjectsPage() {
-  const projects = await getProjects()
+	const projects = await getProjects();
 
-  return <ProjectsClient initialProjects={projects} />
+	return <ProjectsClient initialProjects={projects} />;
 }
