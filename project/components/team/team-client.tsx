@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
+import { InviteMemberModal } from "@/components/modals/invite-member-modal";
 import { MemberDetailsDrawer } from "@/components/team/member-details-drawer";
 import {
 	type ActivityItem,
@@ -35,6 +36,7 @@ export function TeamClient({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedRole, setSelectedRole] = useState("all");
 	const [selectedStatus, setSelectedStatus] = useState("all");
+	const [isInviteOpen, setIsInviteOpen] = useState(false);
 
 	// Filter members based on search query, role, and status
 	const filteredMembers = useMemo(() => {
@@ -63,8 +65,7 @@ export function TeamClient({
 	};
 
 	const handleInviteMember = () => {
-		// Open invite modal or trigger invite action
-		alert("Invite Member dialog opened!");
+		setIsInviteOpen(true);
 	};
 
 	return (
@@ -119,6 +120,12 @@ export function TeamClient({
 			<MemberDetailsDrawer
 				member={selectedMember}
 				onClose={() => setSelectedMember(null)}
+			/>
+
+			{/* Invite Member Modal */}
+			<InviteMemberModal
+				isOpen={isInviteOpen}
+				onClose={() => setIsInviteOpen(false)}
 			/>
 		</DashboardLayoutContainer>
 	);

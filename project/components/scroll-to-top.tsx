@@ -4,18 +4,19 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 export function ScrollToTop() {
-	const _pathname = usePathname();
+	const pathname = usePathname();
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pathname is used to trigger re-execution on navigation
 	useEffect(() => {
-		// Scroll the window to the top instantly upon route change
+		// Scroll window to top instantly upon route change
 		window.scrollTo(0, 0);
 
-		// Also reset scroll position for any scrollable main containers
+		// Reset scroll position for any scrollable main container
 		const mainContent = document.querySelector("main");
 		if (mainContent) {
 			mainContent.scrollTop = 0;
 		}
-	}, []);
+	}, [pathname]);
 
 	return null;
 }

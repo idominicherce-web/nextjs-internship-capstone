@@ -1,8 +1,9 @@
+import { eq } from "drizzle-orm";
 import { TeamClient } from "@/components/team/team-client";
 import type { Member } from "@/components/team/team-directory-table";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { projects, users } from "@/lib/db/schema";
+import { projects, users, workspaceInvitations } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,12 @@ export default async function TeamPage() {
 
 	const dbUsers = await db.select().from(users);
 	const allProjects = await db.select().from(projects);
+
+	// Fetch real pending invitations from Neon PostgreSQL database
+	const pendingInvitesFromDb = await db
+		.select()
+		.from(workspaceInvitations)
+		.where(eq(workspaceInvitations.status, "pending"));
 
 	// Map Real DB Users
 	const mappedDbUsers: Member[] = dbUsers.map((u, idx) => {
@@ -27,51 +34,39 @@ export default async function TeamPage() {
 			id: u.id,
 			name: displayName,
 			role:
-				u.id === dbUser?.id
-					? "Workspace Owner"
-					: idx % 2 === 0
-						? "Project Manager"
-						: "Developer",
+				u.role || (u.id === dbUser?.id ? "Workspace Owner" : "Project Manager"),
 			email: u.email,
 			avatar: initials || "U",
-			projectCount: userProjects || 2,
+			projectCount: userProjects || 0,
 			status: idx === 0 ? "Online" : idx % 2 === 0 ? "Away" : "Offline",
 			lastActive: idx === 0 ? "Today" : "Yesterday",
 		};
 	});
 
-	// Sample Activities & Pending Invitations
+	// Format real pending invitations for the UI component
+	const mappedPendingInvites = pendingInvitesFromDb.map((inv) => ({
+		id: inv.id,
+		email: inv.email,
+		invitedAgo: new Date(inv.createdAt).toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+		}),
+	}));
+
 	const sampleActivities = [
 		{
 			id: "1",
 			user: "Dominic Herce",
-			action: "invited Maria Cruz to the workspace",
-			timeAgo: "2 hours ago",
+			action: "invited team member to workspace",
+			timeAgo: "Recently",
 		},
-		{
-			id: "2",
-			user: "John Cruz",
-			action: "joined Project Alpha",
-			timeAgo: "Yesterday",
-		},
-		{
-			id: "3",
-			user: "James Vance",
-			action: "promoted to Project Manager",
-			timeAgo: "3 days ago",
-		},
-	];
-
-	const samplePending = [
-		{ id: "p1", email: "maria@enterprise.com", invitedAgo: "2 days ago" },
-		{ id: "p2", email: "alex@enterprise.com", invitedAgo: "4 days ago" },
 	];
 
 	return (
 		<TeamClient
 			initialMembers={mappedDbUsers}
 			activities={sampleActivities}
-			pendingInvitations={samplePending}
+			pendingInvitations={mappedPendingInvites}
 		/>
 	);
 }

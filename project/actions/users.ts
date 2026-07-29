@@ -6,7 +6,7 @@ import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { userSettings, users, workspaceInvitations } from "@/lib/db/schema";
 
-// --- EXISTING FUNCTION ---
+// --- EXISTING FUNCTIONS ---
 export async function getUsers() {
 	try {
 		const allUsers = await db
@@ -14,6 +14,7 @@ export async function getUsers() {
 				id: users.id,
 				name: users.name,
 				email: users.email,
+				role: users.role,
 			})
 			.from(users);
 
@@ -23,8 +24,6 @@ export async function getUsers() {
 		return { success: false, data: [] };
 	}
 }
-
-// --- NEW SERVER ACTIONS FOR SETTINGS & INVITATIONS ---
 
 export async function updateUserProfile(data: {
 	name: string;
@@ -109,5 +108,22 @@ export async function sendWorkspaceInvite(email: string, role: string) {
 	} catch (error) {
 		console.error("Failed to send invitation:", error);
 		return { success: false, error: "Failed to send invitation" };
+	}
+}
+
+export async function cancelWorkspaceInvite(inviteId: string) {
+	try {
+		const dbUser = await getOrCreateDbUser();
+		if (!dbUser) throw new Error("Unauthorized");
+
+		await db
+			.delete(workspaceInvitations)
+			.where(eq(workspaceInvitations.id, inviteId));
+
+		revalidatePath("/team");
+		return { success: true };
+	} catch (error) {
+		console.error("Failed to cancel invitation:", error);
+		return { success: false, error: "Failed to cancel invitation" };
 	}
 }
