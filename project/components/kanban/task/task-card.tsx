@@ -3,7 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Calendar, Trash2, User } from "lucide-react";
-import { TaskPriorityBadge } from "@/components/kanban/task-priority-badge";
+import { TaskPriorityBadge } from "@/components/kanban/task/task-priority-badge";
 
 export interface TaskCardData {
 	id: string;
@@ -53,7 +53,7 @@ export function TaskCard({
 		transition,
 	};
 
-	// Calculate Due Date Status
+	// Due Date Status Calculation
 	const getDueStatus = () => {
 		if (!task.dueDate) return null;
 		const due = new Date(task.dueDate);
@@ -93,7 +93,7 @@ export function TaskCard({
 			{...attributes}
 			{...listeners}
 			onClick={() => onTaskClick(task)}
-			className={`group relative p-3.5 rounded-xs border-2 border-[#8F6236] bg-[#FAF0D7] text-[#1A120C] shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D7B05C] hover:shadow-[0_8px_20px_rgba(215,176,92,0.35)] cursor-grab active:cursor-grabbing select-none overflow-hidden ${
+			className={`group relative w-full p-3.5 sm:p-4 rounded-xs border-2 border-[#8F6236] bg-[#FAF0D7] text-[#1A120C] shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D7B05C] hover:shadow-[0_8px_20px_rgba(215,176,92,0.35)] cursor-grab active:cursor-grabbing select-none overflow-hidden ${
 				isDragging
 					? "opacity-40 scale-95 border-dashed border-[#D7B05C] -rotate-1 shadow-2xl"
 					: ""
@@ -115,18 +115,18 @@ export function TaskCard({
 				}}
 			/>
 
-			{/* Top Brass Pin Fitting */}
+			{/* Top Brass Fitting */}
 			<div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#8F6236] border border-[#1A120C] shadow-xs" />
 
-			<div className="space-y-2.5 relative z-10 pr-3">
-				{/* Title */}
-				<h4 className="font-serif font-black text-xs text-[#1A120C] group-hover:text-[#5B3922] transition-colors leading-snug">
+			<div className="space-y-2 relative z-10 pr-3">
+				{/* Title - Large Tap Target for Mobile */}
+				<h4 className="font-serif font-black text-xs sm:text-sm text-[#1A120C] group-hover:text-[#5B3922] transition-colors leading-snug">
 					{task.title}
 				</h4>
 
-				{/* Description Snippet */}
+				{/* Description Snippet (Hidden on small mobile screens to compress height) */}
 				{task.description && (
-					<p className="text-[10px] font-sans text-[#3B2415]/80 line-clamp-2 italic leading-tight">
+					<p className="hidden sm:block text-[10px] font-sans text-[#3B2415]/80 line-clamp-2 italic leading-tight">
 						{task.description}
 					</p>
 				)}
@@ -145,8 +145,9 @@ export function TaskCard({
 
 					<TaskPriorityBadge priority={task.priority} />
 
+					{/* Assignee Badge (Shown on desktop viewports) */}
 					{task.assignee && (
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-[#1A120C] text-[#D7B05C] border border-[#4A2C1D] text-[9px] font-sans font-bold shadow-xs">
+						<span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-[#1A120C] text-[#D7B05C] border border-[#4A2C1D] text-[9px] font-sans font-bold shadow-xs">
 							<User size={10} />
 							{task.assignee.name || task.assignee.email.split("@")[0]}
 						</span>
@@ -154,10 +155,10 @@ export function TaskCard({
 				</div>
 			</div>
 
-			{/* Delete Task Action */}
+			{/* Delete Action Button */}
 			<button
 				type="button"
-				onPointerDown={(e) => e.stopPropagation()} // Stop dnd-kit pointer interception
+				onPointerDown={(e) => e.stopPropagation()}
 				onClick={(e) => {
 					e.stopPropagation();
 					e.preventDefault();

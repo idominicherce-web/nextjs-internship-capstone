@@ -3,6 +3,7 @@
 import {
 	Calendar,
 	CheckCircle,
+	Columns,
 	Loader2,
 	Scroll,
 	Shield,
@@ -12,16 +13,17 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { updateTask } from "@/actions/tasks";
+import { updateTask, updateTaskPosition } from "@/actions/tasks";
 import {
 	type PriorityLevel,
 	TaskPriorityBadge,
-} from "@/components/kanban/task-priority-badge";
+} from "@/components/kanban/task/task-priority-badge";
 
 interface Task {
 	id: string;
 	title: string;
 	description: string | null;
+	listId: string;
 	dueDate?: Date | string | null;
 	userId?: string | null;
 	priority?: PriorityLevel | string | null;
@@ -33,11 +35,17 @@ interface UserOption {
 	email: string;
 }
 
+interface ListOption {
+	id: string;
+	name: string;
+}
+
 interface TaskDetailModalProps {
 	task: Task | null;
 	projectId: string;
 	isOpen: boolean;
 	users?: UserOption[];
+	lists?: ListOption[];
 	onClose: () => void;
 }
 
@@ -46,6 +54,7 @@ export function TaskDetailModal({
 	projectId,
 	isOpen,
 	users = [],
+	lists = [],
 	onClose,
 }: TaskDetailModalProps) {
 	const [title, setTitle] = useState("");
@@ -53,6 +62,7 @@ export function TaskDetailModal({
 	const [dueDate, setDueDate] = useState("");
 	const [assignedUserId, setAssignedUserId] = useState<string>("");
 	const [priority, setPriority] = useState<string>("Medium");
+	const [selectedListId, setSelectedListId] = useState<string>("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [successMsg, setSuccessMsg] = useState("");
 
@@ -65,6 +75,7 @@ export function TaskDetailModal({
 			);
 			setAssignedUserId(task.userId || "");
 			setPriority(task.priority || "Medium");
+			setSelectedListId(task.listId || "");
 		}
 	}, [task]);
 
@@ -77,12 +88,18 @@ export function TaskDetailModal({
 		setIsLoading(true);
 		setSuccessMsg("");
 
+		// 1. Move column if target list changed
+		if (selectedListId && selectedListId !== task.listId) {
+			await updateTaskPosition(task.id, selectedListId, 0, projectId);
+		}
+
+		// 2. Update task details
 		const result = await updateTask(task.id, projectId, {
 			title: title.trim(),
 			description: description.trim() || null,
 			dueDate: dueDate ? new Date(dueDate) : null,
 			userId: assignedUserId || null,
-			priority: priority || "Medium", // 👈 Pass priority to updateTask
+			priority: priority || "Medium",
 		});
 
 		setIsLoading(false);
@@ -97,28 +114,26 @@ export function TaskDetailModal({
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs font-serif text-[#F8EEDB]">
-			<div className="relative w-full max-w-lg rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden">
+		<div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-xs font-serif text-[#F8EEDB]">
+			<div className="relative w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[85dvh] flex flex-col rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden">
 				{/* Forged Brass Corner Brackets */}
-				<div className="absolute left-1 top-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
-				<div className="absolute right-1 top-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
-				<div className="absolute bottom-1 left-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
-				<div className="absolute bottom-1 right-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+				<div className="absolute left-1 top-1 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+				<div className="absolute right-1 top-1 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
 
-				{/* Modal Header Plank */}
-				<div className="flex items-center justify-between border-b-2 border-[#4A2C1D] pb-4 mb-5">
+				{/* Fixed Modal Header */}
+				<div className="flex-none flex items-center justify-between p-3.5 sm:p-5 border-b-2 border-[#4A2C1D] bg-[#15100C]/90">
 					<div className="flex items-center space-x-3">
 						<div className="p-2 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md">
-							<Scroll size={22} />
+							<Scroll size={18} />
 						</div>
 						<div>
-							<div className="text-[9px] font-sans font-black uppercase tracking-[0.25em] text-[#D7B05C]">
+							<div className="text-[9px] font-sans font-black uppercase tracking-[0.2em] text-[#D7B05C]">
 								Objective Ledger •{" "}
 								<span className="italic font-serif text-[#D7B05C]/70">
 									Task Details
 								</span>
 							</div>
-							<h2 className="text-xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
+							<h2 className="text-base sm:text-lg font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
 								Edit Objective
 							</h2>
 						</div>
@@ -127,21 +142,25 @@ export function TaskDetailModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
+						className="p-1.5 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
 					>
-						<X size={20} />
+						<X size={18} />
 					</button>
 				</div>
 
-				{/* Success Alert Banner */}
-				{successMsg && (
-					<div className="mb-4 rounded-xs bg-emerald-950/80 border border-emerald-600 p-3 text-xs font-sans font-bold text-emerald-300 flex items-center gap-2 shadow-inner">
-						<CheckCircle size={16} className="text-emerald-400" />
-						<span>{successMsg}</span>
-					</div>
-				)}
+				{/* Scrollable Form Body */}
+				<form
+					onSubmit={handleSubmit}
+					className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
+				>
+					{/* Success Alert Banner */}
+					{successMsg && (
+						<div className="rounded-xs bg-emerald-950/80 border border-emerald-600 p-2.5 text-xs font-sans font-bold text-emerald-300 flex items-center gap-2 shadow-inner">
+							<CheckCircle size={16} className="text-emerald-400" />
+							<span>{successMsg}</span>
+						</div>
+					)}
 
-				<form onSubmit={handleSubmit} className="space-y-4">
 					{/* Title Input */}
 					<div className="space-y-1">
 						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
@@ -152,9 +171,30 @@ export function TaskDetailModal({
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 							required
-							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner"
+							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
 						/>
 					</div>
+
+					{/* Target Column / Stage Selector */}
+					{lists.length > 0 && (
+						<div className="space-y-1">
+							<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+								<Columns size={14} className="text-[#D7B05C]" />
+								<span>Quest Stage / Column</span>
+							</label>
+							<select
+								value={selectedListId}
+								onChange={(e) => setSelectedListId(e.target.value)}
+								className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
+							>
+								{lists.map((l) => (
+									<option key={l.id} value={l.id}>
+										{l.name}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
 
 					{/* Description Input */}
 					<div className="space-y-1">
@@ -165,18 +205,18 @@ export function TaskDetailModal({
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 							rows={3}
-							placeholder="Add tactical details about this objective..."
-							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
+							placeholder="Add tactical details..."
+							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
 						/>
 					</div>
 
-					{/* Priority Selection Strip */}
+					{/* Priority Selection */}
 					<div className="space-y-1">
 						<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 							<ShieldAlert size={14} className="text-[#D7B05C]" />
 							<span>Quest Priority</span>
 						</label>
-						<div className="flex items-center gap-2">
+						<div className="flex flex-wrap items-center gap-2">
 							{["Low", "Medium", "High", "Urgent"].map((p) => (
 								<button
 									key={p}
@@ -192,7 +232,6 @@ export function TaskDetailModal({
 
 					{/* Grid: Assignee & Due Date */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-						{/* Assignee Selection */}
 						<div className="space-y-1">
 							<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 								<UserIcon size={14} className="text-[#D7B05C]" />
@@ -212,7 +251,6 @@ export function TaskDetailModal({
 							</select>
 						</div>
 
-						{/* Due Date Picker */}
 						<div className="space-y-1">
 							<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 								<Calendar size={14} className="text-[#D7B05C]" />
@@ -227,8 +265,8 @@ export function TaskDetailModal({
 						</div>
 					</div>
 
-					{/* Modal Footer Controls */}
-					<div className="flex items-center justify-end gap-3 pt-4 border-t border-[#4A2C1D]">
+					{/* Fixed Modal Footer */}
+					<div className="flex-none flex items-center justify-end gap-3 pt-3 border-t border-[#4A2C1D]">
 						<button
 							type="button"
 							onClick={onClose}
@@ -240,12 +278,12 @@ export function TaskDetailModal({
 						<button
 							type="submit"
 							disabled={isLoading}
-							className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] hover:shadow-[0_0_20px_rgba(215,176,92,0.4)] transition-all cursor-pointer disabled:opacity-50"
+							className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] transition-all cursor-pointer disabled:opacity-50"
 						>
 							{isLoading ? (
 								<>
 									<Loader2 className="animate-spin text-[#D7B05C]" size={16} />
-									<span>Sealing Decree...</span>
+									<span>Saving...</span>
 								</>
 							) : (
 								<>
