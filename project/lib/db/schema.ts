@@ -1,7 +1,12 @@
-// lib/db/schema.ts
-
 import { relations } from "drizzle-orm";
-import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 
 // USERS TABLE
 export const users = pgTable("users", {
@@ -15,6 +20,35 @@ export const users = pgTable("users", {
 	imageUrl: text("image_url"),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// NEW: USER SETTINGS TABLE
+export const userSettings = pgTable("user_settings", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	userId: text("user_id")
+		.notNull()
+		.unique()
+		.references(() => users.id, { onDelete: "cascade" }),
+	taskAssignedInApp: boolean("task_assigned_in_app").default(true).notNull(),
+	taskAssignedEmail: boolean("task_assigned_email").default(true).notNull(),
+	dueDatesInApp: boolean("due_dates_in_app").default(true).notNull(),
+	dueDatesEmail: boolean("due_dates_email").default(true).notNull(),
+	mentionsInApp: boolean("mentions_in_app").default(true).notNull(),
+	mentionsEmail: boolean("mentions_email").default(false).notNull(),
+	emailDigest: text("email_digest").default("daily").notNull(),
+	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// NEW: WORKSPACE INVITATIONS TABLE
+export const workspaceInvitations = pgTable("workspace_invitations", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	email: text("email").notNull(),
+	role: text("role").default("Project Manager").notNull(),
+	invitedById: text("invited_by_id")
+		.notNull()
+		.references(() => users.id, { onDelete: "cascade" }),
+	status: text("status").default("pending").notNull(), // 'pending', 'accepted', 'cancelled'
+	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // PROJECTS TABLE
@@ -75,13 +109,28 @@ export const activityLogs = pgTable("activity_logs", {
 });
 
 // ==========================================
-// DRIZZLE RELATIONS (Required for db.query)
+// DRIZZLE RELATIONS
 // ==========================================
 
-export const usersRelations = relations(users, ({ many }) => ({
+	settings: one(userSettings, {
+			fields: [users.id],
+			references: [userSettings.userId],
+		}),
+		sentInvitations: many(workspaceInvitations),
 	projects: many(projects),
 	tasks: many(tasks),
 }));
+
+export const workspaceInvitationsRelations = relations(
+	workspaceInvitations,
+	({ one }) => ({
+		invitedBy: one(users, {
+			fields: [workspaceInvitations.invitedById],
+			references: [users.id],
+		}),
+	}),
+);
+
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
 	user: one(users, {

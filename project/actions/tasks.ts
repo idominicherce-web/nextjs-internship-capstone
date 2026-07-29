@@ -25,7 +25,7 @@ const createTaskSchema = z.object({
  * Creates a new task objective inside a strategy column.
  */
 export async function createTask(
-	prevState: unknown,
+	_prevState: unknown,
 	formData?:
 		| FormData
 		| {

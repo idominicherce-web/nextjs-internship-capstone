@@ -41,7 +41,7 @@ const DEFAULT_PROJECT_COLUMNS = [
  * Creates a new project along with its 5 default Kanban columns.
  */
 export async function createProject(
-	prevState: unknown,
+	_prevState: unknown,
 	formData?: FormData | { name: string; description?: string } | string,
 	secondArgDescription?: string,
 ): Promise<ActionResponse> {

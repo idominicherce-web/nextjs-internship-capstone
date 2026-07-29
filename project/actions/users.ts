@@ -1,12 +1,12 @@
-// actions/users.ts
 "use server";
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { userSettings, users, workspaceInvitations } from "@/lib/db/schema";
 
+// --- EXISTING FUNCTION ---
 export async function getUsers() {
 	try {
 		const allUsers = await db
@@ -24,6 +24,9 @@ export async function getUsers() {
 	}
 }
 
+// --- NEW SERVER ACTIONS FOR SETTINGS & INVITATIONS ---
+
+
 export async function updateUserProfile(data: {
 	name: string;
 	email: string;
@@ -38,7 +41,7 @@ export async function updateUserProfile(data: {
 			.set({
 				name: data.name,
 				email: data.email,
-				role: data.role,
+					...(data.role ? { role: data.role } : {}),
 				updatedAt: new Date(),
 			})
 			.where(eq(users.id, dbUser.id));
@@ -49,7 +52,65 @@ export async function updateUserProfile(data: {
 
 		return { success: true };
 	} catch (error) {
-		console.error("Failed to update user profile:", error);
-		return { success: false, error: "Failed to update profile." };
+		console.error("Failed to update profile:", error);
+		return { success: false, error: "Failed to update profile" };
+	}
+}
+
+export async function updateNotificationPreferences(data: {
+	taskAssignedInApp: boolean;
+	taskAssignedEmail: boolean;
+	dueDatesInApp: boolean;
+	dueDatesEmail: boolean;
+	mentionsInApp: boolean;
+	mentionsEmail: boolean;
+	emailDigest: string;
+}) {
+	try {
+		const dbUser = await getOrCreateDbUser();
+		if (!dbUser) throw new Error("Unauthorized");
+
+		await db
+			.insert(userSettings)
+			.values({
+				userId: dbUser.id,
+				...data,
+				updatedAt: new Date(),
+			})
+			.onConflictDoUpdate({
+				target: userSettings.userId,
+				set: {
+					...data,
+					updatedAt: new Date(),
+				},
+			});
+
+		revalidatePath("/settings");
+		return { success: true };
+	} catch (error) {
+		console.error("Failed to update notification preferences:", error);
+		return { success: false, error: "Failed to save preferences" };
+	}
+}
+
+export async function sendWorkspaceInvite(email: string, role: string) {
+	try {
+		const dbUser = await getOrCreateDbUser();
+		if (!dbUser) throw new Error("Unauthorized");
+
+		await db.insert(workspaceInvitations).values({
+			email,
+			role,
+			invitedById: dbUser.id,
+			status: "pending",
+		});
+
+		revalidatePath("/team");
+		return { success: true };
+	} catch (error) {
+		console.error("Failed to send invitation:", error);
+		return { success: false, error: "Failed to send invitation" };
+	}
+
 	}
 }
