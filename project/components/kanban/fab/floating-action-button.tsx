@@ -11,7 +11,7 @@ interface FloatingActionButtonProps {
 export function FloatingActionButton({
 	onClick,
 	label = "NEW TASK",
-	sublabel = "Decree Objective",
+	sublabel = "Quest Objective",
 }: FloatingActionButtonProps) {
 	return (
 		<>

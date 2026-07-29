@@ -10,7 +10,7 @@ export function DashboardLayoutContainer({
 	children,
 }: DashboardLayoutContainerProps) {
 	return (
-		<div className="min-h-full bg-[#15100C] text-[#F8EEDB] font-serif relative select-none antialiased">
+		<div className="w-full bg-[#15100C] text-[#F8EEDB] font-serif relative antialiased">
 			{/* Torch Light Radial Glow */}
 			<div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_12%,rgba(215,176,92,0.15),transparent_65%)] mix-blend-screen" />
 
@@ -26,10 +26,8 @@ export function DashboardLayoutContainer({
 				}}
 			/>
 
-			<div className="relative z-10">
-				<main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-					{children}
-				</main>
+			<div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-8 relative z-10">
+				{children}
 			</div>
 		</div>
 	);
