@@ -1,7 +1,7 @@
 import { and, asc, eq, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { KanbanBoard } from "@/components/kanban/kanban-board";
-import { WarRoomToolbar } from "@/components/kanban/war-room-toolbar";
+import { KanbanBoard } from "@/components/kanban/board/kanban-board";
+import { WarRoomToolbar } from "@/components/kanban/toolbar/war-room-toolbar";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -66,7 +66,22 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 				</div>
 			</div>
 
-			<div className="mt-6 rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-4 sm:p-6 shadow-2xl relative overflow-hidden">
+			<div
+				className="
+				mt-6
+				rounded-xs
+				border-4
+				border-[#3B2415]
+				bg-gradient-to-b
+				from-[#2D1B10]
+				via-[#1A120C]
+				to-[#100A07]
+				p-4
+				sm:p-6
+				shadow-2xl
+				relative
+				"
+			>
 				<KanbanBoard
 					projectId={project.id}
 					initialLists={projectLists as any}

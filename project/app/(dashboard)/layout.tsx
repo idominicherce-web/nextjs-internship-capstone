@@ -19,6 +19,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type React from "react";
 import { Suspense, useState } from "react";
+import { Footer } from "@/components/layout/footer";
 
 const navigation = [
 	{
@@ -59,9 +60,7 @@ export default function DashboardLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	// Mobile drawer state
 	const [mobileOpen, setMobileOpen] = useState(false);
-	// Desktop sidebar state: COLLAPSED BY DEFAULT
 	const [isCollapsed, setIsCollapsed] = useState(true);
 	const pathname = usePathname();
 
@@ -75,7 +74,7 @@ export default function DashboardLayout({
 				/>
 			)}
 
-			{/* Medieval Castle Sidebar Navigation */}
+			{/* Sidebar Navigation */}
 			<aside
 				className={`fixed inset-y-0 left-0 z-50 border-r-2 border-[#4A2C1D] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-2xl transition-all duration-300 ease-in-out transform lg:translate-x-0 ${
 					mobileOpen
@@ -83,9 +82,8 @@ export default function DashboardLayout({
 						: "-translate-x-full lg:translate-x-0"
 				} ${isCollapsed ? "lg:w-20" : "lg:w-64"}`}
 			>
-				{/* Brand Header Bar - Exactly h-20 to match top navbar */}
+				{/* Sidebar Header Bar */}
 				<div className="flex items-center justify-between h-20 px-3.5 border-b-2 border-[#4A2C1D] shrink-0">
-					{/* ================= COLLAPSED VIEW (Desktop) ================= */}
 					{isCollapsed && !mobileOpen ? (
 						<div className="w-full flex justify-center items-center">
 							<button
@@ -105,7 +103,6 @@ export default function DashboardLayout({
 							</button>
 						</div>
 					) : (
-						/* ================= EXPANDED VIEW ================= */
 						<>
 							<Link
 								href="/dashboard"
@@ -124,7 +121,6 @@ export default function DashboardLayout({
 								</div>
 							</Link>
 
-							{/* Desktop Collapse Trigger Button */}
 							<button
 								type="button"
 								onClick={() => setIsCollapsed(true)}
@@ -136,7 +132,6 @@ export default function DashboardLayout({
 						</>
 					)}
 
-					{/* Mobile Close Button */}
 					<button
 						type="button"
 						onClick={() => setMobileOpen(false)}
@@ -146,7 +141,7 @@ export default function DashboardLayout({
 					</button>
 				</div>
 
-				{/* Dual-Label Navigation Items */}
+				{/* Navigation Items */}
 				<nav className="mt-6 px-3 space-y-2 overflow-x-hidden">
 					{navigation.map((item) => {
 						const isActive =
@@ -186,13 +181,14 @@ export default function DashboardLayout({
 				</nav>
 			</aside>
 
-			{/* Main Layout Content Area */}
+			{/* Main Document Content Column */}
 			<div
-				className={`transition-all duration-300 ease-in-out ${isCollapsed ? "lg:pl-20" : "lg:pl-64"}`}
+				className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${
+					isCollapsed ? "lg:ml-20" : "lg:ml-64"
+				}`}
 			>
-				{/* Top Header Control Bar - Height matched exactly (h-20) to sidebar header */}
-				<header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b-2 border-[#4A2C1D] bg-[#15100C]/95 backdrop-blur-md px-4 shadow-xl sm:px-6 lg:px-8">
-					{/* Mobile Menu Trigger */}
+				{/* Sticky Header Bar */}
+				<header className="sticky top-0 z-30 h-20 flex items-center justify-between border-b-2 border-[#4A2C1D] bg-[#15100C]/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 shadow-xl">
 					<button
 						type="button"
 						onClick={() => setMobileOpen(true)}
@@ -201,10 +197,8 @@ export default function DashboardLayout({
 						<Menu size={22} />
 					</button>
 
-					{/* Desktop Left Spacer */}
 					<div className="hidden lg:block" />
 
-					{/* Right Controls: Notification Bell & User Profile Avatar */}
 					<div className="flex items-center gap-4">
 						<button
 							type="button"
@@ -220,21 +214,12 @@ export default function DashboardLayout({
 				</header>
 
 				{/* Page Content Container */}
-				<main className="min-h-[calc(100vh-5rem)]">
+				<main className="relative min-h-[calc(100vh-5rem)]">
 					<Suspense>{children}</Suspense>
 				</main>
 
-				{/* GLOBAL FOOTER */}
-				<footer className="relative z-10 py-8 text-center border-t border-[#3B2415] bg-[#1A120C] mt-auto">
-					<div className="flex items-center justify-center gap-4 text-[#8F6236] text-xs mb-2">
-						<div className="h-px w-24 bg-gradient-to-r from-transparent to-[#8F6236]" />
-						<span>══════════════════════════</span>
-						<div className="h-px w-24 bg-gradient-to-l from-transparent to-[#8F6236]" />
-					</div>
-					<p className="text-xs font-sans font-bold uppercase tracking-[0.3em] text-[#D4A74A]">
-						The Roundtable © 2026 • Crafted by Dominic Herce
-					</p>
-				</footer>
+				{/* Reusable Consolidated Footer */}
+				<Footer />
 			</div>
 		</div>
 	);

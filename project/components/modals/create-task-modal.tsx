@@ -1,16 +1,9 @@
 "use client";
 
-import {
-	Calendar,
-	Compass,
-	Loader2,
-	Scroll,
-	User as UserIcon,
-	X,
-} from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
-import { useFormStatus } from "react-dom";
-import { type ActionResponse, createTask } from "@/actions/tasks";
+import { Compass, Loader2, Scroll, X } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { createTask } from "@/actions/tasks";
 
 interface UserOption {
 	id: string;
@@ -25,85 +18,87 @@ interface ListOption {
 
 interface CreateTaskModalProps {
 	projectId: string;
-	lists: ListOption[];
-	users?: UserOption[];
-	defaultListId?: string;
 	isOpen: boolean;
+	lists?: ListOption[];
+	users?: UserOption[];
 	onClose: () => void;
-}
-
-function SubmitButton() {
-	const { pending } = useFormStatus();
-
-	return (
-		<button
-			type="submit"
-			disabled={pending}
-			className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] hover:shadow-[0_0_20px_rgba(215,176,92,0.4)] transition-all cursor-pointer disabled:opacity-50"
-		>
-			{pending ? (
-				<Loader2 size={16} className="animate-spin text-[#D7B05C]" />
-			) : (
-				<Compass size={16} className="text-[#D7B05C]" />
-			)}
-			<span>{pending ? "Dispatching Decree..." : "Create Objective"}</span>
-		</button>
-	);
 }
 
 export function CreateTaskModal({
 	projectId,
-	lists,
-	users = [],
-	defaultListId,
 	isOpen,
+	lists = [],
+	users = [],
 	onClose,
 }: CreateTaskModalProps) {
-	const [selectedListId, setSelectedListId] = useState(
-		defaultListId || lists[0]?.id || "",
-	);
+	const [title, setTitle] = useState("");
+	const [description, setDescription] = useState("");
+	const [listId, setListId] = useState("");
+	const [assignedUserId, setAssignedUserId] = useState("");
+	const [dueDate, setDueDate] = useState("");
+	const [priority, setPriority] = useState("Medium");
+	const [isLoading, setIsLoading] = useState(false);
 
+	// Lock body scroll when modal is open to prevent page scrolling underneath
 	useEffect(() => {
-		if (defaultListId) setSelectedListId(defaultListId);
-		else if (lists.length > 0) setSelectedListId(lists[0].id);
-	}, [defaultListId, lists]);
-
-	const [state, formAction] = useActionState<ActionResponse, FormData>(
-		createTask,
-		{ success: false },
-	);
-
-	useEffect(() => {
-		if (state.success) {
-			onClose();
+		if (isOpen) {
+			document.body.style.overflow = "hidden";
+		} else {
+			document.body.style.overflow = "";
 		}
-	}, [state.success, onClose]);
+		return () => {
+			document.body.style.overflow = "";
+		};
+	}, [isOpen]);
 
 	if (!isOpen) return null;
 
-	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs font-serif text-[#F8EEDB]">
-			<div className="relative w-full max-w-lg rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden">
-				{/* Forged Corner Fittings */}
-				<div className="absolute left-1 top-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
-				<div className="absolute right-1 top-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
-				<div className="absolute bottom-1 left-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
-				<div className="absolute bottom-1 right-1 w-3.5 h-3.5 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!title.trim() || !listId) return;
 
-				{/* Modal Header */}
-				<div className="flex items-center justify-between border-b-2 border-[#4A2C1D] pb-4 mb-5">
+		setIsLoading(true);
+
+		// Inside handleSubmit in create-task-modal.tsx
+		await createTask(null, {
+			title: title.trim(),
+			description: description.trim() || undefined,
+			listId,
+			projectId,
+			dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+			userId: assignedUserId || undefined,
+			priority,
+		});
+
+		setIsLoading(false);
+
+		// Reset Form State & Dismiss Modal
+		setTitle("");
+		setDescription("");
+		setDueDate("");
+		setAssignedUserId("");
+		setPriority("Medium");
+		onClose();
+	};
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xs font-serif text-[#F8EEDB]">
+			<div className="relative w-[94vw] sm:max-w-lg max-h-[85dvh] flex flex-col rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden">
+				{/* Forged Brass Corner Brackets */}
+				<div className="absolute left-1 top-1 w-3 h-3 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
+				<div className="absolute right-1 top-1 w-3 h-3 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
+
+				{/* Fixed Modal Header */}
+				<div className="flex-none flex items-center justify-between p-3.5 sm:p-5 border-b-2 border-[#4A2C1D] bg-[#15100C]/90">
 					<div className="flex items-center space-x-3">
 						<div className="p-2 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md">
-							<Scroll size={22} />
+							<Scroll size={18} />
 						</div>
 						<div>
-							<div className="text-[9px] font-sans font-black uppercase tracking-[0.25em] text-[#D7B05C]">
-								War Room •{" "}
-								<span className="italic font-serif text-[#D7B05C]/70">
-									New Decree
-								</span>
+							<div className="text-[9px] font-sans font-black uppercase tracking-[0.2em] text-[#D7B05C]">
+								Royal Command
 							</div>
-							<h2 className="text-xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
+							<h2 className="text-base sm:text-lg font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
 								Create Task Objective
 							</h2>
 						</div>
@@ -112,33 +107,31 @@ export function CreateTaskModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
+						className="p-1.5 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
 					>
-						<X size={20} />
+						<X size={18} />
 					</button>
 				</div>
 
-				<form action={formAction} className="space-y-4">
-					<input type="hidden" name="projectId" value={projectId} />
-
-					{state.error && (
-						<div className="p-3 rounded-xs border border-rose-600 bg-rose-950/80 text-rose-300 text-xs font-sans font-bold">
-							{state.error}
-						</div>
-					)}
-
-					{/* Target Column Select */}
+				{/* Scrollable Form Body */}
+				<form
+					onSubmit={handleSubmit}
+					className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
+				>
+					{/* Target Column / Stage Selector */}
 					<div className="space-y-1">
 						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 							Target Stage / Column <span className="text-rose-400">*</span>
 						</label>
 						<select
-							name="listId"
-							value={selectedListId}
-							onChange={(e) => setSelectedListId(e.target.value)}
+							value={listId}
+							onChange={(e) => setListId(e.target.value)}
 							required
-							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
+							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
 						>
+							<option value="" disabled>
+								Select Stage Column...
+							</option>
 							{lists.map((l) => (
 								<option key={l.id} value={l.id}>
 									{l.name}
@@ -154,36 +147,37 @@ export function CreateTaskModal({
 						</label>
 						<input
 							type="text"
-							name="title"
+							value={title}
+							onChange={(e) => setTitle(e.target.value)}
 							placeholder="e.g. Fortify Front-End Infrastructure"
 							required
-							autoFocus
-							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner"
+							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/80 focus:outline-none focus:border-[#D7B05C] shadow-inner"
 						/>
 					</div>
 
-					{/* Description Textarea */}
+					{/* Description Input */}
 					<div className="space-y-1">
 						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 							Mission Brief / Description
 						</label>
 						<textarea
-							name="description"
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
 							rows={3}
 							placeholder="Specify requirements and tactical deliverables..."
-							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
+							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/80 focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
 						/>
 					</div>
 
-					{/* Assignee & Due Date Grid */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+					{/* Grid: Assignee & Priority */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<div className="space-y-1">
-							<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-								<UserIcon size={14} className="text-[#D7B05C]" />
-								<span>Assigned Officer</span>
+							<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+								Assigned Officer
 							</label>
 							<select
-								name="userId"
+								value={assignedUserId}
+								onChange={(e) => setAssignedUserId(e.target.value)}
 								className="w-full px-3 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
 							>
 								<option value="">Unassigned</option>
@@ -196,20 +190,20 @@ export function CreateTaskModal({
 						</div>
 
 						<div className="space-y-1">
-							<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-								<Calendar size={14} className="text-[#D7B05C]" />
-								<span>Target Deadline</span>
+							<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+								Target Deadline
 							</label>
 							<input
 								type="date"
-								name="dueDate"
+								value={dueDate}
+								onChange={(e) => setDueDate(e.target.value)}
 								className="w-full px-3 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
 							/>
 						</div>
 					</div>
 
-					{/* Modal Footer Controls */}
-					<div className="flex items-center justify-end gap-3 pt-4 border-t border-[#4A2C1D]">
+					{/* Fixed Modal Footer Controls */}
+					<div className="flex-none flex items-center justify-end gap-3 pt-3 border-t border-[#4A2C1D]">
 						<button
 							type="button"
 							onClick={onClose}
@@ -218,7 +212,18 @@ export function CreateTaskModal({
 							Cancel
 						</button>
 
-						<SubmitButton />
+						<button
+							type="submit"
+							disabled={isLoading || !title.trim() || !listId}
+							className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] transition-all cursor-pointer disabled:opacity-50"
+						>
+							{isLoading ? (
+								<Loader2 className="animate-spin text-[#D7B05C]" size={16} />
+							) : (
+								<Compass size={16} className="text-[#D7B05C]" />
+							)}
+							<span>{isLoading ? "Dispatching..." : "Create Objective"}</span>
+						</button>
 					</div>
 				</form>
 			</div>
