@@ -106,7 +106,7 @@ export function CreateProjectModal({
 							placeholder="e.g. Website Redesign"
 							required
 							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/70 focus:outline-none focus:border-[#D7B05C] shadow-inner"
-					autoFocus
+							autoFocus
 						/>
 						{state.fieldErrors?.name && (
 							<p className="text-[10px] font-sans font-bold text-rose-400 mt-1">

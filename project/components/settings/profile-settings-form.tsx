@@ -117,7 +117,7 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 					</div>
 				</div>
 
-					{/* Restrained Form Body (Max Width ~620px for high readability) */}
+				{/* Restrained Form Body (Max Width ~620px for high readability) */}
 				<form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
 					{/* Full Name */}
 					<div className="space-y-1.5">
@@ -197,9 +197,9 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 								type="button"
 								disabled={isLoading}
 								onClick={() => {
-							setFullName(user.name || "");
-							setEmail(user.email || "");
-							setRole(user.role || "Project Manager");
+									setFullName(user.name || "");
+									setEmail(user.email || "");
+									setRole(user.role || "Project Manager");
 									setErrorMessage(null);
 								}}
 								className="px-4 py-2 border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C]/80 hover:text-white hover:border-[#8F6236] text-xs font-sans font-bold uppercase rounded-xs transition-colors cursor-pointer disabled:opacity-50"
@@ -222,7 +222,7 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 				</form>
 			</div>
 
-					{/* Standalone Session Status Card */}
+			{/* Standalone Session Status Card */}
 			<div className="p-4 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 				<div className="flex items-center gap-3">
 					<div className="p-2 rounded-full border border-emerald-700 bg-emerald-950 text-emerald-400 shrink-0">

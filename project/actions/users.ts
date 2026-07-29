@@ -26,7 +26,6 @@ export async function getUsers() {
 
 // --- NEW SERVER ACTIONS FOR SETTINGS & INVITATIONS ---
 
-
 export async function updateUserProfile(data: {
 	name: string;
 	email: string;
@@ -41,7 +40,7 @@ export async function updateUserProfile(data: {
 			.set({
 				name: data.name,
 				email: data.email,
-					...(data.role ? { role: data.role } : {}),
+				...(data.role ? { role: data.role } : {}),
 				updatedAt: new Date(),
 			})
 			.where(eq(users.id, dbUser.id));
@@ -110,7 +109,5 @@ export async function sendWorkspaceInvite(email: string, role: string) {
 	} catch (error) {
 		console.error("Failed to send invitation:", error);
 		return { success: false, error: "Failed to send invitation" };
-	}
-
 	}
 }

@@ -112,11 +112,12 @@ export const activityLogs = pgTable("activity_logs", {
 // DRIZZLE RELATIONS
 // ==========================================
 
+export const usersRelations = relations(users, ({ one, many }) => ({
 	settings: one(userSettings, {
-			fields: [users.id],
-			references: [userSettings.userId],
-		}),
-		sentInvitations: many(workspaceInvitations),
+		fields: [users.id],
+		references: [userSettings.userId],
+	}),
+	sentInvitations: many(workspaceInvitations),
 	projects: many(projects),
 	tasks: many(tasks),
 }));
@@ -130,7 +131,6 @@ export const workspaceInvitationsRelations = relations(
 		}),
 	}),
 );
-
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
 	user: one(users, {

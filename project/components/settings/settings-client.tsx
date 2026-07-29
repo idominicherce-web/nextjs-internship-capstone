@@ -48,7 +48,9 @@ export function SettingsClient({ user }: SettingsClientProps) {
 				<div className="h-px w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
 			</div>
 
-		{/* Settings Grid (Proportional 22% Sidebar / 78% Settings Workspace Ratio) */}
+			{/* Settings Grid */}
+			<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+				{/* Navigation Sidebar (3 Columns) */}
 				<div className="lg:col-span-3">
 					<SettingsNavigation
 						activeTab={activeTab}
@@ -56,7 +58,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
 					/>
 				</div>
 
-		{/* Active Settings Panel (9 Columns on lg = ~75%) */}
+				{/* Active Settings Panel (9 Columns) */}
 				<div className="lg:col-span-9">
 					{activeTab === "profile" && <ProfileSettingsForm user={user} />}
 
