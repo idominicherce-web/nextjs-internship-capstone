@@ -31,13 +31,17 @@ export default async function CalendarPage() {
 		);
 	}
 
-	// Fetch real projects & tasks with due dates from database
+	// Fetch real projects & tasks with due dates + assignees from database
 	const userProjects = await db.query.projects.findMany({
 		where: eq(projects.userId, dbUser.id),
 		with: {
 			lists: {
 				with: {
-					tasks: true,
+					tasks: {
+						with: {
+							user: true, // Include assigned user details
+						},
+					},
 				},
 			},
 		},
@@ -67,6 +71,20 @@ export default async function CalendarPage() {
 						taskType = "milestone";
 					}
 
+					// Derive dynamic priority label or default to Medium
+					const dynamicPriority = (task.priority || "Medium") as
+						| "Low"
+						| "Medium"
+						| "High"
+						| "Urgent";
+
+					// Derive dynamic assignee name
+					const assignedOfficer =
+						task.user?.name ||
+						(task.user?.email
+							? task.user.email.split("@")[0]
+							: "Unassigned Realm");
+
 					realTasks.push({
 						id: task.id,
 						title: task.title,
@@ -74,70 +92,19 @@ export default async function CalendarPage() {
 						dueDate: new Date(task.dueDate),
 						type: taskType,
 						isCompleted: isDone,
-						priority: "High",
-						assignedTo: "Lord Scribe",
+						priority: dynamicPriority,
+						assignedTo: assignedOfficer,
 					});
 				}
 			});
 		});
 	});
 
-	// Fallback upcoming events if DB is empty
-	const formattedTasks: CalendarTask[] =
-		realTasks.length > 0
-			? realTasks
-			: [
-					{
-						id: "f1",
-						title: "API Integration",
-						projectName: "Project Alpha",
-						dueDate: new Date("2026-07-24"),
-						type: "deadline",
-						isCompleted: false,
-						priority: "Urgent",
-						assignedTo: "Sir Gareth",
-					},
-					{
-						id: "f2",
-						title: "Sprint Review",
-						projectName: "Project Phoenix",
-						dueDate: new Date("2026-07-24"),
-						type: "meeting",
-						isCompleted: true,
-						priority: "Medium",
-						assignedTo: "Lady Elaine",
-					},
-					{
-						id: "f3",
-						title: "Kingdom UI Overhaul",
-						projectName: "Internal Tools",
-						dueDate: new Date("2026-07-27"),
-						type: "milestone",
-						isCompleted: false,
-						priority: "High",
-						assignedTo: "Grand Master",
-					},
-					{
-						id: "f4",
-						title: "Database Backup Audit",
-						projectName: "Project Alpha",
-						dueDate: new Date("2026-07-29"),
-						type: "reminder",
-						isCompleted: false,
-						priority: "Low",
-						assignedTo: "Royal Warden",
-					},
-				];
-
 	// Summary Metrics Calculations
-	const totalTasksCount = formattedTasks.length;
-	const completedTasksCount = formattedTasks.filter(
-		(t) => t.isCompleted,
-	).length;
-	const deadlinesThisWeekCount = formattedTasks.filter(
-		(t) => !t.isCompleted,
-	).length;
-	const milestoneCount = userProjects.length || 3;
+	const totalTasksCount = realTasks.length;
+	const completedTasksCount = realTasks.filter((t) => t.isCompleted).length;
+	const deadlinesThisWeekCount = realTasks.filter((t) => !t.isCompleted).length;
+	const milestoneCount = userProjects.length || 0;
 
 	return (
 		<div className="min-h-screen bg-[#15100C] text-[#F8EEDB] font-serif p-4 sm:p-8 relative select-none overflow-hidden antialiased">
@@ -181,7 +148,7 @@ export default async function CalendarPage() {
 				{/* Legend Index Bar */}
 				<CalendarLegend />
 
-				{/* quest Summary Statistics */}
+				{/* Quest Summary Statistics */}
 				<CalendarStats
 					totalTasks={totalTasksCount}
 					deadlinesCount={deadlinesThisWeekCount}
@@ -197,15 +164,15 @@ export default async function CalendarPage() {
 				</div>
 
 				{/* Main Calendar Grid */}
-				<CalendarGrid tasks={formattedTasks} />
+				<CalendarGrid tasks={realTasks} />
 
-				{/* Lower Dashboard Split: Today's Sidebar + Upcoming quests */}
+				{/* Lower Dashboard Split: Today's Sidebar + Upcoming Quests */}
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
 					<div className="lg:col-span-1">
 						<TodaySidebar />
 					</div>
 					<div className="lg:col-span-2">
-						<Upcomingquests tasks={formattedTasks.slice(0, 5)} />
+						<Upcomingquests tasks={realTasks.slice(0, 5)} />
 					</div>
 				</div>
 			</div>

@@ -2,7 +2,8 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, ShieldAlert, Trash2, User } from "lucide-react";
+import { Calendar, Trash2, User } from "lucide-react";
+import { TaskPriorityBadge } from "@/components/kanban/task-priority-badge";
 
 export interface TaskCardData {
 	id: string;
@@ -52,7 +53,7 @@ export function TaskCard({
 		transition,
 	};
 
-	// Calculate Due Date Status for Wax Seal Badge
+	// Calculate Due Date Status
 	const getDueStatus = () => {
 		if (!task.dueDate) return null;
 		const due = new Date(task.dueDate);
@@ -83,19 +84,6 @@ export function TaskCard({
 		};
 	};
 
-	// Priority Heraldic Color Badge
-	const getPriorityStyle = (priority?: string | null) => {
-		switch (priority) {
-			case "Urgent":
-			case "High":
-				return "bg-rose-950 text-rose-300 border-rose-700/80";
-			case "Medium":
-				return "bg-amber-950 text-amber-300 border-amber-700/80";
-			default:
-				return "bg-[#2D1B10] text-[#FFF5D6] border-[#8F6236]";
-		}
-	};
-
 	const dueStatus = getDueStatus();
 
 	return (
@@ -111,7 +99,7 @@ export function TaskCard({
 					: ""
 			}`}
 		>
-			{/* Weathered Paper Background Texture Overlay */}
+			{/* Paper Texture Overlay */}
 			<div
 				className="pointer-events-none absolute inset-0 opacity-40 mix-blend-multiply"
 				style={{
@@ -136,7 +124,7 @@ export function TaskCard({
 					{task.title}
 				</h4>
 
-				{/* Description Snippet (if available) */}
+				{/* Description Snippet */}
 				{task.description && (
 					<p className="text-[10px] font-sans text-[#3B2415]/80 line-clamp-2 italic leading-tight">
 						{task.description}
@@ -155,16 +143,7 @@ export function TaskCard({
 						</span>
 					)}
 
-					{task.priority && (
-						<span
-							className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xs border text-[9px] font-sans font-extrabold uppercase shadow-xs ${getPriorityStyle(
-								task.priority,
-							)}`}
-						>
-							<ShieldAlert size={10} className="text-[#D7B05C]" />
-							{task.priority}
-						</span>
-					)}
+					<TaskPriorityBadge priority={task.priority} />
 
 					{task.assignee && (
 						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-[#1A120C] text-[#D7B05C] border border-[#4A2C1D] text-[9px] font-sans font-bold shadow-xs">
@@ -175,14 +154,16 @@ export function TaskCard({
 				</div>
 			</div>
 
-			{/* Quick Delete Task Action */}
+			{/* Delete Task Action */}
 			<button
 				type="button"
+				onPointerDown={(e) => e.stopPropagation()} // Stop dnd-kit pointer interception
 				onClick={(e) => {
 					e.stopPropagation();
+					e.preventDefault();
 					onDeleteTask(task.id, projectId);
 				}}
-				className="absolute top-2 right-6 opacity-0 group-hover:opacity-100 p-1 text-[#8F6236] hover:text-rose-700 transition-all cursor-pointer"
+				className="absolute top-2 right-6 opacity-0 group-hover:opacity-100 p-1 text-[#8F6236] hover:text-rose-700 transition-all cursor-pointer z-20 pointer-events-auto"
 				title="Delete Task"
 			>
 				<Trash2 size={13} />

@@ -18,7 +18,7 @@ export function CalendarStats({
 	const cards = [
 		{
 			title: "Scheduled Tasks",
-			value: `${totalTasks} quests`,
+			value: `${totalTasks} Objectives`,
 			icon: Scroll,
 			color: "text-[#D7B05C]",
 			borderColor: "border-[#D7B05C]/40",
