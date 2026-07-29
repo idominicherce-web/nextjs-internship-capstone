@@ -92,6 +92,7 @@ export const tasks = pgTable("tasks", {
 		.notNull()
 		.references(() => lists.id, { onDelete: "cascade" }),
 	userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+	priority: text("priority").default("Medium"), // 👈 Add priority column here
 	dueDate: timestamp("due_date"),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),

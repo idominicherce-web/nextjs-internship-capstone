@@ -141,6 +141,13 @@ export async function getProjects() {
 		return await db.query.projects.findMany({
 			where: eq(projects.userId, dbUser.id),
 			orderBy: [desc(projects.createdAt)],
+			with: {
+				lists: {
+					with: {
+						tasks: true,
+					},
+				},
+			},
 		});
 	} catch (error) {
 		console.error("Failed to fetch projects:", error);

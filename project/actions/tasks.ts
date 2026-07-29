@@ -19,6 +19,9 @@ const createTaskSchema = z.object({
 	description: z.string().trim().optional(),
 	listId: z.string().min(1, "Target column is required."),
 	projectId: z.string().min(1, "Project identifier is required."),
+	userId: z.string().optional(),
+	dueDate: z.string().optional(),
+	priority: z.string().optional(),
 });
 
 /**
@@ -33,6 +36,9 @@ export async function createTask(
 				projectId: string;
 				title: string;
 				description?: string;
+				userId?: string;
+				dueDate?: string;
+				priority?: string;
 		  },
 ): Promise<ActionResponse> {
 	try {
@@ -48,6 +54,9 @@ export async function createTask(
 				description: formData.get("description"),
 				listId: formData.get("listId"),
 				projectId: formData.get("projectId"),
+				userId: formData.get("userId"),
+				dueDate: formData.get("dueDate"),
+				priority: formData.get("priority"),
 			};
 		} else if (formData && typeof formData === "object") {
 			rawData = formData;
@@ -67,7 +76,8 @@ export async function createTask(
 			};
 		}
 
-		const { listId, projectId, title, description } = parsed.data;
+		const { listId, projectId, title, description, userId, dueDate, priority } =
+			parsed.data;
 
 		// Determine next position index for the task in this list
 		const maxPositionResult = await db
@@ -83,7 +93,9 @@ export async function createTask(
 				title,
 				description: description || null,
 				listId,
-				userId: dbUser.id,
+				userId: userId && userId.trim() !== "" ? userId : dbUser.id,
+				priority: priority || "Medium",
+				dueDate: dueDate && dueDate.trim() !== "" ? new Date(dueDate) : null,
 				position: nextPosition,
 			})
 			.returning();
@@ -100,6 +112,7 @@ export async function createTask(
 		revalidatePath(`/projects/${projectId}`);
 		revalidatePath("/dashboard");
 		revalidatePath("/analytics");
+		revalidatePath("/calendar");
 
 		return { success: true, data: newTask };
 	} catch (error) {
@@ -109,7 +122,7 @@ export async function createTask(
 }
 
 /**
- * Updates a task objective (title, description, due date, assignee).
+ * Updates a task objective (title, description, due date, assignee, priority).
  */
 export async function updateTask(
 	taskId: string,
@@ -119,6 +132,7 @@ export async function updateTask(
 		description?: string | null;
 		dueDate?: Date | null;
 		userId?: string | null;
+		priority?: string | null;
 	},
 ): Promise<ActionResponse> {
 	try {
@@ -139,6 +153,7 @@ export async function updateTask(
 		revalidatePath(`/projects/${projectId}`);
 		revalidatePath("/dashboard");
 		revalidatePath("/calendar");
+		revalidatePath("/analytics");
 
 		return { success: true, data: updatedTask };
 	} catch (error) {
@@ -247,6 +262,8 @@ export async function deleteTask(
 
 		revalidatePath(`/projects/${projectId}`);
 		revalidatePath("/dashboard");
+		revalidatePath("/analytics");
+		revalidatePath("/calendar");
 
 		return { success: true };
 	} catch (error) {

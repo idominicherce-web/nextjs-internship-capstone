@@ -11,7 +11,9 @@ export interface ProjectData {
 	createdAt: Date;
 	updatedAt: Date;
 	lists?: Array<{
-		tasks: Array<{ id: string; completed?: boolean }>;
+		id: string;
+		name: string;
+		tasks: Array<{ id: string; title?: string }>;
 	}>;
 }
 
@@ -25,9 +27,15 @@ export function LeatherProjectCard({ project }: LeatherProjectCardProps) {
 
 	if (project.lists) {
 		project.lists.forEach((list) => {
-			list.tasks.forEach((t) => {
+			const isDoneList =
+				list.name.toLowerCase().includes("done") ||
+				list.name.toLowerCase().includes("complete");
+
+			list.tasks.forEach(() => {
 				totalTasks++;
-				if (t.completed) completedTasks++;
+				if (isDoneList) {
+					completedTasks++;
+				}
 			});
 		});
 	}

@@ -8,11 +8,24 @@ interface UpcomingquestsProps {
 }
 
 export function Upcomingquests({ tasks }: UpcomingquestsProps) {
+	const getPriorityBadgeStyle = (priority?: string) => {
+		switch (priority) {
+			case "Urgent":
+				return "text-rose-400 font-black";
+			case "High":
+				return "text-amber-400 font-bold";
+			case "Low":
+				return "text-[#D7B05C]/60 font-medium";
+			default:
+				return "text-[#D7B05C] font-bold";
+		}
+	};
+
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center gap-3 text-sm font-sans font-black uppercase tracking-[0.2em] text-[#D7B05C]">
 				<span>📜</span>
-				<h2>Upcoming quests & Priorities</h2>
+				<h2>Upcoming Tasks & Priorities</h2>
 				<div className="h-px flex-1 bg-gradient-to-r from-[#4A2C1D] to-transparent" />
 			</div>
 
@@ -67,12 +80,16 @@ export function Upcomingquests({ tasks }: UpcomingquestsProps) {
 												<Shield size={12} /> {event.projectName}
 											</span>
 											{event.assignedTo && (
-												<span className="flex items-center gap-1 text-[#F8EEDB]/70">
+												<span className="flex items-center gap-1 text-[#F8EEDB]/80">
 													<User size={12} /> {event.assignedTo}
 												</span>
 											)}
 											{event.priority && (
-												<span className="flex items-center gap-1 text-red-400 font-bold">
+												<span
+													className={`flex items-center gap-1 ${getPriorityBadgeStyle(
+														event.priority,
+													)}`}
+												>
 													<AlertCircle size={12} /> {event.priority} Priority
 												</span>
 											)}

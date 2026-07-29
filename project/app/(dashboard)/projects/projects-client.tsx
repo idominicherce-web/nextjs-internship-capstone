@@ -64,11 +64,26 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
 		setSortBy("newest");
 	};
 
-	// Calculate totals
+	// Calculate totals based on nested list and task completion states
 	const totalCount = initialProjects.length;
 	const completedCount = initialProjects.filter((p) => {
 		if (!p.lists || p.lists.length === 0) return false;
-		return p.lists.every((l) => l.tasks.every((t) => t.completed));
+
+		let projectTotal = 0;
+		let projectCompleted = 0;
+
+		p.lists.forEach((list) => {
+			const isDoneList =
+				list.name.toLowerCase().includes("done") ||
+				list.name.toLowerCase().includes("complete");
+
+			list.tasks.forEach(() => {
+				projectTotal++;
+				if (isDoneList) projectCompleted++;
+			});
+		});
+
+		return projectTotal > 0 && projectTotal === projectCompleted;
 	}).length;
 	const activeCount = totalCount - completedCount;
 
