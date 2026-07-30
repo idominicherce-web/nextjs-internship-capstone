@@ -20,6 +20,7 @@ import { usePathname } from "next/navigation";
 import type React from "react";
 import { Suspense, useState } from "react";
 import { Footer } from "@/components/layout/footer";
+import { useSidebarStore } from "@/stores/use-sidebar-store";
 
 const navigation = [
 	{
@@ -61,7 +62,7 @@ export default function DashboardLayout({
 	children: React.ReactNode;
 }) {
 	const [mobileOpen, setMobileOpen] = useState(false);
-	const [isCollapsed, setIsCollapsed] = useState(true);
+	const { isCollapsed, setCollapsed } = useSidebarStore();
 	const pathname = usePathname();
 
 	return (
@@ -88,7 +89,7 @@ export default function DashboardLayout({
 						<div className="w-full flex justify-center items-center">
 							<button
 								type="button"
-								onClick={() => setIsCollapsed(false)}
+								onClick={() => setCollapsed(false)}
 								className="group relative p-2.5 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#FFF5D6] transition-all shadow-md cursor-pointer flex items-center justify-center"
 								title="Expand Command Sidebar"
 							>
@@ -123,7 +124,7 @@ export default function DashboardLayout({
 
 							<button
 								type="button"
-								onClick={() => setIsCollapsed(true)}
+								onClick={() => setCollapsed(true)}
 								className="hidden lg:flex shrink-0 p-1.5 rounded-xs border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] transition-colors cursor-pointer ml-1"
 								title="Collapse Sidebar"
 							>
