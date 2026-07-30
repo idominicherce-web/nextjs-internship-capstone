@@ -48,9 +48,11 @@ export function TaskCard({
 		data: { type: "Task", task },
 	});
 
+	// Optimize transforms to use GPU compositing and eliminate repaint flicker
 	const style = {
-		transform: CSS.Transform.toString(transform),
-		transition,
+		transform: CSS.Translate.toString(transform),
+		transition: isDragging ? undefined : transition,
+		willChange: "transform",
 	};
 
 	// Due Date Status Calculation
@@ -93,10 +95,10 @@ export function TaskCard({
 			{...attributes}
 			{...listeners}
 			onClick={() => onTaskClick(task)}
-			className={`group relative w-full p-3.5 sm:p-4 rounded-xs border-2 border-[#8F6236] bg-[#FAF0D7] text-[#1A120C] shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D7B05C] hover:shadow-[0_8px_20px_rgba(215,176,92,0.35)] cursor-grab active:cursor-grabbing select-none overflow-hidden ${
+			className={`group relative w-full p-3.5 sm:p-4 rounded-xs border-2 border-[#8F6236] bg-[#FAF0D7] text-[#1A120C] shadow-md hover:-translate-y-0.5 hover:border-[#D7B05C] hover:shadow-[0_8px_20px_rgba(215,176,92,0.35)] cursor-grab active:cursor-grabbing select-none overflow-hidden ${
 				isDragging
-					? "opacity-40 scale-95 border-dashed border-[#D7B05C] -rotate-1 shadow-2xl"
-					: ""
+					? "opacity-30 border-dashed border-[#D7B05C]"
+					: "transition-transform duration-150"
 			}`}
 		>
 			{/* Paper Texture Overlay */}
@@ -119,12 +121,12 @@ export function TaskCard({
 			<div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#8F6236] border border-[#1A120C] shadow-xs" />
 
 			<div className="space-y-2 relative z-10 pr-3">
-				{/* Title - Large Tap Target for Mobile */}
+				{/* Title */}
 				<h4 className="font-serif font-black text-xs sm:text-sm text-[#1A120C] group-hover:text-[#5B3922] transition-colors leading-snug">
 					{task.title}
 				</h4>
 
-				{/* Description Snippet (Hidden on small mobile screens to compress height) */}
+				{/* Description Snippet */}
 				{task.description && (
 					<p className="hidden sm:block text-[10px] font-sans text-[#3B2415]/80 line-clamp-2 italic leading-tight">
 						{task.description}
@@ -145,7 +147,7 @@ export function TaskCard({
 
 					<TaskPriorityBadge priority={task.priority} />
 
-					{/* Assignee Badge (Shown on desktop viewports) */}
+					{/* Assignee Badge */}
 					{task.assignee && (
 						<span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-[#1A120C] text-[#D7B05C] border border-[#4A2C1D] text-[9px] font-sans font-bold shadow-xs">
 							<User size={10} />

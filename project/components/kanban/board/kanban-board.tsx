@@ -31,6 +31,7 @@ import type { List } from "@/components/kanban/column/kanban-column";
 import { FloatingActionButton } from "@/components/kanban/fab/floating-action-button";
 import type { TaskCardData } from "@/components/kanban/task/task-card";
 import { useKanbanStore } from "@/stores/use-kanban-store";
+import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface KanbanBoardProps {
 	projectId: string;
@@ -56,6 +57,9 @@ export function KanbanBoard({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
 	const [, startTransition] = useTransition();
+	const addNotification = useNotificationStore(
+		(state) => state.addNotification,
+	);
 
 	const {
 		searchQuery,
@@ -160,6 +164,13 @@ export function KanbanBoard({
 
 		setIsLoading(true);
 		await createList(projectId, newListName);
+
+		addNotification({
+			title: "New Quest Stage Created",
+			description: `Column '${newListName.trim()}' has been forged.`,
+			type: "project",
+		});
+
 		setNewListName("");
 		setIsLoading(false);
 	};
@@ -249,6 +260,15 @@ export function KanbanBoard({
 		}));
 
 		await reorderTasks(taskUpdates, projectId);
+
+		// ⚡ Trigger notification on stage move
+		if (activeTask) {
+			addNotification({
+				title: "Objective Relocated",
+				description: `'${activeTask.title}' was moved to stage '${targetList.name}'.`,
+				type: "task",
+			});
+		}
 	};
 
 	if (!isMounted) return null;
@@ -281,10 +301,10 @@ export function KanbanBoard({
 					onTaskClick={(task) => openTaskDetailModal(task)}
 				/>
 
-				<DragOverlay>
+				<DragOverlay dropAnimation={null}>
 					{activeTask ? (
-						<div className="p-3 bg-[#FAF0D7] border-2 border-[#D7B05C] text-[#1A120C] rounded-xs shadow-2xl opacity-95 -rotate-2 scale-105">
-							<h4 className="font-serif font-black text-xs">
+						<div className="w-full max-w-[280px] sm:max-w-xs p-3.5 bg-[#FAF0D7] border-2 border-[#D7B05C] text-[#1A120C] rounded-xs shadow-2xl pointer-events-none cursor-grabbing opacity-90">
+							<h4 className="font-serif font-black text-xs sm:text-sm">
 								{activeTask.title}
 							</h4>
 						</div>

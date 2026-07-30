@@ -3,6 +3,7 @@
 import {
 	Calendar,
 	CheckCircle,
+	ChevronDown,
 	Columns,
 	Loader2,
 	Scroll,
@@ -114,17 +115,17 @@ export function TaskDetailModal({
 	};
 
 	return (
-		<div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-xs font-serif text-[#F8EEDB]">
-			<div className="relative w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[85dvh] flex flex-col rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden">
+		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xs font-serif text-[#F8EEDB]">
+			<div className="relative w-full max-w-lg flex flex-col rounded-xs border-2 sm:border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden my-auto">
 				{/* Forged Brass Corner Brackets */}
-				<div className="absolute left-1 top-1 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
-				<div className="absolute right-1 top-1 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+				<div className="absolute left-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+				<div className="absolute right-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
 
-				{/* Fixed Modal Header */}
-				<div className="flex-none flex items-center justify-between p-3.5 sm:p-5 border-b-2 border-[#4A2C1D] bg-[#15100C]/90">
+				{/* Modal Header */}
+				<div className="flex-none flex items-center justify-between p-3.5 sm:p-4 border-b-2 border-[#4A2C1D] bg-[#15100C]/90">
 					<div className="flex items-center space-x-3">
-						<div className="p-2 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md">
-							<Scroll size={18} />
+						<div className="p-1.5 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md shrink-0">
+							<Scroll size={16} />
 						</div>
 						<div>
 							<div className="text-[9px] font-sans font-black uppercase tracking-[0.2em] text-[#D7B05C]">
@@ -148,14 +149,11 @@ export function TaskDetailModal({
 					</button>
 				</div>
 
-				{/* Scrollable Form Body */}
-				<form
-					onSubmit={handleSubmit}
-					className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
-				>
+				{/* Non-Scrollable Form Body */}
+				<form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
 					{/* Success Alert Banner */}
 					{successMsg && (
-						<div className="rounded-xs bg-emerald-950/80 border border-emerald-600 p-2.5 text-xs font-sans font-bold text-emerald-300 flex items-center gap-2 shadow-inner">
+						<div className="rounded-xs bg-emerald-950/80 border border-emerald-600 p-2 text-xs font-sans font-bold text-emerald-300 flex items-center gap-2 shadow-inner">
 							<CheckCircle size={16} className="text-emerald-400" />
 							<span>{successMsg}</span>
 						</div>
@@ -171,7 +169,7 @@ export function TaskDetailModal({
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 							required
-							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
+							className="w-full px-3 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
 						/>
 					</div>
 
@@ -182,17 +180,23 @@ export function TaskDetailModal({
 								<Columns size={14} className="text-[#D7B05C]" />
 								<span>Quest Stage / Column</span>
 							</label>
-							<select
-								value={selectedListId}
-								onChange={(e) => setSelectedListId(e.target.value)}
-								className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
-							>
-								{lists.map((l) => (
-									<option key={l.id} value={l.id}>
-										{l.name}
-									</option>
-								))}
-							</select>
+							<div className="relative flex items-center">
+								<select
+									value={selectedListId}
+									onChange={(e) => setSelectedListId(e.target.value)}
+									className="w-full appearance-none pl-3 pr-10 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
+								>
+									{lists.map((l) => (
+										<option key={l.id} value={l.id}>
+											{l.name}
+										</option>
+									))}
+								</select>
+								<ChevronDown
+									size={16}
+									className="absolute right-3 text-[#1A120C] pointer-events-none"
+								/>
+							</div>
 						</div>
 					)}
 
@@ -204,9 +208,9 @@ export function TaskDetailModal({
 						<textarea
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							rows={3}
+							rows={2}
 							placeholder="Add tactical details..."
-							className="w-full px-3.5 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
+							className="w-full px-3 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
 						/>
 					</div>
 
@@ -216,13 +220,17 @@ export function TaskDetailModal({
 							<ShieldAlert size={14} className="text-[#D7B05C]" />
 							<span>Quest Priority</span>
 						</label>
-						<div className="flex flex-wrap items-center gap-2">
+						<div className="flex flex-wrap items-center gap-2 pt-0.5">
 							{["Low", "Medium", "High", "Urgent"].map((p) => (
 								<button
 									key={p}
 									type="button"
 									onClick={() => setPriority(p)}
-									className={`cursor-pointer transition-transform ${priority === p ? "scale-105 ring-2 ring-[#D7B05C]" : "opacity-60"}`}
+									className={`cursor-pointer transition-transform ${
+										priority === p
+											? "scale-105 ring-2 ring-[#D7B05C]"
+											: "opacity-60"
+									}`}
 								>
 									<TaskPriorityBadge priority={p} />
 								</button>
@@ -231,24 +239,30 @@ export function TaskDetailModal({
 					</div>
 
 					{/* Grid: Assignee & Due Date */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
 						<div className="space-y-1">
 							<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 								<UserIcon size={14} className="text-[#D7B05C]" />
 								<span>Assigned Officer</span>
 							</label>
-							<select
-								value={assignedUserId}
-								onChange={(e) => setAssignedUserId(e.target.value)}
-								className="w-full px-3 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
-							>
-								<option value="">Unassigned</option>
-								{users.map((u) => (
-									<option key={u.id} value={u.id}>
-										{u.name || u.email}
-									</option>
-								))}
-							</select>
+							<div className="relative flex items-center">
+								<select
+									value={assignedUserId}
+									onChange={(e) => setAssignedUserId(e.target.value)}
+									className="w-full appearance-none pl-3 pr-9 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
+								>
+									<option value="">Unassigned</option>
+									{users.map((u) => (
+										<option key={u.id} value={u.id}>
+											{u.name || u.email}
+										</option>
+									))}
+								</select>
+								<ChevronDown
+									size={16}
+									className="absolute right-2.5 text-[#1A120C] pointer-events-none"
+								/>
+							</div>
 						</div>
 
 						<div className="space-y-1">
@@ -260,17 +274,17 @@ export function TaskDetailModal({
 								type="date"
 								value={dueDate}
 								onChange={(e) => setDueDate(e.target.value)}
-								className="w-full px-3 py-2 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
+								className="w-full px-3 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
 							/>
 						</div>
 					</div>
 
-					{/* Fixed Modal Footer */}
-					<div className="flex-none flex items-center justify-end gap-3 pt-3 border-t border-[#4A2C1D]">
+					{/* Modal Action Buttons */}
+					<div className="flex items-center justify-end gap-3 pt-3 border-t border-[#4A2C1D]">
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2 border border-[#8F6236] bg-[#15100C] text-[#D7B05C] hover:text-white rounded-xs text-xs font-sans font-black uppercase tracking-wider transition-colors cursor-pointer"
+							className="px-4 py-1.5 border border-[#8F6236] bg-[#15100C] text-[#D7B05C] hover:text-white rounded-xs text-xs font-sans font-black uppercase tracking-wider transition-colors cursor-pointer"
 						>
 							Cancel
 						</button>
@@ -278,16 +292,16 @@ export function TaskDetailModal({
 						<button
 							type="submit"
 							disabled={isLoading}
-							className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] transition-all cursor-pointer disabled:opacity-50"
+							className="inline-flex items-center gap-2 px-5 py-1.5 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] transition-all cursor-pointer disabled:opacity-50"
 						>
 							{isLoading ? (
 								<>
-									<Loader2 className="animate-spin text-[#D7B05C]" size={16} />
+									<Loader2 className="animate-spin text-[#D7B05C]" size={15} />
 									<span>Saving...</span>
 								</>
 							) : (
 								<>
-									<Shield size={16} className="text-[#D7B05C]" />
+									<Shield size={15} className="text-[#D7B05C]" />
 									<span>Save Changes</span>
 								</>
 							)}
