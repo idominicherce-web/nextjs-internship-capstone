@@ -18,8 +18,10 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type React from "react";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Footer } from "@/components/layout/footer";
+import { NotificationDrawer } from "@/components/layout/notification-drawer";
+import { useNotificationStore } from "@/stores/use-notification-store";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 
 const navigation = [
@@ -62,8 +64,32 @@ export default function DashboardLayout({
 	children: React.ReactNode;
 }) {
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [showHeader, setShowHeader] = useState(true);
+	const lastScrollY = useRef(0);
 	const { isCollapsed, setCollapsed } = useSidebarStore();
 	const pathname = usePathname();
+
+	// Zustand Notification Hooks
+	const { openDrawer, notifications } = useNotificationStore();
+	const unreadCount = notifications.filter((n) => !n.read).length;
+
+	// Auto-hide header when scrolling down on mobile; reveal when scrolling up
+	useEffect(() => {
+		const handleScroll = () => {
+			const currentScrollY = window.scrollY;
+
+			if (currentScrollY > lastScrollY.current && currentScrollY > 60) {
+				setShowHeader(false); // Hide when scrolling down past 60px
+			} else {
+				setShowHeader(true); // Reveal when scrolling up
+			}
+
+			lastScrollY.current = currentScrollY;
+		};
+
+		window.addEventListener("scroll", handleScroll, { passive: true });
+		return () => window.removeEventListener("scroll", handleScroll);
+	}, []);
 
 	return (
 		<div className="min-h-screen bg-[#15100C] text-[#F8EEDB] font-serif antialiased selection:bg-[#D7B05C] selection:text-[#15100C]">
@@ -188,8 +214,12 @@ export default function DashboardLayout({
 					isCollapsed ? "lg:ml-20" : "lg:ml-64"
 				}`}
 			>
-				{/* Sticky Header Bar */}
-				<header className="sticky top-0 z-30 h-20 flex items-center justify-between border-b-2 border-[#4A2C1D] bg-[#15100C]/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 shadow-xl">
+				{/* Smart Sticky Header Bar */}
+				<header
+					className={`sticky top-0 z-30 h-20 flex items-center justify-between border-b-2 border-[#4A2C1D] bg-[#15100C]/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 shadow-xl transition-transform duration-300 ease-in-out lg:translate-y-0 ${
+						showHeader ? "translate-y-0" : "-translate-y-full"
+					}`}
+				>
 					<button
 						type="button"
 						onClick={() => setMobileOpen(true)}
@@ -203,11 +233,14 @@ export default function DashboardLayout({
 					<div className="flex items-center gap-4">
 						<button
 							type="button"
+							onClick={openDrawer}
 							className="p-2.5 rounded-xs border border-[#8F6236]/60 bg-[#2D1B10] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] transition-colors relative cursor-pointer shadow-md"
 							title="Notifications"
 						>
 							<Bell size={18} />
-							<span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+							{unreadCount > 0 && (
+								<span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+							)}
 						</button>
 
 						<UserButton userProfileMode="modal" />
@@ -218,6 +251,9 @@ export default function DashboardLayout({
 				<main className="relative min-h-[calc(100vh-5rem)]">
 					<Suspense>{children}</Suspense>
 				</main>
+
+				{/* Notification Drawer Slide-Over */}
+				<NotificationDrawer />
 
 				{/* Reusable Consolidated Footer */}
 				<Footer />
