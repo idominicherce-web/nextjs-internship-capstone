@@ -13,19 +13,24 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { ShieldAlert } from "lucide-react";
 import type React from "react";
-import { useEffect, useOptimistic, useState, useTransition } from "react";
+import {
+	useEffect,
+	useMemo,
+	useOptimistic,
+	useState,
+	useTransition,
+} from "react";
 import { createList, deleteList } from "@/actions/lists";
 import { createTask, reorderTasks } from "@/actions/tasks";
-import { getUsers } from "@/actions/users";
-import { BoardColumnScroller } from "@/components/kanban/board/board-column-scroller";
 import { KanbanAddColumnForm } from "@/components/kanban/board/kanban-add-column-form";
+import { KanbanFilterBar } from "@/components/kanban/board/kanban-filter-bar";
+import { KanbanFrame } from "@/components/kanban/board/kanban-frame";
+import { KanbanModals } from "@/components/kanban/board/kanban-modals";
 import type { List } from "@/components/kanban/column/kanban-column";
 import { FloatingActionButton } from "@/components/kanban/fab/floating-action-button";
 import type { TaskCardData } from "@/components/kanban/task/task-card";
-import { CreateTaskModal } from "@/components/modals/create-task-modal";
-import { TaskDetailModal } from "@/components/modals/task-detail-modal";
+import { useKanbanStore } from "@/stores/use-kanban-store";
 
 interface KanbanBoardProps {
 	projectId: string;
@@ -46,16 +51,18 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
 	const [listsState, setListsState] = useState<List[]>(initialLists);
 	const [activeTask, setActiveTask] = useState<TaskCardData | null>(null);
-	const [editingTask, setEditingTask] = useState<TaskCardData | null>(null);
-	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [newListName, setNewListName] = useState("");
 	const [taskInputs, setTaskInputs] = useState<Record<string, string>>({});
 	const [isLoading, setIsLoading] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
-	const [usersList, setUsersList] = useState<
-		{ id: string; name: string | null; email: string }[]
-	>([]);
 	const [, startTransition] = useTransition();
+
+	const {
+		searchQuery,
+		selectedPriority,
+		openCreateTaskModal,
+		openTaskDetailModal,
+	} = useKanbanStore();
 
 	useEffect(() => {
 		setIsMounted(true);
@@ -64,16 +71,6 @@ export function KanbanBoard({
 	useEffect(() => {
 		setListsState(initialLists);
 	}, [initialLists]);
-
-	useEffect(() => {
-		async function fetchUsers() {
-			const res = await getUsers();
-			if (res.success && res.data) {
-				setUsersList(res.data);
-			}
-		}
-		fetchUsers();
-	}, []);
 
 	const [optimisticLists, setOptimisticLists] = useOptimistic(
 		listsState,
@@ -128,18 +125,31 @@ export function KanbanBoard({
 		},
 	);
 
-	// Static sensor array reference to prevent useEffect dependency size changes
+	const filteredLists = useMemo(() => {
+		if (!searchQuery.trim() && !selectedPriority) return optimisticLists;
+		const q = searchQuery.toLowerCase().trim();
+
+		return optimisticLists.map((list) => ({
+			...list,
+			tasks: list.tasks.filter((task) => {
+				const matchesSearch =
+					!q ||
+					task.title.toLowerCase().includes(q) ||
+					task.description?.toLowerCase().includes(q);
+
+				const matchesPriority =
+					!selectedPriority ||
+					task.priority?.toLowerCase() === selectedPriority.toLowerCase();
+
+				return matchesSearch && matchesPriority;
+			}),
+		}));
+	}, [optimisticLists, searchQuery, selectedPriority]);
+
 	const sensors = useSensors(
-		useSensor(MouseSensor, {
-			activationConstraint: {
-				distance: 10,
-			},
-		}),
+		useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
 		useSensor(TouchSensor, {
-			activationConstraint: {
-				delay: 250,
-				tolerance: 5,
-			},
+			activationConstraint: { delay: 250, tolerance: 5 },
 		}),
 		useSensor(KeyboardSensor),
 	);
@@ -158,9 +168,8 @@ export function KanbanBoard({
 		const taskTitle = taskInputs[listId];
 		if (!taskTitle?.trim()) return;
 
-		const tempId = `temp-${Date.now()}`;
 		const tempTask: TaskCardData = {
-			id: tempId,
+			id: `temp-${Date.now()}`,
 			title: taskTitle.trim(),
 			description: null,
 			position: 999,
@@ -190,9 +199,7 @@ export function KanbanBoard({
 		const taskData = event.active.data.current?.task as
 			| TaskCardData
 			| undefined;
-		if (taskData) {
-			setActiveTask(taskData);
-		}
+		if (taskData) setActiveTask(taskData);
 	};
 
 	const handleDragOver = (event: DragOverEvent) => {
@@ -226,11 +233,9 @@ export function KanbanBoard({
 	const handleDragEnd = async (event: DragEndEvent) => {
 		const { over } = event;
 		setActiveTask(null);
-
 		if (!over) return;
 
 		const overId = over.id as string;
-
 		const targetList = optimisticLists.find(
 			(l) => l.id === overId || l.tasks.some((t) => t.id === overId),
 		);
@@ -250,13 +255,14 @@ export function KanbanBoard({
 
 	return (
 		<div className="space-y-4 sm:space-y-6">
-			{/* Add Column Form */}
 			<KanbanAddColumnForm
 				newListName={newListName}
 				setNewListName={setNewListName}
 				isLoading={isLoading}
 				onSubmit={handleAddList}
 			/>
+
+			<KanbanFilterBar />
 
 			<DndContext
 				sensors={sensors}
@@ -265,37 +271,15 @@ export function KanbanBoard({
 				onDragOver={handleDragOver}
 				onDragEnd={handleDragEnd}
 			>
-				{/* Outer Board Frame */}
-				<div className="relative rounded-xs border-2 sm:border-4 border-[#3B2415] bg-gradient-to-b from-[#4A2C1D] via-[#2D1B10] to-[#15100C] p-1 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden">
-					{/* Brass Corner Fittings */}
-					<div className="absolute left-1 top-1 z-30 h-3 w-3 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
-					<div className="absolute right-1 top-1 z-30 h-3 w-3 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
-					<div className="absolute bottom-1 left-1 z-30 h-3 w-3 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
-					<div className="absolute bottom-1 right-1 z-30 h-3 w-3 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
-
-					{optimisticLists.length === 0 ? (
-						<div className="text-center py-12 sm:py-16 border-2 border-dashed border-[#8F6236]/40 bg-[#15100C] rounded-xs space-y-2">
-							<ShieldAlert size={32} className="mx-auto text-[#D7B05C]/50" />
-							<h3 className="text-base sm:text-lg font-serif font-black text-[#F8EEDB]">
-								No Columns Created Yet
-							</h3>
-							<p className="text-xs font-sans text-[#D7B05C]/70 max-w-sm mx-auto px-4">
-								Type a column name above to start organizing your project tasks
-								on the board.
-							</p>
-						</div>
-					) : (
-						<BoardColumnScroller
-							lists={optimisticLists}
-							projectId={projectId}
-							taskInputs={taskInputs}
-							setTaskInputs={setTaskInputs}
-							deleteList={deleteList}
-							handleAddTask={handleAddTask}
-							onTaskClick={(task) => setEditingTask(task)}
-						/>
-					)}
-				</div>
+				<KanbanFrame
+					lists={filteredLists}
+					projectId={projectId}
+					taskInputs={taskInputs}
+					setTaskInputs={setTaskInputs}
+					deleteList={deleteList}
+					handleAddTask={handleAddTask}
+					onTaskClick={(task) => openTaskDetailModal(task)}
+				/>
 
 				<DragOverlay>
 					{activeTask ? (
@@ -308,26 +292,9 @@ export function KanbanBoard({
 				</DragOverlay>
 			</DndContext>
 
-			{/* Floating Action Button */}
-			<FloatingActionButton onClick={() => setIsCreateModalOpen(true)} />
+			<FloatingActionButton onClick={() => openCreateTaskModal()} />
 
-			{/* Modals */}
-			<CreateTaskModal
-				projectId={projectId}
-				lists={optimisticLists.map((l) => ({ id: l.id, name: l.name }))}
-				users={usersList}
-				isOpen={isCreateModalOpen}
-				onClose={() => setIsCreateModalOpen(false)}
-			/>
-
-			<TaskDetailModal
-				task={editingTask}
-				projectId={projectId}
-				users={usersList}
-				lists={optimisticLists.map((l) => ({ id: l.id, name: l.name }))}
-				isOpen={!!editingTask}
-				onClose={() => setEditingTask(null)}
-			/>
+			<KanbanModals projectId={projectId} lists={optimisticLists} />
 		</div>
 	);
 }
