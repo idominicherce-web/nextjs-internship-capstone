@@ -21,6 +21,7 @@ import type React from "react";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Footer } from "@/components/layout/footer";
 import { NotificationDrawer } from "@/components/layout/notification-drawer";
+import { useKanbanStore } from "@/stores/use-kanban-store";
 import { useNotificationStore } from "@/stores/use-notification-store";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 
@@ -67,29 +68,40 @@ export default function DashboardLayout({
 	const [showHeader, setShowHeader] = useState(true);
 	const lastScrollY = useRef(0);
 	const { isCollapsed, setCollapsed } = useSidebarStore();
+
+	// Check if a task detail workspace is currently open
+	const editingTask = useKanbanStore((state) => state.editingTask);
 	const pathname = usePathname();
 
-	// Zustand Notification Hooks
 	const { openDrawer, notifications } = useNotificationStore();
 	const unreadCount = notifications.filter((n) => !n.read).length;
 
-	// Auto-hide header when scrolling down on mobile; reveal when scrolling up
 	useEffect(() => {
 		const handleScroll = () => {
 			const currentScrollY = window.scrollY;
-
 			if (currentScrollY > lastScrollY.current && currentScrollY > 60) {
-				setShowHeader(false); // Hide when scrolling down past 60px
+				setShowHeader(false);
 			} else {
-				setShowHeader(true); // Reveal when scrolling up
+				setShowHeader(true);
 			}
-
 			lastScrollY.current = currentScrollY;
 		};
 
 		window.addEventListener("scroll", handleScroll, { passive: true });
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
+
+	// Render full-screen workspace without sidebar/navbar chrome when editing a task
+	if (editingTask) {
+		return (
+			<div className="min-h-screen bg-[#15100C] text-[#F8EEDB] font-serif antialiased selection:bg-[#D7B05C] selection:text-[#15100C]">
+				<main className="relative min-h-screen w-full">
+					<Suspense>{children}</Suspense>
+				</main>
+				<NotificationDrawer />
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen bg-[#15100C] text-[#F8EEDB] font-serif antialiased selection:bg-[#D7B05C] selection:text-[#15100C]">
@@ -151,7 +163,7 @@ export default function DashboardLayout({
 							<button
 								type="button"
 								onClick={() => setCollapsed(true)}
-								className="hidden lg:flex shrink-0 p-1.5 rounded-xs border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] transition-colors cursor-pointer ml-1"
+								className="hidden lg:flex shrink-0 p-1.5 rounded-xs border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C] hover:text-[#FFF5D6] hover:border-[#D7B05C] transition-colors cursor-pointer ml-1"
 								title="Collapse Sidebar"
 							>
 								<PanelLeftClose size={18} />
@@ -252,10 +264,7 @@ export default function DashboardLayout({
 					<Suspense>{children}</Suspense>
 				</main>
 
-				{/* Notification Drawer Slide-Over */}
 				<NotificationDrawer />
-
-				{/* Reusable Consolidated Footer */}
 				<Footer />
 			</div>
 		</div>

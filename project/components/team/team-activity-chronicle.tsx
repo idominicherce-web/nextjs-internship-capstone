@@ -26,7 +26,7 @@ export function TeamActivityChronicle({
 					</h3>
 				</div>
 				<span className="text-[9px] font-serif italic text-[#D7B05C]/60">
-					Council Chronicle
+					Council Comments
 				</span>
 			</div>
 

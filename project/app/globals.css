@@ -11,10 +11,6 @@
 		--paynes-gray: #4c5c68;
 		--blue-munsell: #1985a1;
 	}
-
-	.dark {
-		/* Dark theme color adjustments */
-	}
 }
 
 @layer utilities {
@@ -23,6 +19,7 @@
 		display: -webkit-box;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 2;
+		line-clamp: 2;
 	}
 
 	.line-clamp-3 {
@@ -30,13 +27,14 @@
 		display: -webkit-box;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 3;
+		line-clamp: 3;
 	}
 }
 
 /* Custom scrollbar styles */
 .scrollbar-thin {
-	scrollbar-width: thin;
 	scrollbar-color: var(--french-gray) transparent;
+	scrollbar-width: thin;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
