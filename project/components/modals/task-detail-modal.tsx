@@ -1,10 +1,12 @@
 "use client";
 
 import {
+	ArrowLeft,
 	Calendar,
 	CheckCircle,
 	ChevronDown,
 	Columns,
+	Copy,
 	Loader2,
 	Scroll,
 	Shield,
@@ -15,10 +17,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { updateTask, updateTaskPosition } from "@/actions/tasks";
-import {
-	type PriorityLevel,
-	TaskPriorityBadge,
-} from "@/components/kanban/task/task-priority-badge";
+import { TaskCommentSection } from "@/components/kanban/task/task-comment-section";
 
 interface Task {
 	id: string;
@@ -27,7 +26,9 @@ interface Task {
 	listId: string;
 	dueDate?: Date | string | null;
 	userId?: string | null;
-	priority?: PriorityLevel | string | null;
+	priority?: "Low" | "Medium" | "High" | "Urgent" | string | null;
+	createdAt?: Date | string | null;
+	updatedAt?: Date | string | null;
 }
 
 interface UserOption {
@@ -64,8 +65,12 @@ export function TaskDetailModal({
 	const [assignedUserId, setAssignedUserId] = useState<string>("");
 	const [priority, setPriority] = useState<string>("Medium");
 	const [selectedListId, setSelectedListId] = useState<string>("");
+	const [activeMobileTab, setActiveMobileTab] = useState<
+		"details" | "chronicle"
+	>("details");
 	const [isLoading, setIsLoading] = useState(false);
 	const [successMsg, setSuccessMsg] = useState("");
+	const [copiedLink, setCopiedLink] = useState(false);
 
 	useEffect(() => {
 		if (task) {
@@ -80,6 +85,19 @@ export function TaskDetailModal({
 		}
 	}, [task]);
 
+	// Prevent background page scrolling when modal is active
+	useEffect(() => {
+		if (isOpen && task) {
+			document.body.style.overflow = "hidden";
+		} else {
+			document.body.style.overflow = "unset";
+		}
+
+		return () => {
+			document.body.style.overflow = "unset";
+		};
+	}, [isOpen, task]);
+
 	if (!isOpen || !task) return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -89,12 +107,10 @@ export function TaskDetailModal({
 		setIsLoading(true);
 		setSuccessMsg("");
 
-		// 1. Move column if target list changed
 		if (selectedListId && selectedListId !== task.listId) {
 			await updateTaskPosition(task.id, selectedListId, 0, projectId);
 		}
 
-		// 2. Update task details
 		const result = await updateTask(task.id, projectId, {
 			title: title.trim(),
 			description: description.trim() || null,
@@ -114,200 +130,313 @@ export function TaskDetailModal({
 		}
 	};
 
+	const copyLinkToClipboard = () => {
+		navigator.clipboard.writeText(window.location.href);
+		setCopiedLink(true);
+		setTimeout(() => setCopiedLink(false), 1500);
+	};
+
 	return (
-		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xs font-serif text-[#F8EEDB]">
-			<div className="relative w-full max-w-lg flex flex-col rounded-xs border-2 sm:border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden my-auto">
+		<div className="fixed inset-0 z-[100] bg-[#100A07] lg:bg-black/85 lg:backdrop-blur-xs flex items-stretch lg:items-start justify-center overflow-hidden font-serif text-[#F8EEDB]">
+			{/* Fluid Container Window */}
+			<div className="relative w-full h-full lg:w-[min(96vw,1600px)] lg:h-[min(92vh,1000px)] lg:my-auto flex flex-col lg:rounded-xs border-0 lg:border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden">
 				{/* Forged Brass Corner Brackets */}
-				<div className="absolute left-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
-				<div className="absolute right-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+				<div className="hidden lg:block absolute left-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
+				<div className="hidden lg:block absolute right-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
 
-				{/* Modal Header */}
-				<div className="flex-none flex items-center justify-between p-3.5 sm:p-4 border-b-2 border-[#4A2C1D] bg-[#15100C]/90">
-					<div className="flex items-center space-x-3">
-						<div className="p-1.5 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md shrink-0">
-							<Scroll size={16} />
-						</div>
-						<div>
-							<div className="text-[9px] font-sans font-black uppercase tracking-[0.2em] text-[#D7B05C]">
-								Objective Ledger •{" "}
-								<span className="italic font-serif text-[#D7B05C]/70">
-									Task Details
-								</span>
-							</div>
-							<h2 className="text-base sm:text-lg font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
-								Edit Objective
-							</h2>
-						</div>
-					</div>
-
-					<button
-						type="button"
-						onClick={onClose}
-						className="p-1.5 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
-					>
-						<X size={18} />
-					</button>
-				</div>
-
-				{/* Non-Scrollable Form Body */}
-				<form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
-					{/* Success Alert Banner */}
-					{successMsg && (
-						<div className="rounded-xs bg-emerald-950/80 border border-emerald-600 p-2 text-xs font-sans font-bold text-emerald-300 flex items-center gap-2 shadow-inner">
-							<CheckCircle size={16} className="text-emerald-400" />
-							<span>{successMsg}</span>
-						</div>
-					)}
-
-					{/* Title Input */}
-					<div className="space-y-1">
-						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-							Objective Title <span className="text-rose-400">*</span>
-						</label>
-						<input
-							type="text"
-							value={title}
-							onChange={(e) => setTitle(e.target.value)}
-							required
-							className="w-full px-3 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
-						/>
-					</div>
-
-					{/* Target Column / Stage Selector */}
-					{lists.length > 0 && (
-						<div className="space-y-1">
-							<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-								<Columns size={14} className="text-[#D7B05C]" />
-								<span>Quest Stage / Column</span>
-							</label>
-							<div className="relative flex items-center">
-								<select
-									value={selectedListId}
-									onChange={(e) => setSelectedListId(e.target.value)}
-									className="w-full appearance-none pl-3 pr-10 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
-								>
-									{lists.map((l) => (
-										<option key={l.id} value={l.id}>
-											{l.name}
-										</option>
-									))}
-								</select>
-								<ChevronDown
-									size={16}
-									className="absolute right-3 text-[#1A120C] pointer-events-none"
-								/>
-							</div>
-						</div>
-					)}
-
-					{/* Description Input */}
-					<div className="space-y-1">
-						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-							Mission Brief / Description
-						</label>
-						<textarea
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							rows={2}
-							placeholder="Add tactical details..."
-							className="w-full px-3 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
-						/>
-					</div>
-
-					{/* Priority Selection */}
-					<div className="space-y-1">
-						<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-							<ShieldAlert size={14} className="text-[#D7B05C]" />
-							<span>Quest Priority</span>
-						</label>
-						<div className="flex flex-wrap items-center gap-2 pt-0.5">
-							{["Low", "Medium", "High", "Urgent"].map((p) => (
-								<button
-									key={p}
-									type="button"
-									onClick={() => setPriority(p)}
-									className={`cursor-pointer transition-transform ${
-										priority === p
-											? "scale-105 ring-2 ring-[#D7B05C]"
-											: "opacity-60"
-									}`}
-								>
-									<TaskPriorityBadge priority={p} />
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* Grid: Assignee & Due Date */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
-						<div className="space-y-1">
-							<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-								<UserIcon size={14} className="text-[#D7B05C]" />
-								<span>Assigned Officer</span>
-							</label>
-							<div className="relative flex items-center">
-								<select
-									value={assignedUserId}
-									onChange={(e) => setAssignedUserId(e.target.value)}
-									className="w-full appearance-none pl-3 pr-9 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
-								>
-									<option value="">Unassigned</option>
-									{users.map((u) => (
-										<option key={u.id} value={u.id}>
-											{u.name || u.email}
-										</option>
-									))}
-								</select>
-								<ChevronDown
-									size={16}
-									className="absolute right-2.5 text-[#1A120C] pointer-events-none"
-								/>
-							</div>
-						</div>
-
-						<div className="space-y-1">
-							<label className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-								<Calendar size={14} className="text-[#D7B05C]" />
-								<span>Target Deadline</span>
-							</label>
-							<input
-								type="date"
-								value={dueDate}
-								onChange={(e) => setDueDate(e.target.value)}
-								className="w-full px-3 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
-							/>
-						</div>
-					</div>
-
-					{/* Modal Action Buttons */}
-					<div className="flex items-center justify-end gap-3 pt-3 border-t border-[#4A2C1D]">
+				{/* 1. Header Bar */}
+				<div className="sticky top-0 z-20 flex-none flex items-center justify-between px-3 lg:px-[clamp(1rem,2vw,2rem)] py-2 lg:py-3 border-b-2 border-[#4A2C1D] bg-[#15100C] shadow-md">
+					<div className="flex items-center space-x-2 lg:space-x-3">
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-1.5 border border-[#8F6236] bg-[#15100C] text-[#D7B05C] hover:text-white rounded-xs text-xs font-sans font-black uppercase tracking-wider transition-colors cursor-pointer"
+							className="lg:hidden p-1 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
 						>
-							Cancel
+							<ArrowLeft size={16} />
 						</button>
 
+						<div className="p-1.5 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md shrink-0 hidden lg:block">
+							<Scroll size={18} />
+						</div>
+						<div className="flex items-center gap-1.5 sm:gap-3">
+							<h2 className="text-xs sm:text-base lg:text-lg font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
+								Edit Objective
+							</h2>
+							<span className="px-1.5 py-0.5 rounded-xs bg-[#1A120C] border border-[#8F6236] text-[9px] font-sans font-extrabold text-[#D7B05C]">
+								OBJ-{task.id.slice(0, 6).toUpperCase()}
+							</span>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-1.5">
 						<button
-							type="submit"
-							disabled={isLoading}
-							className="inline-flex items-center gap-2 px-5 py-1.5 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] transition-all cursor-pointer disabled:opacity-50"
+							type="button"
+							onClick={copyLinkToClipboard}
+							className="px-2 py-0.5 lg:px-2.5 lg:py-1 rounded-xs border border-[#8F6236] bg-[#1A120C] text-[#D7B05C] hover:text-white text-[9px] font-sans font-bold flex items-center gap-1 transition-colors cursor-pointer"
 						>
-							{isLoading ? (
-								<>
-									<Loader2 className="animate-spin text-[#D7B05C]" size={15} />
-									<span>Saving...</span>
-								</>
-							) : (
-								<>
-									<Shield size={15} className="text-[#D7B05C]" />
-									<span>Save Changes</span>
-								</>
-							)}
+							<Copy size={11} />
+							<span>{copiedLink ? "Copied!" : "Copy Link"}</span>
+						</button>
+						<button
+							type="button"
+							onClick={onClose}
+							className="hidden lg:block p-1.5 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
+						>
+							<X size={20} />
 						</button>
 					</div>
-				</form>
+				</div>
+
+				{/* Mobile Tab Switcher Controls (< lg) */}
+				<div className="flex lg:hidden border-b border-[#4A2C1D] bg-[#15100C] flex-none">
+					<button
+						type="button"
+						onClick={() => setActiveMobileTab("details")}
+						className={`flex-1 py-1.5 text-[11px] font-sans font-black uppercase tracking-wider text-center border-b-2 transition-colors ${
+							activeMobileTab === "details"
+								? "border-[#D7B05C] text-[#D7B05C] bg-[#2D1B10]/50"
+								: "border-transparent text-[#D7B05C]/50"
+						}`}
+					>
+						Objective Details
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveMobileTab("chronicle")}
+						className={`flex-1 py-1.5 text-[11px] font-sans font-black uppercase tracking-wider text-center border-b-2 transition-colors ${
+							activeMobileTab === "chronicle"
+								? "border-[#D7B05C] text-[#D7B05C] bg-[#2D1B10]/50"
+								: "border-transparent text-[#D7B05C]/50"
+						}`}
+					>
+						Council Chronicle
+					</button>
+				</div>
+
+				{/* 2. Fluid Non-Scrolling Split Body Container */}
+				<div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] divide-y lg:divide-y-0 lg:divide-x divide-[#4A2C1D] overflow-hidden">
+					{/* Left Panel: Form Fields */}
+					<form
+						onSubmit={handleSubmit}
+						className={`p-2.5 sm:p-4 lg:p-[clamp(1rem,2vw,2rem)] flex flex-col justify-between overflow-hidden lg:overflow-y-auto space-y-2 lg:space-y-4 scrollbar-thin scrollbar-thumb-[#8F6236] ${
+							activeMobileTab === "chronicle" ? "hidden lg:flex" : "flex"
+						}`}
+					>
+						<div className="space-y-2 lg:space-y-4">
+							{/* Alert Banner */}
+							{successMsg && (
+								<div className="rounded-xs bg-emerald-950/80 border border-emerald-600 p-2 text-xs font-sans font-bold text-emerald-300 flex items-center gap-2 shadow-inner">
+									<CheckCircle size={14} className="text-emerald-400" />
+									<span>{successMsg}</span>
+								</div>
+							)}
+
+							{/* Hero Objective Title */}
+							<div className="space-y-1">
+								<div className="flex items-center justify-between text-[9px] font-sans font-bold text-[#D7B05C]/60 uppercase tracking-wider">
+									<span>Objective Headline</span>
+									<span>Required *</span>
+								</div>
+								<input
+									type="text"
+									value={title}
+									onChange={(e) => setTitle(e.target.value)}
+									required
+									placeholder="Objective title..."
+									className="w-full px-2.5 py-1.5 lg:px-3.5 lg:py-2.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs sm:text-sm lg:text-base font-serif font-black text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
+								/>
+							</div>
+
+							{/* Section Card: Mission Details */}
+							<div className="p-2 lg:p-[clamp(0.75rem,1.5vw,1.25rem)] rounded-xs border border-[#8F6236]/50 bg-[#15100C]/70 space-y-1.5">
+								<div className="text-[9px] font-sans font-black uppercase tracking-[0.15em] text-[#D7B05C] border-b border-[#4A2C1D] pb-0.5">
+									Mission Brief
+								</div>
+								<textarea
+									value={description}
+									onChange={(e) => setDescription(e.target.value)}
+									placeholder="Add tactical details..."
+									className="w-full px-2.5 py-1 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-[11px] sm:text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner h-14 sm:h-20 lg:min-h-28 lg:max-h-[30vh] resize-none"
+								/>
+							</div>
+
+							{/* Section Card: Tactical Parameters */}
+							<div className="p-2 lg:p-[clamp(0.75rem,1.5vw,1.25rem)] rounded-xs border border-[#8F6236]/50 bg-[#15100C]/70 space-y-2">
+								<div className="text-[9px] font-sans font-black uppercase tracking-[0.15em] text-[#D7B05C] border-b border-[#4A2C1D] pb-0.5">
+									Tactical Parameters
+								</div>
+
+								<div className="grid gap-2 grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
+									{/* Column Stage Dropdown */}
+									{lists.length > 0 && (
+										<div className="space-y-0.5">
+											<label className="flex items-center gap-1 text-[10px] sm:text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+												<Columns size={12} />
+												<span>Stage</span>
+											</label>
+											<div className="relative flex items-center">
+												<select
+													value={selectedListId}
+													onChange={(e) => setSelectedListId(e.target.value)}
+													className="w-full appearance-none pl-2 pr-6 py-1 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-[11px] font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
+												>
+													{lists.map((l) => (
+														<option key={l.id} value={l.id}>
+															{l.name}
+														</option>
+													))}
+												</select>
+												<ChevronDown
+													size={14}
+													className="absolute right-2 text-[#1A120C] pointer-events-none"
+												/>
+											</div>
+										</div>
+									)}
+
+									{/* Priority Control: Dropdown on Mobile (< sm), Segmented on Desktop (≥ sm) */}
+									<div className="space-y-0.5">
+										<label className="flex items-center gap-1 text-[10px] sm:text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+											<ShieldAlert size={12} />
+											<span>Priority</span>
+										</label>
+
+										{/* Mobile Native Dropdown */}
+										<div className="relative flex items-center sm:hidden">
+											<select
+												value={priority}
+												onChange={(e) => setPriority(e.target.value)}
+												className="w-full appearance-none pl-2 pr-6 py-1 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-[11px] font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
+											>
+												<option value="Low">🟢 Low</option>
+												<option value="Medium">🟡 Medium</option>
+												<option value="High">🟠 High</option>
+												<option value="Urgent">🔴 Urgent</option>
+											</select>
+											<ChevronDown
+												size={14}
+												className="absolute right-2 text-[#1A120C] pointer-events-none"
+											/>
+										</div>
+
+										{/* Tablet/Desktop Segmented Control */}
+										<div className="hidden sm:grid grid-cols-4 gap-0.5 p-0.5 bg-[#1A120C] border border-[#8F6236] rounded-xs">
+											{[
+												{ label: "Low", icon: "🟢" },
+												{ label: "Medium", icon: "🟡" },
+												{ label: "High", icon: "🟠" },
+												{ label: "Urgent", icon: "🔴" },
+											].map((p) => {
+												const active = priority === p.label;
+												return (
+													<button
+														key={p.label}
+														type="button"
+														onClick={() => setPriority(p.label)}
+														className={`py-1 text-[9px] font-sans font-black uppercase tracking-wider rounded-xs transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
+															active
+																? "bg-[#D7B05C] text-[#1A120C] shadow-md font-extrabold scale-102"
+																: "text-[#D7B05C]/60 hover:text-white hover:bg-[#2D1B10]"
+														}`}
+													>
+														<span>{p.icon}</span>
+														<span>{p.label}</span>
+													</button>
+												);
+											})}
+										</div>
+									</div>
+
+									{/* Officer Assignee */}
+									<div className="space-y-0.5">
+										<label className="flex items-center gap-1 text-[10px] sm:text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+											<UserIcon size={12} />
+											<span>Assigned Officer</span>
+										</label>
+										<div className="relative flex items-center">
+											<select
+												value={assignedUserId}
+												onChange={(e) => setAssignedUserId(e.target.value)}
+												className="w-full appearance-none pl-2 pr-6 py-1 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-[11px] font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
+											>
+												<option value="">Unassigned</option>
+												{users.map((u) => (
+													<option key={u.id} value={u.id}>
+														{u.name || u.email}
+													</option>
+												))}
+											</select>
+											<ChevronDown
+												size={14}
+												className="absolute right-2 text-[#1A120C] pointer-events-none"
+											/>
+										</div>
+									</div>
+
+									{/* Deadline Picker */}
+									<div className="space-y-0.5">
+										<label className="flex items-center gap-1 text-[10px] sm:text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+											<Calendar size={12} />
+											<span>Target Deadline</span>
+										</label>
+										<input
+											type="date"
+											value={dueDate}
+											onChange={(e) => setDueDate(e.target.value)}
+											className="w-full px-2 py-1 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-[11px] font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
+										/>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<button id="modal-submit-btn" type="submit" className="hidden" />
+					</form>
+
+					{/* Right Panel: Discussion Feed */}
+					<div
+						className={`p-3 lg:p-[clamp(1rem,2vw,2rem)] bg-[#15100C]/50 flex flex-col justify-between overflow-hidden ${
+							activeMobileTab === "details" ? "hidden lg:flex" : "flex"
+						}`}
+					>
+						<TaskCommentSection taskId={task.id} projectId={projectId} />
+					</div>
+				</div>
+
+				{/* 3. Sticky Action Footer with Equal Button Widths */}
+				<div className="sticky bottom-0 z-20 flex-none flex items-center justify-end gap-2 sm:gap-3 px-3 lg:px-[clamp(1rem,2vw,2rem)] py-2 lg:py-3 border-t-2 border-[#4A2C1D] bg-[#15100C] shadow-2xl">
+					<button
+						type="button"
+						onClick={onClose}
+						className="flex-1 max-w-[160px] py-1.5 lg:py-2 border border-[#8F6236] bg-[#15100C] text-[#D7B05C] hover:text-white rounded-xs text-[11px] sm:text-xs font-sans font-black uppercase tracking-wider transition-colors cursor-pointer text-center"
+					>
+						Cancel
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							const submitBtn = document.getElementById(
+								"modal-submit-btn",
+							) as HTMLButtonElement;
+							submitBtn?.click();
+						}}
+						disabled={isLoading}
+						className="flex-1 max-w-[160px] inline-flex items-center justify-center gap-1.5 py-1.5 lg:py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-[11px] sm:text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] transition-all cursor-pointer disabled:opacity-50"
+					>
+						{isLoading ? (
+							<>
+								<Loader2 className="animate-spin text-[#D7B05C]" size={14} />
+								<span>Saving...</span>
+							</>
+						) : (
+							<>
+								<Shield size={14} className="text-[#D7B05C]" />
+								<span>Save Changes</span>
+							</>
+						)}
+					</button>
+				</div>
 			</div>
 		</div>
 	);

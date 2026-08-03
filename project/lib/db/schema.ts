@@ -149,13 +149,42 @@ export const listsRelations = relations(lists, ({ one, many }) => ({
 	tasks: many(tasks),
 }));
 
-export const tasksRelations = relations(tasks, ({ one }) => ({
+// TASK COMMENTS TABLE
+export const taskComments = pgTable("task_comments", {
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	content: text("content").notNull(),
+	taskId: text("task_id")
+		.notNull()
+		.references(() => tasks.id, { onDelete: "cascade" }),
+	userId: text("user_id")
+		.notNull()
+		.references(() => users.id, { onDelete: "cascade" }),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
 	list: one(lists, {
 		fields: [tasks.listId],
 		references: [lists.id],
 	}),
 	user: one(users, {
 		fields: [tasks.userId],
+		references: [users.id],
+	}),
+	comments: many(taskComments),
+}));
+
+// Add taskComments relations
+export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
+	task: one(tasks, {
+		fields: [taskComments.taskId],
+		references: [tasks.id],
+	}),
+	user: one(users, {
+		fields: [taskComments.userId],
 		references: [users.id],
 	}),
 }));
