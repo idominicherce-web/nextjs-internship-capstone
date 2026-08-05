@@ -22,7 +22,7 @@ export const users = pgTable("users", {
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// NEW: USER SETTINGS TABLE
+// USER SETTINGS TABLE
 export const userSettings = pgTable("user_settings", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	userId: text("user_id")
@@ -39,7 +39,7 @@ export const userSettings = pgTable("user_settings", {
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// NEW: WORKSPACE INVITATIONS TABLE
+// WORKSPACE INVITATIONS TABLE
 export const workspaceInvitations = pgTable("workspace_invitations", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	email: text("email").notNull(),
@@ -64,6 +64,19 @@ export const projects = pgTable("projects", {
 		.references(() => users.id, { onDelete: "cascade" }),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// PROJECT MEMBERS JUNCTION TABLE
+export const projectMembers = pgTable("project_members", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	projectId: text("project_id")
+		.notNull()
+		.references(() => projects.id, { onDelete: "cascade" }),
+	userId: text("user_id")
+		.notNull()
+		.references(() => users.id, { onDelete: "cascade" }),
+	role: text("role").default("Member").notNull(), // 'Viewer', 'Member', 'Admin'
+	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // LISTS TABLE (Kanban Columns)
@@ -92,8 +105,24 @@ export const tasks = pgTable("tasks", {
 		.notNull()
 		.references(() => lists.id, { onDelete: "cascade" }),
 	userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
-	priority: text("priority").default("Medium"), // 👈 Add priority column here
+	priority: text("priority").default("Medium"),
 	dueDate: timestamp("due_date"),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// TASK COMMENTS TABLE
+export const taskComments = pgTable("task_comments", {
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	content: text("content").notNull(),
+	taskId: text("task_id")
+		.notNull()
+		.references(() => tasks.id, { onDelete: "cascade" }),
+	userId: text("user_id")
+		.notNull()
+		.references(() => users.id, { onDelete: "cascade" }),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -121,6 +150,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 	sentInvitations: many(workspaceInvitations),
 	projects: many(projects),
 	tasks: many(tasks),
+	projectMemberships: many(projectMembers),
 }));
 
 export const workspaceInvitationsRelations = relations(
@@ -139,6 +169,18 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
 		references: [users.id],
 	}),
 	lists: many(lists),
+	members: many(projectMembers),
+}));
+
+export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
+	project: one(projects, {
+		fields: [projectMembers.projectId],
+		references: [projects.id],
+	}),
+	user: one(users, {
+		fields: [projectMembers.userId],
+		references: [users.id],
+	}),
 }));
 
 export const listsRelations = relations(lists, ({ one, many }) => ({
@@ -148,22 +190,6 @@ export const listsRelations = relations(lists, ({ one, many }) => ({
 	}),
 	tasks: many(tasks),
 }));
-
-// TASK COMMENTS TABLE
-export const taskComments = pgTable("task_comments", {
-	id: text("id")
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	content: text("content").notNull(),
-	taskId: text("task_id")
-		.notNull()
-		.references(() => tasks.id, { onDelete: "cascade" }),
-	userId: text("user_id")
-		.notNull()
-		.references(() => users.id, { onDelete: "cascade" }),
-	createdAt: timestamp("created_at").defaultNow().notNull(),
-	updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
 	list: one(lists, {
@@ -177,7 +203,6 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
 	comments: many(taskComments),
 }));
 
-// Add taskComments relations
 export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
 	task: one(tasks, {
 		fields: [taskComments.taskId],

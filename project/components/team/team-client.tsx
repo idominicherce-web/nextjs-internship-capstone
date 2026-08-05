@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { revokeInvitation } from "@/actions/invitations";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
+import { AssignProjectMemberModal } from "@/components/modals/assign-project-member-modal";
 import { InviteMemberModal } from "@/components/modals/invite-member-modal";
 import { MemberDetailsDrawer } from "@/components/team/member-details-drawer";
 import {
@@ -21,6 +22,7 @@ import {
 import { TeamQuickActions } from "@/components/team/team-quick-actions";
 import { TeamSearch } from "@/components/team/team-search";
 import { TeamStats } from "@/components/team/team-stats";
+import { useKanbanStore } from "@/stores/use-kanban-store";
 import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface TeamClientProps {
@@ -43,10 +45,17 @@ export function TeamClient({
 	const [selectedStatus, setSelectedStatus] = useState("all");
 	const [isInviteOpen, setIsInviteOpen] = useState(false);
 
+	const {
+		isAssignProjectMemberModalOpen,
+		openAssignProjectMemberModal,
+		closeAssignProjectMemberModal,
+	} = useKanbanStore();
+
 	const addNotification = useNotificationStore(
 		(state) => state.addNotification,
 	);
 
+	// Filter members based on search query, role, and status
 	const filteredMembers = useMemo(() => {
 		return initialMembers.filter((m) => {
 			const matchesQuery =
@@ -95,8 +104,10 @@ export function TeamClient({
 	return (
 		<DashboardLayoutContainer>
 			<div className="space-y-8">
+				{/* Header */}
 				<TeamHeader onInviteClick={handleInviteMember} />
 
+				{/* Stats Row */}
 				<TeamStats
 					totalMembers={initialMembers.length}
 					activeThisWeek={
@@ -109,7 +120,9 @@ export function TeamClient({
 					pendingInvitationsCount={pendingInvites.length}
 				/>
 
+				{/* Main Grid Layout */}
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+					{/* Main Content Area */}
 					<div className="lg:col-span-2 space-y-4">
 						<TeamSearch
 							searchQuery={searchQuery}
@@ -127,8 +140,12 @@ export function TeamClient({
 						/>
 					</div>
 
+					{/* Right Sidebar */}
 					<div className="space-y-6">
-						<TeamQuickActions onInviteMember={handleInviteMember} />
+						<TeamQuickActions
+							onInviteMember={handleInviteMember}
+							onAssignProject={openAssignProjectMemberModal}
+						/>
 						<TeamPendingInvitations
 							invitations={pendingInvites}
 							onCancel={handleCancelInvite}
@@ -138,14 +155,22 @@ export function TeamClient({
 				</div>
 			</div>
 
+			{/* Member Details Side Drawer */}
 			<MemberDetailsDrawer
 				member={selectedMember}
 				onClose={() => setSelectedMember(null)}
 			/>
 
+			{/* Invite Member Modal */}
 			<InviteMemberModal
 				isOpen={isInviteOpen}
 				onClose={() => setIsInviteOpen(false)}
+			/>
+
+			{/* Assign Project Officer Modal */}
+			<AssignProjectMemberModal
+				isOpen={isAssignProjectMemberModalOpen}
+				onClose={closeAssignProjectMemberModal}
 			/>
 		</DashboardLayoutContainer>
 	);
