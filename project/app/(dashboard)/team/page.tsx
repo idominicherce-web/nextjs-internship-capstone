@@ -43,10 +43,11 @@ export default async function TeamPage() {
 		};
 	});
 
-	// Format real pending invitations for the UI component
+	// Format real pending invitations for the UI component, including role
 	const mappedPendingInvites = pendingInvitesFromDb.map((inv) => ({
 		id: inv.id,
 		email: inv.email,
+		role: inv.role,
 		invitedAgo: new Date(inv.createdAt).toLocaleDateString("en-US", {
 			month: "short",
 			day: "numeric",

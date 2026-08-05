@@ -1,7 +1,6 @@
 import { and, asc, eq, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { KanbanBoard } from "@/components/kanban/board/kanban-board";
-import { WarRoomToolbar } from "@/components/kanban/toolbar/war-room-toolbar";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -21,7 +20,6 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 		return notFound();
 	}
 
-	// Security Hardening: Enforce user ownership (dbUser.id) alongside slug or id lookup
 	const project = await db.query.projects.findFirst({
 		where: and(
 			eq(projects.userId, dbUser.id),
@@ -45,7 +43,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
 	return (
 		<DashboardLayoutContainer>
-			<div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6 relative font-serif text-[#F8EEDB]">
+			<div className="border-b-2 border-[#4A2C1D] pb-6 relative font-serif text-[#F8EEDB]">
 				<div>
 					<div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
 						<span>⚔</span>
@@ -60,28 +58,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 							"Interactive Kanban board for project operations and task strategy."}
 					</p>
 				</div>
-
-				<div className="shrink-0">
-					<WarRoomToolbar />
-				</div>
 			</div>
 
-			<div
-				className="
-				mt-6
-				rounded-xs
-				border-4
-				border-[#3B2415]
-				bg-gradient-to-b
-				from-[#2D1B10]
-				via-[#1A120C]
-				to-[#100A07]
-				p-4
-				sm:p-6
-				shadow-2xl
-				relative
-				"
-			>
+			<div className="mt-6 rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-4 sm:p-6 shadow-2xl relative">
 				<KanbanBoard
 					projectId={project.id}
 					initialLists={projectLists as any}

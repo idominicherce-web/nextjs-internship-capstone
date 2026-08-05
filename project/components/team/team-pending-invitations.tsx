@@ -5,6 +5,7 @@ import { Mail, X } from "lucide-react";
 export interface PendingInvite {
 	id: string;
 	email: string;
+	role?: string;
 	invitedAgo: string;
 }
 
@@ -48,22 +49,29 @@ export function TeamPendingInvitations({
 								<p className="font-bold text-[#F8EEDB] truncate">
 									{invite.email}
 								</p>
-								<span className="text-[10px] text-[#D7B05C]/60 italic font-serif">
-									Invited {invite.invitedAgo}
-								</span>
+								<div className="flex items-center gap-2 mt-0.5">
+									{invite.role && (
+										<span className="px-1.5 py-0.2 bg-[#1A120C] border border-[#8F6236] rounded-2xs text-[#D7B05C] font-sans font-bold text-[9px] uppercase tracking-wider">
+											{invite.role}
+										</span>
+									)}
+									<span className="text-[10px] text-[#D7B05C]/60 italic font-serif">
+										Invited {invite.invitedAgo}
+									</span>
+								</div>
 							</div>
 							<div className="flex items-center gap-1.5 shrink-0">
 								<button
 									type="button"
 									onClick={() => onResend?.(invite.id)}
-									className="px-2 py-1 text-[10px] font-bold text-[#D7B05C] hover:text-white border border-[#8F6236] bg-[#15100C] rounded-xs transition-colors"
+									className="px-2 py-1 text-[10px] font-bold text-[#D7B05C] hover:text-white border border-[#8F6236] bg-[#15100C] rounded-xs transition-colors cursor-pointer"
 								>
 									Resend
 								</button>
 								<button
 									type="button"
 									onClick={() => onCancel?.(invite.id)}
-									className="p-1 text-[#D7B05C]/60 hover:text-rose-400 transition-colors"
+									className="p-1 text-[#D7B05C]/60 hover:text-rose-400 transition-colors cursor-pointer"
 									title="Cancel invite"
 								>
 									<X size={14} />
