@@ -1,7 +1,7 @@
 "use client";
 
 import {
-	closestCorners,
+	closestCenter,
 	DndContext,
 	type DragEndEvent,
 	type DragOverEvent,
@@ -15,6 +15,7 @@ import {
 } from "@dnd-kit/core";
 import type React from "react";
 import {
+	useCallback,
 	useEffect,
 	useMemo,
 	useOptimistic,
@@ -22,7 +23,7 @@ import {
 	useTransition,
 } from "react";
 import { createList, deleteList } from "@/actions/lists";
-import { createTask, reorderTasks } from "@/actions/tasks";
+import { createTask, reorderTasks, updateTaskPosition } from "@/actions/tasks";
 import { KanbanAddColumnForm } from "@/components/kanban/board/kanban-add-column-form";
 import { KanbanFilterBar } from "@/components/kanban/board/kanban-filter-bar";
 import { KanbanFrame } from "@/components/kanban/board/kanban-frame";
@@ -57,6 +58,7 @@ export function KanbanBoard({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
 	const [, startTransition] = useTransition();
+
 	const addNotification = useNotificationStore(
 		(state) => state.addNotification,
 	);
@@ -151,9 +153,9 @@ export function KanbanBoard({
 	}, [optimisticLists, searchQuery, selectedPriority]);
 
 	const sensors = useSensors(
-		useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
+		useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
 		useSensor(TouchSensor, {
-			activationConstraint: { delay: 250, tolerance: 5 },
+			activationConstraint: { delay: 150, tolerance: 5 },
 		}),
 		useSensor(KeyboardSensor),
 	);
@@ -206,70 +208,115 @@ export function KanbanBoard({
 		});
 	};
 
-	const handleDragStart = (event: DragStartEvent) => {
+	const handleDragStart = useCallback((event: DragStartEvent) => {
 		const taskData = event.active.data.current?.task as
 			| TaskCardData
 			| undefined;
 		if (taskData) setActiveTask(taskData);
-	};
+	}, []);
 
-	const handleDragOver = (event: DragOverEvent) => {
-		const { active, over } = event;
-		if (!over) return;
+	// No continuous state setting on move to prevent infinite measure loops
+	const handleDragOver = useCallback((_event: DragOverEvent) => {}, []);
 
-		const activeTaskId = active.id as string;
-		const overId = over.id as string;
+	const handleDragEnd = useCallback(
+		async (event: DragEndEvent) => {
+			const { active, over } = event;
+			setActiveTask(null);
+			if (!over) return;
 
-		const sourceList = optimisticLists.find((l) =>
-			l.tasks.some((t) => t.id === activeTaskId),
-		);
-		const targetList = optimisticLists.find(
-			(l) => l.id === overId || l.tasks.some((t) => t.id === overId),
-		);
+			const activeTaskId = active.id as string;
+			const overId = over.id as string;
 
-		if (!sourceList || !targetList || sourceList.id === targetList.id) return;
+			if (activeTaskId.startsWith("temp-")) return;
 
-		startTransition(() => {
-			setOptimisticLists({
-				type: "MOVE_TASK",
-				payload: {
-					taskId: activeTaskId,
-					sourceListId: sourceList.id,
-					targetListId: targetList.id,
-				},
-			});
-		});
-	};
+			// Locate source and destination columns
+			const sourceList = listsState.find((l) =>
+				l.tasks.some((t) => t.id === activeTaskId),
+			);
+			const targetList = listsState.find(
+				(l) => l.id === overId || l.tasks.some((t) => t.id === overId),
+			);
 
-	const handleDragEnd = async (event: DragEndEvent) => {
-		const { over } = event;
-		setActiveTask(null);
-		if (!over) return;
+			if (!sourceList || !targetList) return;
 
-		const overId = over.id as string;
-		const targetList = optimisticLists.find(
-			(l) => l.id === overId || l.tasks.some((t) => t.id === overId),
-		);
+			const isCrossColumn = sourceList.id !== targetList.id;
+			const movedTask = sourceList.tasks.find((t) => t.id === activeTaskId);
 
-		if (!targetList) return;
+			if (!movedTask) return;
 
-		const taskUpdates = targetList.tasks.map((task, index) => ({
-			id: task.id,
-			listId: targetList.id,
-			position: index,
-		}));
+			// Construct new state locally
+			const updatedLists = listsState
+				.map((list) => {
+					// Remove task from source column
+					if (list.id === sourceList.id) {
+						return {
+							...list,
+							tasks: list.tasks.filter((t) => t.id !== activeTaskId),
+						};
+					}
+					return list;
+				})
+				.map((list) => {
+					// Insert task into target column at new position
+					if (list.id === targetList.id) {
+						const overTaskIndex = list.tasks.findIndex((t) => t.id === overId);
+						const insertIndex =
+							overTaskIndex >= 0 ? overTaskIndex : list.tasks.length;
+						const newTasks = [...list.tasks];
+						newTasks.splice(insertIndex, 0, {
+							...movedTask!,
+							listId: targetList.id,
+						});
+						return {
+							...list,
+							tasks: newTasks,
+						};
+					}
+					return list;
+				});
 
-		await reorderTasks(taskUpdates, projectId);
+			// 1. Permanently commit new position state to React local state (No reload needed!)
+			setListsState(updatedLists);
 
-		// ⚡ Trigger notification on stage move
-		if (activeTask) {
-			addNotification({
-				title: "Objective Relocated",
-				description: `'${activeTask.title}' was moved to stage '${targetList.name}'.`,
-				type: "task",
-			});
-		}
-	};
+			// 2. Persist stage shift in DB and record activity log
+			if (isCrossColumn) {
+				const targetTasks =
+					updatedLists.find((l) => l.id === targetList.id)?.tasks || [];
+				const newPosition = targetTasks.findIndex((t) => t.id === activeTaskId);
+
+				await updateTaskPosition(
+					activeTaskId,
+					targetList.id,
+					newPosition >= 0 ? newPosition : 0,
+					projectId,
+				);
+			}
+
+			// 3. Batch sync positions in DB
+			const targetTasks =
+				updatedLists.find((l) => l.id === targetList.id)?.tasks || [];
+			const updatedTaskPositions = targetTasks
+				.filter((t) => !t.id.startsWith("temp-"))
+				.map((task, index) => ({
+					id: task.id,
+					listId: targetList.id,
+					position: index,
+				}));
+
+			if (updatedTaskPositions.length > 0) {
+				await reorderTasks(updatedTaskPositions, projectId);
+			}
+
+			if (activeTask && isCrossColumn) {
+				addNotification({
+					title: "Objective Relocated",
+					description: `'${activeTask.title}' was moved to stage '${targetList.name}'.`,
+					type: "task",
+				});
+			}
+		},
+		[listsState, projectId, activeTask, addNotification],
+	);
 
 	if (!isMounted) return null;
 
@@ -286,7 +333,7 @@ export function KanbanBoard({
 
 			<DndContext
 				sensors={sensors}
-				collisionDetection={closestCorners}
+				collisionDetection={closestCenter}
 				onDragStart={handleDragStart}
 				onDragOver={handleDragOver}
 				onDragEnd={handleDragEnd}

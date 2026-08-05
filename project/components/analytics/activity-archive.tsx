@@ -19,7 +19,6 @@ interface ActivityArchiveProps {
 }
 
 export function ActivityArchive({ activities }: ActivityArchiveProps) {
-	// Map actions to medieval icons & heraldic accent colors
 	const getActionConfig = (action: string) => {
 		const act = action.toLowerCase();
 		if (act.includes("create") || act.includes("add")) {
@@ -90,12 +89,15 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 						const config = getActionConfig(log.action);
 						const ActionIcon = config.icon;
 
+						const displayDetails = log.details
+							? log.details.replace(/\[TASK:[^\]]+\]\s*/g, "").trim()
+							: null;
+
 						return (
 							<div
 								key={log.id}
 								className="group relative p-3 rounded-xs border border-[#4A2C1D] bg-[#15100C] hover:border-[#D7B05C]/60 transition-colors shadow-xs flex items-start gap-3"
 							>
-								{/* Forged Brass Pin / Wax Seal Badge */}
 								<div
 									className={`mt-0.5 shrink-0 w-7 h-7 rounded-full border flex items-center justify-center shadow-xs ${config.color}`}
 								>
@@ -120,9 +122,9 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 										</span>
 									</div>
 
-									{log.details && (
+									{displayDetails && (
 										<p className="text-[11px] font-sans text-[#D7B05C]/70 mt-0.5 line-clamp-1 italic">
-											{log.details}
+											{displayDetails}
 										</p>
 									)}
 
@@ -131,6 +133,7 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 											{getEntityIcon(log.entityType)}{" "}
 											{log.entityType || "Workspace"}
 										</span>
+
 										<span>
 											• {new Date(log.createdAt).toLocaleDateString()}
 										</span>

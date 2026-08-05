@@ -22,12 +22,15 @@ interface KanbanStore {
 	isCreateTaskModalOpen: boolean;
 	createTaskDefaultListId: string | null;
 	editingTask: TaskCardData | null;
+	isInviteMemberModalOpen: boolean;
 
 	// Modal Actions
 	openCreateTaskModal: (listId?: string) => void;
 	closeCreateTaskModal: () => void;
 	openTaskDetailModal: (task: TaskCardData) => void;
 	closeTaskDetailModal: () => void;
+	openInviteMemberModal: () => void;
+	closeInviteMemberModal: () => void;
 }
 
 export const useKanbanStore = create<KanbanStore>((set) => ({
@@ -42,6 +45,7 @@ export const useKanbanStore = create<KanbanStore>((set) => ({
 	isCreateTaskModalOpen: false,
 	createTaskDefaultListId: null,
 	editingTask: null,
+	isInviteMemberModalOpen: false,
 
 	// Modal Handlers
 	openCreateTaskModal: (listId) =>
@@ -53,4 +57,6 @@ export const useKanbanStore = create<KanbanStore>((set) => ({
 		set({ isCreateTaskModalOpen: false, createTaskDefaultListId: null }),
 	openTaskDetailModal: (task) => set({ editingTask: task }),
 	closeTaskDetailModal: () => set({ editingTask: null }),
+	openInviteMemberModal: () => set({ isInviteMemberModalOpen: true }),
+	closeInviteMemberModal: () => set({ isInviteMemberModalOpen: false }),
 }));

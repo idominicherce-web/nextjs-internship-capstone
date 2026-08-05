@@ -1,4 +1,3 @@
-// lib/logger.ts
 import { db } from "@/lib/db";
 import { activityLogs } from "@/lib/db/schema";
 

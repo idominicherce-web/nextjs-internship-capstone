@@ -209,7 +209,7 @@ export function TaskDetailModal({
 								: "border-transparent text-[#D7B05C]/50"
 						}`}
 					>
-						Council Chronicle
+						Council Comments
 					</button>
 				</div>
 
@@ -247,10 +247,10 @@ export function TaskDetailModal({
 								/>
 							</div>
 
-							{/* Section Card: Mission Details */}
+							{/* Section Card: Quest Details */}
 							<div className="p-2 lg:p-[clamp(0.75rem,1.5vw,1.25rem)] rounded-xs border border-[#8F6236]/50 bg-[#15100C]/70 space-y-1.5">
 								<div className="text-[9px] font-sans font-black uppercase tracking-[0.15em] text-[#D7B05C] border-b border-[#4A2C1D] pb-0.5">
-									Mission Brief
+									Quest Brief
 								</div>
 								<textarea
 									value={description}
@@ -399,7 +399,11 @@ export function TaskDetailModal({
 							activeMobileTab === "details" ? "hidden lg:flex" : "flex"
 						}`}
 					>
-						<TaskCommentSection taskId={task.id} projectId={projectId} />
+						<TaskCommentSection
+							taskId={task.id}
+							projectId={projectId}
+							taskTitle={task.title}
+						/>
 					</div>
 				</div>
 

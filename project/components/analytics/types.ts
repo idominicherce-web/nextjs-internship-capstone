@@ -12,5 +12,10 @@ export interface ActivityLogItem {
 	entityType?: string | null;
 	entityName: string;
 	details?: string | null;
-	createdAt: Date;
+	createdAt: Date | string;
+	user?: {
+		name: string | null;
+		email: string;
+		imageUrl?: string | null;
+	} | null;
 }

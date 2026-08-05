@@ -33,7 +33,7 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
 				<div className="flex items-center gap-2 text-[#D7B05C]">
 					<FolderKanban size={18} />
 					<h2 className="font-serif font-black uppercase text-sm sm:text-base tracking-widest text-[#F8EEDB]">
-						Active quest Dossiers
+						Active Projects
 					</h2>
 				</div>
 				<Link
@@ -50,7 +50,7 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
 
 			{projects.length === 0 ? (
 				<div className="p-8 text-center text-[#D7B05C]/70 font-serif italic border border-dashed border-[#8F6236]/40 rounded-xs">
-					No active quest dossiers recorded in the ledger.
+					No active projects recorded in the ledger.
 				</div>
 			) : (
 				<div className="grid grid-cols-1 gap-3">
@@ -112,7 +112,7 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
 										{/* Mission Brief Description */}
 										<p className="text-xs font-sans text-[#3B2415]/85 line-clamp-1 italic">
 											{project.description ||
-												"No official mission brief recorded."}
+												"No official quest brief recorded."}
 										</p>
 
 										{/* Metadata Row */}
