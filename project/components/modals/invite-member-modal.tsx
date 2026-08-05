@@ -2,16 +2,21 @@
 
 import { AlertCircle, CheckCircle2, Loader2, UserPlus, X } from "lucide-react";
 import { useState } from "react";
-import { sendWorkspaceInvite } from "@/actions/users";
+import { inviteWorkspaceMember } from "@/actions/invitations";
 
 interface InviteMemberModalProps {
+	projectId?: string;
 	isOpen: boolean;
 	onClose: () => void;
 }
 
-export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
+export function InviteMemberModal({
+	projectId,
+	isOpen,
+	onClose,
+}: InviteMemberModalProps) {
 	const [email, setEmail] = useState("");
-	const [role, setRole] = useState("Project Manager");
+	const [role, setRole] = useState<"Viewer" | "Member" | "Admin">("Member");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSuccess, setIsSuccess] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -20,11 +25,19 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!email.trim() || isLoading) return;
+
 		setIsLoading(true);
 		setError(null);
 
 		try {
-			const res = await sendWorkspaceInvite(email, role);
+			const targetProjectId = projectId || "global";
+			const res = await inviteWorkspaceMember(
+				targetProjectId,
+				email.trim(),
+				role,
+			);
+
 			if (res.success) {
 				setIsSuccess(true);
 				setTimeout(() => {
@@ -44,7 +57,7 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-200 font-serif">
 			<div className="w-full max-w-md rounded-xs border-2 border-[#8F6236] bg-[#1A120C] p-6 shadow-2xl space-y-5">
 				{/* Header */}
 				<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-3">
@@ -57,7 +70,7 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
 					<button
 						type="button"
 						onClick={onClose}
-						className="text-[#D7B05C]/60 hover:text-[#F8EEDB] transition-colors p-1"
+						className="text-[#D7B05C]/60 hover:text-[#F8EEDB] transition-colors p-1 cursor-pointer"
 					>
 						<X size={18} />
 					</button>
@@ -70,13 +83,19 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
 						realm.
 					</p>
 
-					{/* Email Field */}
+					{/* Email Field with Form Accessibility Attributes */}
 					<div className="space-y-1.5">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
+						<label
+							htmlFor="invite-email-input"
+							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+						>
 							Officer Email Address
 						</label>
 						<input
+							id="invite-email-input"
+							name="email"
 							type="email"
+							autoComplete="email"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							placeholder="e.g. chancellor@realm.com"
@@ -85,38 +104,39 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
 						/>
 					</div>
 
-					{/* Role Field */}
+					{/* Role Field with Form Accessibility Attributes */}
 					<div className="space-y-1.5">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
+						<label
+							htmlFor="invite-role-input"
+							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+						>
 							Designated Office Role
 						</label>
 						<select
+							id="invite-role-input"
+							name="role"
 							value={role}
-							onChange={(e) => setRole(e.target.value)}
+							onChange={(e) =>
+								setRole(e.target.value as "Viewer" | "Member" | "Admin")
+							}
 							className="w-full px-3.5 py-2.5 bg-[#2D1B10] border border-[#8F6236] text-[#D7B05C] font-sans text-xs font-bold uppercase rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer"
 						>
-							<option value="Administrator">Administrator (Chancellor)</option>
-							<option value="Project Manager">
-								Project Manager (High Commander)
-							</option>
-							<option value="Developer">Developer (Royal Engineer)</option>
-							<option value="Designer">Designer (Master Artisan)</option>
-							<option value="QA Engineer">
-								QA Engineer (Royal Inquisitor)
-							</option>
+							<option value="Viewer">Viewer (Read-only)</option>
+							<option value="Member">Member (Create & Edit)</option>
+							<option value="Admin">Admin (Full Control)</option>
 						</select>
 					</div>
 
 					{/* Success / Error Display */}
 					{isSuccess && (
-						<div className="p-3 rounded-xs bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs flex items-center gap-2">
+						<div className="p-3 rounded-xs bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs flex items-center gap-2 font-sans">
 							<CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
 							<span>Invitation decree successfully dispatched!</span>
 						</div>
 					)}
 
 					{error && (
-						<div className="p-3 rounded-xs bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center gap-2">
+						<div className="p-3 rounded-xs bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center gap-2 font-sans">
 							<AlertCircle size={16} className="text-rose-400 shrink-0" />
 							<span>{error}</span>
 						</div>
@@ -128,14 +148,14 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
 							type="button"
 							onClick={onClose}
 							disabled={isLoading}
-							className="px-4 py-2 border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C]/80 hover:text-white text-xs font-sans font-bold uppercase rounded-xs transition-colors disabled:opacity-50"
+							className="px-4 py-2 border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C]/80 hover:text-white text-xs font-sans font-bold uppercase rounded-xs transition-colors disabled:opacity-50 cursor-pointer"
 						>
 							Cancel
 						</button>
 						<button
 							type="submit"
 							disabled={isLoading || isSuccess}
-							className="px-5 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-wider rounded-xs shadow-md hover:border-[#FFF5D6] transition-all disabled:opacity-50 flex items-center gap-2"
+							className="px-5 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-wider rounded-xs shadow-md hover:border-[#FFF5D6] transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
 						>
 							{isLoading && (
 								<Loader2 size={14} className="animate-spin text-[#D7B05C]" />

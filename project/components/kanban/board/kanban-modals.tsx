@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { getUsers } from "@/actions/users";
 import type { List } from "@/components/kanban/column/kanban-column";
 import { CreateTaskModal } from "@/components/modals/create-task-modal";
+import { InviteMemberModal } from "@/components/modals/invite-member-modal";
 import { TaskDetailModal } from "@/components/modals/task-detail-modal";
 import { useKanbanStore } from "@/stores/use-kanban-store";
 
@@ -21,15 +22,16 @@ export function KanbanModals({ projectId, lists }: KanbanModalsProps) {
 	const {
 		isCreateTaskModalOpen,
 		editingTask,
+		isInviteMemberModalOpen,
 		closeCreateTaskModal,
 		closeTaskDetailModal,
+		closeInviteMemberModal,
 	} = useKanbanStore();
 
-	// Fetch users ONCE when a modal opens, guarded by ref
 	useEffect(() => {
 		if (hasFetchedRef.current) return;
 
-		if (isCreateTaskModalOpen || editingTask) {
+		if (isCreateTaskModalOpen || editingTask || isInviteMemberModalOpen) {
 			hasFetchedRef.current = true;
 			async function fetchUsers() {
 				const res = await getUsers();
@@ -39,7 +41,7 @@ export function KanbanModals({ projectId, lists }: KanbanModalsProps) {
 			}
 			fetchUsers();
 		}
-	}, [isCreateTaskModalOpen, editingTask]);
+	}, [isCreateTaskModalOpen, editingTask, isInviteMemberModalOpen]);
 
 	const formattedLists = lists.map((l) => ({ id: l.id, name: l.name }));
 
@@ -60,6 +62,12 @@ export function KanbanModals({ projectId, lists }: KanbanModalsProps) {
 				lists={formattedLists}
 				isOpen={!!editingTask}
 				onClose={closeTaskDetailModal}
+			/>
+
+			<InviteMemberModal
+				projectId={projectId}
+				isOpen={isInviteMemberModalOpen}
+				onClose={closeInviteMemberModal}
 			/>
 		</>
 	);

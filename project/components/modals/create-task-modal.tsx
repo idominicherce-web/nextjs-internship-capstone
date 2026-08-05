@@ -171,10 +171,10 @@ export function CreateTaskModal({
 						/>
 					</div>
 
-					{/* Mission Brief / Description */}
+					{/* Quest Brief / Description */}
 					<div className="space-y-1">
 						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-							Mission Brief / Description
+							Quest Brief / Description
 						</label>
 						<textarea
 							value={description}

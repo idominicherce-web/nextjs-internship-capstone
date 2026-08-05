@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { activityLogs, tasks } from "@/lib/db/schema";
+import { lists, tasks } from "@/lib/db/schema";
+import { logActivity } from "@/lib/logger";
 
 export type ActionResponse<T = unknown> = {
 	success: boolean;
@@ -24,9 +25,6 @@ const createTaskSchema = z.object({
 	priority: z.string().optional(),
 });
 
-/**
- * Creates a new task objective inside a strategy column.
- */
 export async function createTask(
 	_prevState: unknown,
 	formData?:
@@ -79,7 +77,6 @@ export async function createTask(
 		const { listId, projectId, title, description, userId, dueDate, priority } =
 			parsed.data;
 
-		// Determine next position index for the task in this list
 		const maxPositionResult = await db
 			.select({ maxPos: max(tasks.position) })
 			.from(tasks)
@@ -100,13 +97,12 @@ export async function createTask(
 			})
 			.returning();
 
-		// Activity log
-		await db.insert(activityLogs).values({
+		await logActivity({
 			userId: dbUser.id,
 			action: "Created Objective",
 			entityType: "task",
 			entityName: newTask.title,
-			details: `Added new objective: "${newTask.title}"`,
+			details: `[TASK:${newTask.id}] Created new objective: "${newTask.title}"`,
 		});
 
 		revalidatePath(`/projects/${projectId}`);
@@ -121,9 +117,6 @@ export async function createTask(
 	}
 }
 
-/**
- * Updates a task objective (title, description, due date, assignee, priority).
- */
 export async function updateTask(
 	taskId: string,
 	projectId: string,
@@ -141,6 +134,14 @@ export async function updateTask(
 			return { success: false, error: "Unauthorized access." };
 		}
 
+		const existingTask = await db.query.tasks.findFirst({
+			where: eq(tasks.id, taskId),
+		});
+
+		if (!existingTask) {
+			return { success: false, error: "Objective not found." };
+		}
+
 		const [updatedTask] = await db
 			.update(tasks)
 			.set({
@@ -150,10 +151,34 @@ export async function updateTask(
 			.where(eq(tasks.id, taskId))
 			.returning();
 
+		const changes: string[] = [];
+		if (updates.title && updates.title !== existingTask.title) {
+			changes.push(`Title changed to "${updates.title}"`);
+		}
+		if (updates.priority && updates.priority !== existingTask.priority) {
+			changes.push(`Priority changed to ${updates.priority}`);
+		}
+		if (
+			updates.userId !== undefined &&
+			updates.userId !== existingTask.userId
+		) {
+			changes.push(
+				updates.userId ? "Reassigned officer" : "Unassigned officer",
+			);
+		}
+
+		if (changes.length > 0) {
+			await logActivity({
+				userId: dbUser.id,
+				action: "Updated Objective",
+				entityType: "task",
+				entityName: updatedTask.title,
+				details: `[TASK:${taskId}] ${changes.join(", ")}`,
+			});
+		}
+
 		revalidatePath(`/projects/${projectId}`);
 		revalidatePath("/dashboard");
-		revalidatePath("/calendar");
-		revalidatePath("/analytics");
 
 		return { success: true, data: updatedTask };
 	} catch (error) {
@@ -162,9 +187,6 @@ export async function updateTask(
 	}
 }
 
-/**
- * Updates a single task's column and position during dnd.
- */
 export async function updateTaskPosition(
 	taskId: string,
 	newListId: string,
@@ -177,6 +199,11 @@ export async function updateTaskPosition(
 			return { success: false, error: "Unauthorized access." };
 		}
 
+		const [targetList, currentTask] = await Promise.all([
+			db.query.lists.findFirst({ where: eq(lists.id, newListId) }),
+			db.query.tasks.findFirst({ where: eq(tasks.id, taskId) }),
+		]);
+
 		await db
 			.update(tasks)
 			.set({
@@ -186,8 +213,15 @@ export async function updateTaskPosition(
 			})
 			.where(eq(tasks.id, taskId));
 
-		revalidatePath(`/projects/${projectId}`);
-		revalidatePath("/dashboard");
+		if (targetList && currentTask && currentTask.listId !== newListId) {
+			await logActivity({
+				userId: dbUser.id,
+				action: "Stage Shifted",
+				entityType: "task",
+				entityName: currentTask.title,
+				details: `[TASK:${taskId}] Moved stage to ${targetList.name}`,
+			});
+		}
 
 		return { success: true };
 	} catch (error) {
@@ -196,12 +230,9 @@ export async function updateTaskPosition(
 	}
 }
 
-/**
- * Batch reorders task positions after drag-and-drop.
- */
 export async function reorderTasks(
 	taskUpdates: { id: string; listId: string; position: number }[],
-	projectId: string,
+	_projectId: string,
 ): Promise<ActionResponse> {
 	try {
 		const dbUser = await getOrCreateDbUser();
@@ -222,9 +253,7 @@ export async function reorderTasks(
 			),
 		);
 
-		revalidatePath(`/projects/${projectId}`);
-		revalidatePath("/dashboard");
-
+		// NO revalidatePath here to prevent page flickering during dnd
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to reorder tasks:", error);
@@ -232,9 +261,6 @@ export async function reorderTasks(
 	}
 }
 
-/**
- * Removes a task objective.
- */
 export async function deleteTask(
 	taskId: string,
 	projectId: string,
@@ -251,19 +277,17 @@ export async function deleteTask(
 			.returning();
 
 		if (deletedTask) {
-			await db.insert(activityLogs).values({
+			await logActivity({
 				userId: dbUser.id,
 				action: "Deleted Objective",
 				entityType: "task",
 				entityName: deletedTask.title,
-				details: `Removed objective: "${deletedTask.title}"`,
+				details: `[TASK:${taskId}] Removed objective: "${deletedTask.title}"`,
 			});
 		}
 
 		revalidatePath(`/projects/${projectId}`);
 		revalidatePath("/dashboard");
-		revalidatePath("/analytics");
-		revalidatePath("/calendar");
 
 		return { success: true };
 	} catch (error) {
