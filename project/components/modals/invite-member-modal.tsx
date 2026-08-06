@@ -1,8 +1,9 @@
 "use client";
 
 import { AlertCircle, CheckCircle2, Loader2, UserPlus, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { inviteWorkspaceMember } from "@/actions/invitations";
+import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface InviteMemberModalProps {
 	projectId?: string;
@@ -11,7 +12,7 @@ interface InviteMemberModalProps {
 }
 
 export function InviteMemberModal({
-	projectId,
+	projectId = "global",
 	isOpen,
 	onClose,
 }: InviteMemberModalProps) {
@@ -20,6 +21,23 @@ export function InviteMemberModal({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSuccess, setIsSuccess] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	const addNotification = useNotificationStore(
+		(state) => state.addNotification,
+	);
+
+	// Lock body scroll when modal is active
+	useEffect(() => {
+		if (isOpen) {
+			document.body.style.overflow = "hidden";
+		} else {
+			document.body.style.overflow = "";
+		}
+
+		return () => {
+			document.body.style.overflow = "";
+		};
+	}, [isOpen]);
 
 	if (!isOpen) return null;
 
@@ -31,35 +49,41 @@ export function InviteMemberModal({
 		setError(null);
 
 		try {
-			const targetProjectId = projectId || "global";
-			const res = await inviteWorkspaceMember(
-				targetProjectId,
-				email.trim(),
-				role,
-			);
+			const res = await inviteWorkspaceMember(projectId, email.trim(), role);
 
 			if (res.success) {
 				setIsSuccess(true);
+				addNotification({
+					title: "Royal Summons Dispatched",
+					description: `Invitation sent to ${email.trim()} with ${role} permissions.`,
+					type: "team",
+				});
+
 				setTimeout(() => {
-					setIsSuccess(false);
 					setEmail("");
+					setIsSuccess(false);
 					onClose();
-				}, 1500);
+				}, 1200);
 			} else {
-				setError(res.error || "Failed to dispatch invitation.");
+				setError(res.error || "Failed to dispatch summons.");
 			}
 		} catch (err) {
 			console.error(err);
-			setError("An unexpected error occurred.");
+			setError("An unexpected error occurred while dispatching decree.");
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-200 font-serif">
-			<div className="w-full max-w-md rounded-xs border-2 border-[#8F6236] bg-[#1A120C] p-6 shadow-2xl space-y-5">
-				{/* Header */}
+		<div
+			className="fixed inset-0 z-[100] h-screen w-screen bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200 font-serif"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) onClose();
+			}}
+		>
+			<div className="w-full max-w-md rounded-xs border-2 border-[#8F6236] bg-[#1A120C] p-6 shadow-2xl space-y-5 relative my-auto">
+				{/* Modal Header */}
 				<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-3">
 					<div className="flex items-center gap-2">
 						<UserPlus className="text-[#D7B05C]" size={20} />
@@ -76,65 +100,55 @@ export function InviteMemberModal({
 					</button>
 				</div>
 
-				{/* Body Form */}
+				{/* Modal Form */}
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<p className="text-xs font-serif italic text-[#D7B05C]/80">
+					<p className="text-xs font-serif italic text-[#D7B05C]/80 leading-relaxed">
 						Dispatch a royal decree to invite a new officer to your workspace
 						realm.
 					</p>
 
-					{/* Email Field with Form Accessibility Attributes */}
+					{/* Email Input */}
 					<div className="space-y-1.5">
-						<label
-							htmlFor="invite-email-input"
-							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
-						>
+						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
 							Officer Email Address
 						</label>
 						<input
-							id="invite-email-input"
-							name="email"
 							type="email"
-							autoComplete="email"
+							required
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							placeholder="e.g. chancellor@realm.com"
-							required
-							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/80 focus:outline-none focus:border-[#D7B05C] focus:ring-1 focus:ring-[#D7B05C] shadow-inner"
+							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold placeholder-[#8F6236]/70 rounded-xs focus:outline-none focus:border-[#D7B05C]"
 						/>
 					</div>
 
-					{/* Role Field with Form Accessibility Attributes */}
+					{/* Role Select */}
 					<div className="space-y-1.5">
-						<label
-							htmlFor="invite-role-input"
-							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
-						>
+						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
 							Designated Office Role
 						</label>
 						<select
-							id="invite-role-input"
-							name="role"
 							value={role}
 							onChange={(e) =>
 								setRole(e.target.value as "Viewer" | "Member" | "Admin")
 							}
 							className="w-full px-3.5 py-2.5 bg-[#2D1B10] border border-[#8F6236] text-[#D7B05C] font-sans text-xs font-bold uppercase rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer"
 						>
-							<option value="Viewer">Viewer (Read-only)</option>
+							<option value="Viewer">Viewer (Read-only Access)</option>
 							<option value="Member">Member (Create & Edit)</option>
-							<option value="Admin">Admin (Full Control)</option>
+							<option value="Admin">Admin (Full Realm Control)</option>
 						</select>
 					</div>
 
-					{/* Success / Error Display */}
+					{/* Success Feedback */}
 					{isSuccess && (
 						<div className="p-3 rounded-xs bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs flex items-center gap-2 font-sans">
 							<CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-							<span>Invitation decree successfully dispatched!</span>
+							<span>Decree successfully dispatched to officer!</span>
 						</div>
 					)}
 
+					{/* Error Feedback */}
 					{error && (
 						<div className="p-3 rounded-xs bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center gap-2 font-sans">
 							<AlertCircle size={16} className="text-rose-400 shrink-0" />
@@ -142,7 +156,7 @@ export function InviteMemberModal({
 						</div>
 					)}
 
-					{/* Action Buttons */}
+					{/* Actions */}
 					<div className="flex items-center justify-end gap-3 pt-3 border-t border-[#4A2C1D]">
 						<button
 							type="button"
@@ -157,8 +171,10 @@ export function InviteMemberModal({
 							disabled={isLoading || isSuccess}
 							className="px-5 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-wider rounded-xs shadow-md hover:border-[#FFF5D6] transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
 						>
-							{isLoading && (
+							{isLoading ? (
 								<Loader2 size={14} className="animate-spin text-[#D7B05C]" />
+							) : (
+								<UserPlus size={14} className="text-[#D7B05C]" />
 							)}
 							<span>{isLoading ? "Dispatching..." : "Send Decree"}</span>
 						</button>

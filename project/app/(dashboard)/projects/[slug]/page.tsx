@@ -1,10 +1,13 @@
+// app/(dashboard)/projects/[slug]/page.tsx
+
 import { and, asc, eq, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { AssignOfficerButton } from "@/components/kanban/board/assign-officer-button";
 import { KanbanBoard } from "@/components/kanban/board/kanban-board";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { lists, projects, tasks } from "@/lib/db/schema";
+import { lists, projectMembers, projects, tasks } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +23,30 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 		return notFound();
 	}
 
+	// 1. Fetch project by slug or ID
 	const project = await db.query.projects.findFirst({
-		where: and(
-			eq(projects.userId, dbUser.id),
-			or(eq(projects.slug, slug), eq(projects.id, slug)),
-		),
+		where: or(eq(projects.slug, slug), eq(projects.id, slug)),
 	});
 
 	if (!project) {
+		return notFound();
+	}
+
+	// 2. Access control check: user must be the owner OR assigned in projectMembers
+	const isOwner = project.userId === dbUser.id;
+	let isMember = false;
+
+	if (!isOwner) {
+		const membership = await db.query.projectMembers.findFirst({
+			where: and(
+				eq(projectMembers.projectId, project.id),
+				eq(projectMembers.userId, dbUser.id),
+			),
+		});
+		isMember = !!membership;
+	}
+
+	if (!isOwner && !isMember) {
 		return notFound();
 	}
 
@@ -43,7 +62,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
 	return (
 		<DashboardLayoutContainer>
-			<div className="border-b-2 border-[#4A2C1D] pb-6 relative font-serif text-[#F8EEDB]">
+			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-[#4A2C1D] pb-6 relative font-serif text-[#F8EEDB]">
 				<div>
 					<div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
 						<span>⚔</span>
@@ -57,6 +76,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 						{project.description ||
 							"Interactive Kanban board for project operations and task strategy."}
 					</p>
+				</div>
+
+				<div className="shrink-0">
+					<AssignOfficerButton />
 				</div>
 			</div>
 

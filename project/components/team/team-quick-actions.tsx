@@ -4,9 +4,13 @@ import { FolderPlus, Settings, UserPlus } from "lucide-react";
 
 interface TeamQuickActionsProps {
 	onInviteMember?: () => void;
+	onAssignProject?: () => void;
 }
 
-export function TeamQuickActions({ onInviteMember }: TeamQuickActionsProps) {
+export function TeamQuickActions({
+	onInviteMember,
+	onAssignProject,
+}: TeamQuickActionsProps) {
 	return (
 		<div className="p-4 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-3">
 			<h3 className="font-serif font-black uppercase text-xs tracking-wider text-[#F8EEDB] border-b border-[#4A2C1D] pb-2">
@@ -24,6 +28,7 @@ export function TeamQuickActions({ onInviteMember }: TeamQuickActionsProps) {
 
 				<button
 					type="button"
+					onClick={onAssignProject}
 					className="w-full flex items-center gap-2.5 px-3 py-2 border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C]/70 hover:text-[#D7B05C] font-sans text-xs font-bold uppercase rounded-xs transition-colors text-left cursor-pointer"
 				>
 					<FolderPlus size={15} /> Assign Project
