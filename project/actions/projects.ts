@@ -2,11 +2,11 @@
 
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { activityLogs, lists, projects } from "@/lib/db/schema";
+import { activityLogs, lists, projectMembers, projects } from "@/lib/db/schema";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validations";
 
 export type ActionResponse<T = unknown> = {
@@ -129,7 +129,7 @@ export async function createProject(
 }
 
 /**
- * Fetches all projects for the authenticated user.
+ * Fetches all projects for the authenticated user (both owned and assigned).
  */
 export async function getProjects() {
 	try {
@@ -138,8 +138,25 @@ export async function getProjects() {
 			return [];
 		}
 
+		// Find project IDs where the user is an assigned member
+		const memberRecords = await db
+			.select({ projectId: projectMembers.projectId })
+			.from(projectMembers)
+			.where(eq(projectMembers.userId, dbUser.id));
+
+		const assignedProjectIds = memberRecords.map((m) => m.projectId);
+
+		// Query projects owned OR assigned
+		const condition =
+			assignedProjectIds.length > 0
+				? or(
+						eq(projects.userId, dbUser.id),
+						inArray(projects.id, assignedProjectIds),
+					)
+				: eq(projects.userId, dbUser.id);
+
 		return await db.query.projects.findMany({
-			where: eq(projects.userId, dbUser.id),
+			where: condition,
 			orderBy: [desc(projects.createdAt)],
 			with: {
 				lists: {
