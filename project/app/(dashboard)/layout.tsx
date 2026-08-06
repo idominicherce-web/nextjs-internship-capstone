@@ -69,8 +69,20 @@ export default function DashboardLayout({
 	const lastScrollY = useRef(0);
 	const { isCollapsed, setCollapsed } = useSidebarStore();
 
-	// Check if a task detail workspace is currently open
-	const editingTask = useKanbanStore((state) => state.editingTask);
+	// Check if any modal or task detail workspace is currently open
+	const {
+		editingTask,
+		isCreateTaskModalOpen,
+		isInviteMemberModalOpen,
+		isAssignProjectMemberModalOpen,
+	} = useKanbanStore();
+
+	const isModalOrWorkspaceActive =
+		Boolean(editingTask) ||
+		isCreateTaskModalOpen ||
+		isInviteMemberModalOpen ||
+		isAssignProjectMemberModalOpen;
+
 	const pathname = usePathname();
 
 	const { openDrawer, notifications } = useNotificationStore();
@@ -91,10 +103,10 @@ export default function DashboardLayout({
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
-	// Render full-screen workspace without sidebar/navbar chrome when editing a task
-	if (editingTask) {
+	// Lock body scroll and hide navbar/sidebar chrome when a modal/workspace is active
+	if (isModalOrWorkspaceActive) {
 		return (
-			<div className="min-h-screen bg-[#15100C] text-[#F8EEDB] font-serif antialiased selection:bg-[#D7B05C] selection:text-[#15100C]">
+			<div className="min-h-screen bg-[#15100C] text-[#F8EEDB] font-serif antialiased selection:bg-[#D7B05C] selection:text-[#15100C] overflow-hidden">
 				<main className="relative min-h-screen w-full">
 					<Suspense>{children}</Suspense>
 				</main>
