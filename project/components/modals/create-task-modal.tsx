@@ -1,273 +1,279 @@
 "use client";
 
-import { ChevronDown, Compass, Loader2, Scroll, X } from "lucide-react";
-import type React from "react";
+import { AlertCircle, CheckCircle2, Loader2, Scroll, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createTask } from "@/actions/tasks";
 import { useNotificationStore } from "@/stores/use-notification-store";
 
-interface UserOption {
-	id: string;
-	name: string | null;
-	email: string;
-}
-
-interface ListOption {
-	id: string;
-	name: string;
-}
-
 interface CreateTaskModalProps {
 	projectId: string;
+	lists: { id: string; name: string }[];
+	users?: { id: string; name: string | null; email: string }[];
 	isOpen: boolean;
-	lists?: ListOption[];
-	users?: UserOption[];
 	onClose: () => void;
 }
 
 export function CreateTaskModal({
 	projectId,
-	isOpen,
-	lists = [],
+	lists,
 	users = [],
+	isOpen,
 	onClose,
 }: CreateTaskModalProps) {
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [listId, setListId] = useState("");
-	const [assignedUserId, setAssignedUserId] = useState("");
+	const [userId, setUserId] = useState("");
+	const [priority, setPriority] = useState<
+		"Low" | "Medium" | "High" | "Urgent"
+	>("Medium");
 	const [dueDate, setDueDate] = useState("");
-	const [priority, setPriority] = useState("Medium");
 	const [isLoading, setIsLoading] = useState(false);
+	const [isSuccess, setIsSuccess] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
 	const addNotification = useNotificationStore(
 		(state) => state.addNotification,
 	);
 
-	// Lock body scroll when modal is open to prevent page scrolling underneath
 	useEffect(() => {
-		if (isOpen) {
-			document.body.style.overflow = "hidden";
-		} else {
-			document.body.style.overflow = "";
+		if (lists.length > 0 && !listId) {
+			setListId(lists[0].id);
 		}
+	}, [lists, listId]);
+
+	// Lock body scroll when active and listen to Escape key
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose();
+		};
+
+		document.body.style.overflow = "hidden";
+		window.addEventListener("keydown", handleKeyDown);
+
 		return () => {
 			document.body.style.overflow = "";
+			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [isOpen]);
+	}, [isOpen, onClose]);
 
 	if (!isOpen) return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!title.trim() || !listId) return;
+		if (!title.trim() || !listId || isLoading) return;
 
 		setIsLoading(true);
+		setError(null);
 
-		await createTask(null, {
-			title: title.trim(),
-			description: description.trim() || undefined,
-			listId,
-			projectId,
-			dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-			userId: assignedUserId || undefined,
-			priority,
-		});
+		try {
+			const res = await createTask(null, {
+				projectId,
+				listId,
+				title: title.trim(),
+				description: description.trim() || undefined,
+				userId: userId || undefined,
+				priority,
+				dueDate: dueDate ? dueDate : undefined,
+			});
 
-		setIsLoading(false);
+			if (res.success) {
+				setIsSuccess(true);
+				addNotification({
+					title: "Royal Task Objective Commissioned",
+					description: `'${title.trim()}' has been logged into the quest ledger.`,
+					type: "task",
+				});
 
-		// Reset Form State & Dismiss Modal
-		setTitle("");
-		setDescription("");
-		setDueDate("");
-		setAssignedUserId("");
-		setPriority("Medium");
-		onClose();
-
-		// Trigger real-time dispatch
-		addNotification({
-			title: "Project Objective Decreed",
-			description: `New task objective '${title.trim()}' was dispatched to the board.`,
-			type: "task",
-		});
+				setTimeout(() => {
+					setTitle("");
+					setDescription("");
+					setUserId("");
+					setDueDate("");
+					setIsSuccess(false);
+					onClose();
+				}, 1000);
+			} else {
+				setError(res.error || "Failed to create task objective.");
+			}
+		} catch (err) {
+			console.error(err);
+			setError("An unexpected error occurred while creating task.");
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (
-		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xs font-serif text-[#F8EEDB] overflow-hidden">
-			<div className="relative w-full max-w-sm sm:max-w-md md:max-w-lg max-h-[85dvh] flex flex-col rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden my-auto">
-				{/* Forged Brass Corner Brackets */}
-				<div className="absolute left-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
-				<div className="absolute right-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#D7B05C] to-[#8F6236]" />
-
-				{/* Fixed Modal Header */}
-				<div className="flex-none flex items-center justify-between px-4 py-3 border-b-2 border-[#4A2C1D] bg-[#15100C]/90">
-					<div className="flex items-center space-x-3">
-						<div className="p-1.5 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md shrink-0">
-							<Scroll size={16} />
-						</div>
-						<div>
-							<div className="text-[9px] font-sans font-black uppercase tracking-[0.2em] text-[#D7B05C]">
-								Royal Command
-							</div>
-							<h2 className="text-sm sm:text-base font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
-								Create Task Objective
-							</h2>
-						</div>
+		<div
+			className="fixed inset-0 z-[100] h-screen w-screen bg-black/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200 font-serif"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) onClose();
+			}}
+		>
+			<div className="w-full max-w-lg rounded-xs border-2 border-[#8F6236] bg-[#1A120C] shadow-2xl relative my-auto overflow-hidden">
+				{/* Modal Header */}
+				<div className="flex items-center justify-between border-b border-[#4A2C1D] p-3.5 sm:p-4 bg-[#15100C] shrink-0">
+					<div className="flex items-center gap-2">
+						<Scroll className="text-[#D7B05C]" size={20} />
+						<h3 className="font-serif font-black text-sm sm:text-lg text-[#F8EEDB] uppercase tracking-wider">
+							Create Task Objective
+						</h3>
 					</div>
-
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1.5 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
+						className="text-[#D7B05C]/60 hover:text-[#F8EEDB] transition-colors p-1 cursor-pointer"
 					>
 						<X size={18} />
 					</button>
 				</div>
 
-				{/* Scrollable Form Body */}
-				<form
-					onSubmit={handleSubmit}
-					className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-[#8F6236]"
-				>
-					{/* Target Column / Stage Selector */}
+				{/* Fixed Non-Scrollable Modal Form Body */}
+				<form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
+					{/* Target Stage Column */}
 					<div className="space-y-1">
-						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
 							Target Stage / Column <span className="text-rose-400">*</span>
 						</label>
-						<div className="relative flex items-center">
-							<select
-								value={listId}
-								onChange={(e) => setListId(e.target.value)}
-								required
-								className="w-full appearance-none pl-3.5 pr-10 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
-							>
-								<option value="" disabled>
-									Select Stage Column...
+						<select
+							value={listId}
+							onChange={(e) => setListId(e.target.value)}
+							required
+							className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer"
+						>
+							<option value="" disabled>
+								Select Stage Column...
+							</option>
+							{lists.map((list) => (
+								<option key={list.id} value={list.id}>
+									{list.name}
 								</option>
-								{lists.map((l) => (
-									<option key={l.id} value={l.id}>
-										{l.name}
-									</option>
-								))}
-							</select>
-							<ChevronDown
-								size={16}
-								className="absolute right-3 text-[#1A120C] pointer-events-none"
-							/>
-						</div>
+							))}
+						</select>
 					</div>
 
-					{/* Title Input */}
+					{/* Objective Title */}
 					<div className="space-y-1">
-						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
 							Objective Title <span className="text-rose-400">*</span>
 						</label>
 						<input
 							type="text"
+							required
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 							placeholder="e.g. Fortify Front-End Infrastructure"
-							required
-							className="w-full px-3.5 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/80 focus:outline-none focus:border-[#D7B05C] shadow-inner"
+							className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold placeholder-[#8F6236]/70 rounded-xs focus:outline-none focus:border-[#D7B05C]"
 						/>
 					</div>
 
 					{/* Quest Brief / Description */}
 					<div className="space-y-1">
-						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
 							Quest Brief / Description
 						</label>
 						<textarea
+							rows={2}
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							rows={2}
 							placeholder="Specify requirements and tactical deliverables..."
-							className="w-full px-3.5 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/80 focus:outline-none focus:border-[#D7B05C] shadow-inner resize-none"
+							className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold placeholder-[#8F6236]/70 rounded-xs focus:outline-none focus:border-[#D7B05C] resize-none"
 						/>
 					</div>
 
-					{/* Grid: Assignee & Priority */}
+					{/* Assigned Officer */}
+					<div className="space-y-1">
+						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
+							Assigned Officer
+						</label>
+						<select
+							value={userId}
+							onChange={(e) => setUserId(e.target.value)}
+							className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer"
+						>
+							<option value="">Unassigned</option>
+							{users.map((user) => (
+								<option key={user.id} value={user.id}>
+									{user.name || user.email}
+								</option>
+							))}
+						</select>
+					</div>
+
+					{/* Priority & Due Date Grid */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<div className="space-y-1">
-							<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-								Assigned Officer
+							<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
+								Quest Priority
 							</label>
-							<div className="relative flex items-center">
-								<select
-									value={assignedUserId}
-									onChange={(e) => setAssignedUserId(e.target.value)}
-									className="w-full appearance-none pl-3 pr-9 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
-								>
-									<option value="">Unassigned</option>
-									{users.map((u) => (
-										<option key={u.id} value={u.id}>
-											{u.name || u.email}
-										</option>
-									))}
-								</select>
-								<ChevronDown
-									size={16}
-									className="absolute right-2.5 text-[#1A120C] pointer-events-none"
-								/>
-							</div>
+							<select
+								value={priority}
+								onChange={(e) =>
+									setPriority(
+										e.target.value as "Low" | "Medium" | "High" | "Urgent",
+									)
+								}
+								className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer"
+							>
+								<option value="Low">Low Priority</option>
+								<option value="Medium">Medium Priority</option>
+								<option value="High">High Priority</option>
+								<option value="Urgent">Urgent Priority</option>
+							</select>
 						</div>
 
 						<div className="space-y-1">
-							<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-								Quest Priority
+							<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
+								Target Deadline
 							</label>
-							<div className="relative flex items-center">
-								<select
-									value={priority}
-									onChange={(e) => setPriority(e.target.value)}
-									className="w-full appearance-none pl-3 pr-9 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
-								>
-									<option value="Low">Low Priority</option>
-									<option value="Medium">Medium Priority</option>
-									<option value="High">High Priority</option>
-									<option value="Urgent">Urgent Priority</option>
-								</select>
-								<ChevronDown
-									size={16}
-									className="absolute right-2.5 text-[#1A120C] pointer-events-none"
-								/>
-							</div>
+							<input
+								type="date"
+								value={dueDate}
+								onChange={(e) => setDueDate(e.target.value)}
+								className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold rounded-xs focus:outline-none focus:border-[#D7B05C]"
+							/>
 						</div>
 					</div>
 
-					{/* Target Deadline */}
-					<div className="space-y-1">
-						<label className="block text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-							Target Deadline
-						</label>
-						<input
-							type="date"
-							value={dueDate}
-							onChange={(e) => setDueDate(e.target.value)}
-							className="w-full px-3 py-1.5 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner"
-						/>
-					</div>
+					{/* Feedback Alerts */}
+					{isSuccess && (
+						<div className="p-2.5 rounded-xs bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs flex items-center gap-2 font-sans">
+							<CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+							<span>Task objective created successfully!</span>
+						</div>
+					)}
 
-					{/* Fixed Action Buttons */}
-					<div className="flex-none flex items-center justify-end gap-2 pt-3 border-t border-[#4A2C1D]">
+					{error && (
+						<div className="p-2.5 rounded-xs bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center gap-2 font-sans">
+							<AlertCircle size={15} className="text-rose-400 shrink-0" />
+							<span>{error}</span>
+						</div>
+					)}
+
+					{/* Modal Action Buttons */}
+					<div className="flex items-center justify-end gap-3 pt-2.5 border-t border-[#4A2C1D]">
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2 border border-[#8F6236] bg-[#15100C] text-[#D7B05C] hover:text-white rounded-xs text-xs font-sans font-black uppercase tracking-wider transition-colors cursor-pointer"
+							disabled={isLoading}
+							className="px-4 py-2 border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C]/80 hover:text-white text-xs font-sans font-bold uppercase rounded-xs transition-colors disabled:opacity-50 cursor-pointer"
 						>
 							Cancel
 						</button>
-
 						<button
 							type="submit"
-							disabled={isLoading || !title.trim() || !listId}
-							className="inline-flex items-center gap-2 px-5 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-[0.15em] rounded-xs shadow-lg hover:border-[#FFF5D6] transition-all cursor-pointer disabled:opacity-50"
+							disabled={isLoading || isSuccess}
+							className="px-5 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-wider rounded-xs shadow-md hover:border-[#FFF5D6] transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
 						>
 							{isLoading ? (
-								<Loader2 className="animate-spin text-[#D7B05C]" size={16} />
+								<Loader2 size={14} className="animate-spin text-[#D7B05C]" />
 							) : (
-								<Compass size={16} className="text-[#D7B05C]" />
+								<Scroll size={14} className="text-[#D7B05C]" />
 							)}
-							<span>{isLoading ? "Dispatching..." : "Create Objective"}</span>
+							<span>{isLoading ? "Commissioning..." : "Create Objective"}</span>
 						</button>
 					</div>
 				</form>

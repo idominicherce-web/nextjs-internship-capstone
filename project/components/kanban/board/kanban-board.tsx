@@ -31,6 +31,7 @@ import { KanbanModals } from "@/components/kanban/board/kanban-modals";
 import type { List } from "@/components/kanban/column/kanban-column";
 import { FloatingActionButton } from "@/components/kanban/fab/floating-action-button";
 import type { TaskCardData } from "@/components/kanban/task/task-card";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useKanbanStore } from "@/stores/use-kanban-store";
 import { useNotificationStore } from "@/stores/use-notification-store";
 
@@ -77,6 +78,8 @@ export function KanbanBoard({
 	useEffect(() => {
 		setListsState(initialLists);
 	}, [initialLists]);
+
+	useKeyboardShortcuts();
 
 	const [optimisticLists, setOptimisticLists] = useOptimistic(
 		listsState,
