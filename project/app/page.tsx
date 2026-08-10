@@ -1,10 +1,9 @@
-// app/page.tsx
-
 import {
 	ArrowRight,
 	BarChart3,
+	Calendar as CalendarIcon,
 	Kanban,
-	Lock,
+	LayoutDashboard,
 	Scroll,
 	Users,
 } from "lucide-react";
@@ -13,66 +12,61 @@ import { Header } from "@/components/header";
 
 export default function HomePage() {
 	return (
-		<div className="relative min-h-screen bg-[#1A120C] text-[#F8EED5] flex flex-col font-serif select-none overflow-hidden">
+		<div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-x-hidden bg-[#1A120C] font-serif select-none text-[#F8EED5] antialiased">
 			{/* Reusable Header */}
 			<Header />
 
-			{/* Hero Section */}
-			<section className="relative z-10 py-16 px-4 sm:px-6 lg:px-8 flex-1 flex flex-col items-center justify-center text-center">
-				{/* Castle Background Glow */}
-				<div className="pointer-events-none absolute top-12 left-1/2 -translate-x-1/2 h-80 w-80 rounded-full bg-radial from-[#D4A74A]/25 via-orange-600/10 to-transparent blur-3xl" />
+			{/* Compact Hero Section */}
+			<section className="relative z-10 flex flex-col items-center px-3 py-6 text-center sm:px-6 sm:py-12 lg:px-8">
+				{/* Background Glow */}
+				<div className="pointer-events-none absolute left-1/2 top-8 h-64 w-64 -translate-x-1/2 rounded-full bg-radial from-[#D4A74A]/20 via-orange-600/10 to-transparent blur-3xl sm:h-80 sm:w-80" />
 
-				<div className="container relative z-10 mx-auto max-w-4xl">
-					{/* Decorative Divider Top */}
-					<div className="flex items-center justify-center gap-3 text-[#D4A74A] text-sm mb-4 opacity-90 select-none">
+				<div className="container relative z-10 mx-auto max-w-4xl min-w-0">
+					{/* Top Divider */}
+					<div className="mb-2 flex items-center justify-center gap-2 text-xs text-[#D4A74A] opacity-90 select-none sm:mb-3 sm:text-sm">
 						<span>✦</span>
-						<div className="h-px w-16 bg-gradient-to-r from-transparent via-[#D4A74A]/60 to-transparent" />
+						<div className="h-px w-10 bg-gradient-to-r from-transparent via-[#D4A74A]/60 to-transparent sm:w-16" />
 						<span>⚔</span>
-						<div className="h-px w-16 bg-gradient-to-r from-transparent via-[#D4A74A]/60 to-transparent" />
+						<div className="h-px w-10 bg-gradient-to-r from-transparent via-[#D4A74A]/60 to-transparent sm:w-16" />
 						<span>✦</span>
 					</div>
 
-					{/* High Impact Stacked Title */}
-					<header className="mb-8">
-						<h1 className="flex flex-col items-center justify-center font-black tracking-widest text-[#F8EED5] uppercase drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]">
-							<span className="text-xl sm:text-2xl font-bold text-[#8F6236] tracking-[0.4em] mb-1">
+					{/* Title Header */}
+					<header className="mb-5 min-w-0 sm:mb-6">
+						<h1 className="flex flex-col items-center justify-center font-black tracking-wider uppercase drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+							<span className="mb-1 text-xs font-bold tracking-[0.3em] text-[#8F6236] sm:text-xl sm:tracking-[0.4em]">
 								THE
 							</span>
-							<span className="bg-gradient-to-b from-[#FFF5D6] via-[#D4A74A] to-[#8F6236] bg-clip-text text-5xl sm:text-7xl md:text-8xl tracking-[0.2em] pl-[0.2em] text-transparent filter drop-shadow-[0_0_25px_rgba(212,167,74,0.3)]">
+							<span className="w-full bg-gradient-to-b from-[#FFF5D6] via-[#D4A74A] to-[#8F6236] bg-clip-text text-3xl font-black tracking-normal text-transparent filter drop-shadow-[0_0_20px_rgba(212,167,74,0.3)] sm:text-6xl sm:tracking-[0.18em] sm:pl-[0.18em] md:text-7xl">
 								ROUNDTABLE
 							</span>
 						</h1>
 
-						{/* Business + Fantasy Hybrid Subtitle */}
-						<p className="mt-4 font-sans text-xs sm:text-sm font-extrabold uppercase tracking-[0.35em] pl-[0.35em] text-[#D4A74A]/90">
+						<p className="mt-2 font-sans text-[10px] font-extrabold uppercase tracking-widest text-[#D4A74A]/90 sm:mt-3 sm:text-xs sm:tracking-[0.3em]">
 							Agile Task Management • Guild Team Collaboration • Project
 							Workflows
 						</p>
 					</header>
 
-					{/* Decorative Divider */}
-					<div className="my-6 text-[#8F6236] text-xs flex items-center justify-center gap-2">
+					{/* Divider */}
+					<div className="my-3 flex items-center justify-center gap-2 text-xs text-[#8F6236] sm:my-4">
 						<span>⚜</span>
-						<div className="h-px w-32 bg-gradient-to-r from-transparent via-[#8F6236] to-transparent" />
+						<div className="h-px w-20 bg-gradient-to-r from-transparent via-[#8F6236] to-transparent sm:w-32" />
 						<span>⚜</span>
 					</div>
 
-					{/* HERO SCROLL CONTRACT */}
-					<div className="relative mx-auto max-w-2xl z-10 mb-14">
-						{/* Outer Carved Oak Frame */}
-						<div className="rounded-sm border-4 border-[#3B2415] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] p-3 sm:p-4 shadow-[0_30px_90px_rgba(0,0,0,0.95)] relative">
-							{/* Cast Iron Brackets */}
-							<div className="absolute left-1 top-1 z-30 h-4 w-4 border border-black bg-gradient-to-br from-zinc-600 to-zinc-900 rounded-xs" />
-							<div className="absolute right-1 top-1 z-30 h-4 w-4 border border-black bg-gradient-to-br from-zinc-600 to-zinc-900 rounded-xs" />
-							<div className="absolute bottom-1 left-1 z-30 h-4 w-4 border border-black bg-gradient-to-br from-zinc-600 to-zinc-900 rounded-xs" />
-							<div className="absolute bottom-1 right-1 z-30 h-4 w-4 border border-black bg-gradient-to-br from-zinc-600 to-zinc-900 rounded-xs" />
+					{/* HERO PARCHMENT CONTRACT */}
+					<div className="relative z-10 mx-auto mb-8 w-full max-w-2xl min-w-0 sm:mb-10">
+						<div className="relative rounded-sm border-2 border-[#3B2415] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] p-2 shadow-[0_15px_40px_rgba(0,0,0,0.9)] sm:border-4 sm:p-3">
+							{/* Cast Iron Corner Brackets */}
+							<div className="absolute left-1 top-1 z-30 h-3 w-3 rounded-xs border border-black bg-gradient-to-br from-zinc-600 to-zinc-900 sm:h-3.5 sm:w-3.5" />
+							<div className="absolute right-1 top-1 z-30 h-3 w-3 rounded-xs border border-black bg-gradient-to-br from-zinc-600 to-zinc-900 sm:h-3.5 sm:w-3.5" />
+							<div className="absolute bottom-1 left-1 z-30 h-3 w-3 rounded-xs border border-black bg-gradient-to-br from-zinc-600 to-zinc-900 sm:h-3.5 sm:w-3.5" />
+							<div className="absolute bottom-1 right-1 z-30 h-3 w-3 rounded-xs border border-black bg-gradient-to-br from-zinc-600 to-zinc-900 sm:h-3.5 sm:w-3.5" />
 
-							{/* Forged Iron Pin */}
-							<div className="absolute left-1/2 -top-2 z-40 h-4 w-4 -translate-x-1/2 rounded-full border border-black bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-950 shadow-[0_4px_8px_rgba(0,0,0,0.8)]" />
-
-							{/* Inner Parchment Scroll Surface */}
+							{/* Parchment Surface */}
 							<div
-								className="relative z-20 overflow-hidden rounded-xs border-2 border-[#8F6236]/60 px-6 sm:px-10 py-8 shadow-inner"
+								className="relative z-20 rounded-xs border border-[#8F6236]/60 px-4 py-5 shadow-inner sm:border-2 sm:px-8 sm:py-6"
 								style={{
 									backgroundColor: "#F3E5C3",
 									backgroundImage: `
@@ -86,151 +80,153 @@ export default function HomePage() {
                   `,
 								}}
 							>
-								{/* Weathered Vignette */}
-								<div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_40px_rgba(59,36,21,0.5)] z-30 mix-blend-multiply" />
+								<div className="pointer-events-none absolute inset-0 z-30 shadow-[inset_0_0_25px_rgba(59,36,21,0.5)] mix-blend-multiply" />
 
-								{/* High-Visibility Hybrid Business-Fantasy Copy */}
-								<p className="relative z-40 font-serif italic text-base sm:text-lg text-[#1A120C] font-black leading-relaxed mb-8 text-center drop-shadow-xs">
-									"Welcome to the High Command Center. Here upon the master
-									project board, team leaders and cross-functional members
-									organize Kanban task bounties, track Sprint milestones, and
-									streamline team operations."
+								{/* Core Copy */}
+								<p className="relative z-40 mb-2 font-serif italic text-sm font-black leading-relaxed text-[#1A120C] sm:text-lg">
+									Plan projects, organize tasks, track milestones, and keep your
+									team aligned from one command center.
+								</p>
+								<p className="relative z-40 mb-5 font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-[#6B4A2A] sm:mb-6 sm:text-xs">
+									The command board for modern project teams.
 								</p>
 
-								{/* Carved Wooden Buttons Container */}
-								<div className="relative z-40 flex flex-col sm:flex-row gap-4 justify-center">
+								{/* Actions */}
+								<div className="relative z-40 flex flex-col justify-center gap-2.5 sm:flex-row sm:gap-4">
+									{/* Primary CTA */}
 									<Link
 										href="/dashboard"
-										className="group relative inline-flex items-center justify-center px-8 py-4 border-2 border-[#D4A74A] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#F3E5C3] font-sans text-xs font-black uppercase tracking-[0.2em] rounded-xs transition-all duration-200 hover:text-white hover:border-[#FFF5D6] hover:shadow-[0_0_25px_rgba(212,167,74,0.5)] active:translate-y-0.5 hover:-translate-y-0.5 shadow-xl cursor-pointer"
+										className="group relative inline-flex items-center justify-center rounded-xs border-2 border-[#D4A74A] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] px-5 py-3 font-sans text-[11px] font-black uppercase tracking-wider text-[#F3E5C3] shadow-md transition-all active:scale-[0.99] sm:px-8 sm:py-3.5 sm:text-xs sm:tracking-[0.2em]"
 									>
-										<span className="drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)] flex items-center gap-2">
-											Manage Kanban Tasks
+										<span className="flex items-center gap-2 drop-shadow-[0_2px_2px_rgba(0,0,0,0.9)]">
+											Open Dashboard
 											<ArrowRight
-												className="transition-transform group-hover:translate-x-1 text-[#D4A74A]"
-												size={16}
+												className="text-[#D4A74A] transition-transform group-hover:translate-x-1"
+												size={14}
 											/>
 										</span>
 									</Link>
 
+									{/* Secondary CTA */}
 									<Link
 										href="/projects"
-										className="inline-flex items-center justify-center px-8 py-4 border-2 border-[#8F6236] bg-[#E3D2A8] text-[#1A120C] hover:bg-[#D8C393] font-sans text-xs font-black uppercase tracking-[0.2em] rounded-xs transition-all duration-200 shadow-md hover:-translate-y-0.5 cursor-pointer"
+										className="inline-flex items-center justify-center rounded-xs border-2 border-[#8F6236] bg-[#E3D2A8] px-5 py-3 font-sans text-[11px] font-black uppercase tracking-wider text-[#1A120C] shadow-sm transition-all hover:bg-[#D8C393] active:scale-[0.99] sm:px-8 sm:py-3.5 sm:text-xs sm:tracking-[0.2em]"
 									>
-										View Active Projects
+										View Projects
 									</Link>
 								</div>
 							</div>
 						</div>
 					</div>
 
-					{/* CIRCULAR BRASS MEDALLIONS FEATURE SECTION */}
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-16">
-						<div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#3B2415] to-[#1A120C] border border-[#8F6236]/60 p-5 rounded-xs shadow-xl relative group hover:border-[#D4A74A]/80 transition-all">
-							<div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#D4A74A] bg-gradient-to-br from-[#8F6236] via-[#5B3922] to-[#1A120C] shadow-[0_0_15px_rgba(212,167,74,0.3)] group-hover:scale-105 transition-transform">
-								<Kanban className="h-6 w-6 text-[#D4A74A]" />
+					{/* FEATURE CARDS */}
+					<div className="mx-auto mb-10 grid max-w-3xl grid-cols-1 gap-3 sm:mb-12 sm:gap-5 md:grid-cols-3">
+						<div className="relative flex flex-col items-center justify-center rounded-xs border border-[#8F6236]/60 bg-gradient-to-b from-[#3B2415] to-[#1A120C] p-4 shadow-xl">
+							<div className="mb-2 flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#D4A74A] bg-gradient-to-br from-[#8F6236] via-[#5B3922] to-[#1A120C] shadow-md sm:h-12 sm:w-12">
+								<Kanban className="h-5 w-5 text-[#D4A74A]" />
 							</div>
-							<span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[#F8EED5]">
-								Kanban Quest Board
+							<span className="font-sans text-[11px] font-extrabold uppercase tracking-wider text-[#F8EED5]">
+								Project & Task Management
 							</span>
-							<span className="font-serif italic text-[11px] text-[#D4A74A]/80 mt-1">
-								Drag-and-Drop Task Backlog
+							<span className="mt-1 font-serif text-[10px] italic text-[#D4A74A]/80">
+								Kanban boards and task workflows
 							</span>
 						</div>
 
-						<div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#3B2415] to-[#1A120C] border border-[#8F6236]/60 p-5 rounded-xs shadow-xl relative group hover:border-[#D4A74A]/80 transition-all">
-							<div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#D4A74A] bg-gradient-to-br from-[#8F6236] via-[#5B3922] to-[#1A120C] shadow-[0_0_15px_rgba(212,167,74,0.3)] group-hover:scale-105 transition-transform">
-								<Users className="h-6 w-6 text-[#D4A74A]" />
+						<div className="relative flex flex-col items-center justify-center rounded-xs border border-[#8F6236]/60 bg-gradient-to-b from-[#3B2415] to-[#1A120C] p-4 shadow-xl">
+							<div className="mb-2 flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#D4A74A] bg-gradient-to-br from-[#8F6236] via-[#5B3922] to-[#1A120C] shadow-md sm:h-12 sm:w-12">
+								<Users className="h-5 w-5 text-[#D4A74A]" />
 							</div>
-							<span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[#F8EED5]">
-								User Roles & Task Assignment
+							<span className="font-sans text-[11px] font-extrabold uppercase tracking-wider text-[#F8EED5]">
+								Team Collaboration
 							</span>
-							<span className="font-serif italic text-[11px] text-[#D4A74A]/80 mt-1">
-								Guild Team
+							<span className="mt-1 font-serif text-[10px] italic text-[#D4A74A]/80">
+								Roles, assignments, and ownership
 							</span>
 						</div>
 
-						<div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#3B2415] to-[#1A120C] border border-[#8F6236]/60 p-5 rounded-xs shadow-xl relative group hover:border-[#D4A74A]/80 transition-all">
-							<div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#D4A74A] bg-gradient-to-br from-[#8F6236] via-[#5B3922] to-[#1A120C] shadow-[0_0_15px_rgba(212,167,74,0.3)] group-hover:scale-105 transition-transform">
-								<Scroll className="h-6 w-6 text-[#D4A74A]" />
+						<div className="relative flex flex-col items-center justify-center rounded-xs border border-[#8F6236]/60 bg-gradient-to-b from-[#3B2415] to-[#1A120C] p-4 shadow-xl">
+							<div className="mb-2 flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#D4A74A] bg-gradient-to-br from-[#8F6236] via-[#5B3922] to-[#1A120C] shadow-md sm:h-12 sm:w-12">
+								<Scroll className="h-5 w-5 text-[#D4A74A]" />
 							</div>
-							<span className="font-sans text-xs font-extrabold uppercase tracking-wider text-[#F8EED5]">
-								Analytics Ledger
+							<span className="font-sans text-[11px] font-extrabold uppercase tracking-wider text-[#F8EED5]">
+								Project Analytics
 							</span>
-							<span className="font-serif italic text-[11px] text-[#D4A74A]/80 mt-1">
-								Sprint KPIs & Activity Audit
+							<span className="mt-1 font-serif text-[10px] italic text-[#D4A74A]/80">
+								Progress, KPIs & activity insights
 							</span>
 						</div>
 					</div>
 				</div>
 			</section>
 
-			{/* NAVIGATION PLAQUES */}
-			<section className="relative z-10 py-12 px-4 sm:px-6 lg:px-8 border-t border-[#3B2415] bg-[#1A120C]/90">
-				<div className="container mx-auto text-center max-w-4xl">
-					<h2 className="text-xl font-black uppercase tracking-[0.2em] text-[#D4A74A] mb-8 flex items-center justify-center gap-3">
+			{/* PRODUCT NAVIGATION PLAQUES */}
+			<section className="relative z-10 border-t border-[#3B2415] bg-[#1A120C]/90 px-3 py-8 sm:px-6 sm:py-10">
+				<div className="container mx-auto max-w-4xl text-center min-w-0">
+					<h2 className="mb-6 flex items-center justify-center gap-2 font-sans text-xs font-black uppercase tracking-widest text-[#D4A74A] sm:mb-8 sm:text-lg sm:tracking-[0.2em]">
 						<span>⚔</span>
-						<span>Explore High Chamber Views</span>
+						<span>Enter The Round Table</span>
 						<span>⚔</span>
 					</h2>
 
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 						<Link
 							href="/dashboard"
-							className="group p-5 bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] rounded-xs border-2 border-[#8F6236] hover:border-[#D4A74A] hover:shadow-[0_0_20px_rgba(212,167,74,0.3)] transition-all hover:-translate-y-1 relative"
+							className="group relative rounded-xs border-2 border-[#8F6236] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] p-4 transition-all hover:border-[#D4A74A]"
 						>
-							<div className="flex items-center justify-center gap-2 mb-2 text-[#D4A74A] group-hover:scale-110 transition-transform">
-								<span>⚔</span>
+							<div className="mb-1 flex items-center justify-center gap-2 text-[#D4A74A]">
+								<LayoutDashboard size={14} />
 								<h3 className="font-sans text-xs font-black uppercase tracking-wider text-[#F8EED5]">
 									Dashboard
 								</h3>
 							</div>
-							<p className="font-serif italic text-xs text-[#D4A74A]/80">
+							<p className="font-serif text-[11px] italic text-[#D4A74A]/80">
 								Overview & Key Metrics
 							</p>
 						</Link>
 
 						<Link
 							href="/projects"
-							className="group p-5 bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] rounded-xs border-2 border-[#8F6236] hover:border-[#D4A74A] hover:shadow-[0_0_20px_rgba(212,167,74,0.3)] transition-all hover:-translate-y-1 relative"
+							className="group relative rounded-xs border-2 border-[#8F6236] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] p-4 transition-all hover:border-[#D4A74A]"
 						>
-							<div className="flex items-center justify-center gap-2 mb-2 text-[#D4A74A] group-hover:scale-110 transition-transform">
-								<BarChart3 size={16} />
+							<div className="mb-1 flex items-center justify-center gap-2 text-[#D4A74A]">
+								<BarChart3 size={14} />
 								<h3 className="font-sans text-xs font-black uppercase tracking-wider text-[#F8EED5]">
 									Projects
 								</h3>
 							</div>
-							<p className="font-serif italic text-xs text-[#D4A74A]/80">
+							<p className="font-serif text-[11px] italic text-[#D4A74A]/80">
 								Project Portfolio & Boards
 							</p>
 						</Link>
 
 						<Link
-							href="/analytics"
-							className="group p-5 bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] rounded-xs border-2 border-[#8F6236] hover:border-[#D4A74A] hover:shadow-[0_0_20px_rgba(212,167,74,0.3)] transition-all hover:-translate-y-1 relative"
+							href="/calendar"
+							className="group relative rounded-xs border-2 border-[#8F6236] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] p-4 transition-all hover:border-[#D4A74A]"
 						>
-							<div className="flex items-center justify-center gap-2 mb-2 text-[#D4A74A] group-hover:scale-110 transition-transform">
-								<Scroll size={16} />
+							<div className="mb-1 flex items-center justify-center gap-2 text-[#D4A74A]">
+								<CalendarIcon size={14} />
 								<h3 className="font-sans text-xs font-black uppercase tracking-wider text-[#F8EED5]">
-									Analytics
+									Calendar
 								</h3>
 							</div>
-							<p className="font-serif italic text-xs text-[#D4A74A]/80">
-								Sprint Audit & Progress
+							<p className="font-serif text-[11px] italic text-[#D4A74A]/80">
+								Deadlines & Milestones
 							</p>
 						</Link>
 
 						<Link
-							href="/sign-in"
-							className="group p-5 bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] rounded-xs border-2 border-[#8F6236] hover:border-[#D4A74A] hover:shadow-[0_0_20px_rgba(212,167,74,0.3)] transition-all hover:-translate-y-1 relative"
+							href="/analytics"
+							className="group relative rounded-xs border-2 border-[#8F6236] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] p-4 transition-all hover:border-[#D4A74A]"
 						>
-							<div className="flex items-center justify-center gap-2 mb-2 text-[#D4A74A] group-hover:scale-110 transition-transform">
-								<Lock size={16} />
+							<div className="mb-1 flex items-center justify-center gap-2 text-[#D4A74A]">
+								<Scroll size={14} />
 								<h3 className="font-sans text-xs font-black uppercase tracking-wider text-[#F8EED5]">
-									Gatekeeper
+									Analytics
 								</h3>
 							</div>
-							<p className="font-serif italic text-xs text-[#D4A74A]/80">
-								User Authentication
+							<p className="font-serif text-[11px] italic text-[#D4A74A]/80">
+								Sprint Audit & Progress
 							</p>
 						</Link>
 					</div>
@@ -238,14 +234,9 @@ export default function HomePage() {
 			</section>
 
 			{/* FOOTER */}
-			<footer className="relative z-10 py-8 text-center border-t border-[#3B2415] bg-[#1A120C]">
-				<div className="flex items-center justify-center gap-4 text-[#8F6236] text-xs mb-2">
-					<div className="h-px w-24 bg-gradient-to-r from-transparent to-[#8F6236]" />
-					<span>══════════════════════════</span>
-					<div className="h-px w-24 bg-gradient-to-l from-transparent to-[#8F6236]" />
-				</div>
-				<p className="text-xs font-sans font-bold uppercase tracking-[0.3em] text-[#D4A74A]">
-					The Roundtable © • Crafted by Dominic Herce
+			<footer className="relative z-10 border-t border-[#3B2415] bg-[#1A120C] py-5 text-center">
+				<p className="font-sans text-[10px] font-bold uppercase tracking-widest text-[#D4A74A]/60 sm:text-xs sm:tracking-[0.25em]">
+					The Roundtable © Realm Software
 				</p>
 			</footer>
 		</div>
