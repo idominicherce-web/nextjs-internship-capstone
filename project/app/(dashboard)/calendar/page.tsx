@@ -17,13 +17,13 @@ export default async function CalendarPage() {
 
 	if (!dbUser) {
 		return (
-			<div className="min-h-screen bg-[#15100C] flex items-center justify-center p-6 text-center text-[#D7B05C] font-serif">
-				<div className="p-8 border-2 border-[#8F6236] bg-[#2D1B10] rounded-xs shadow-2xl">
+			<div className="flex min-h-screen items-center justify-center bg-[#15100C] p-4 text-center font-serif text-[#D7B05C]">
+				<div className="w-full max-w-md rounded-xs border-2 border-[#8F6236] bg-[#2D1B10] p-6 shadow-2xl sm:p-8">
 					<Shield className="mx-auto mb-3 text-[#D7B05C]" size={32} />
-					<h2 className="text-xl font-black uppercase tracking-widest text-[#F8EEDB]">
+					<h2 className="text-lg font-black uppercase tracking-widest text-[#F8EEDB] sm:text-xl">
 						Access Denied
 					</h2>
-					<p className="text-xs font-sans text-[#D7B05C]/70 mt-2">
+					<p className="mt-2 font-sans text-xs text-[#D7B05C]/70">
 						Unauthorized traveler. Please enter through the gatekeeper.
 					</p>
 				</div>
@@ -39,7 +39,7 @@ export default async function CalendarPage() {
 				with: {
 					tasks: {
 						with: {
-							user: true, // Include assigned user details
+							user: true,
 						},
 					},
 				},
@@ -47,16 +47,16 @@ export default async function CalendarPage() {
 		},
 	});
 
-	// Format real tasks into CalendarTask models
-	const realTasks: CalendarTask[] = [];
+	// Transform DB tasks into CalendarTask models
+	const realTasks: CalendarTask[] = userProjects.flatMap((project) =>
+		project.lists.flatMap((list) => {
+			const isDone =
+				list.name.toLowerCase().includes("done") ||
+				list.name.toLowerCase().includes("complete");
 
-	userProjects.forEach((proj) => {
-		proj.lists.forEach((list) => {
-			const listName = list.name.toLowerCase();
-			const isDone = listName.includes("done") || listName.includes("complete");
-
-			list.tasks.forEach((task) => {
-				if (task.dueDate) {
+			return list.tasks
+				.filter((task) => task.dueDate)
+				.map((task) => {
 					let taskType: TaskType = "deadline";
 					if (isDone) taskType = "completed";
 					else if (
@@ -71,111 +71,112 @@ export default async function CalendarPage() {
 						taskType = "milestone";
 					}
 
-					// Derive dynamic priority label or default to Medium
-					const dynamicPriority = (task.priority || "Medium") as
-						| "Low"
-						| "Medium"
-						| "High"
-						| "Urgent";
-
-					// Derive dynamic assignee name
-					const assignedOfficer =
-						task.user?.name ||
-						(task.user?.email
-							? task.user.email.split("@")[0]
-							: "Unassigned Realm");
-
-					realTasks.push({
+					return {
 						id: task.id,
 						title: task.title,
-						projectName: proj.name,
-						dueDate: new Date(task.dueDate),
+						projectName: project.name,
+						dueDate: new Date(task.dueDate!),
 						type: taskType,
 						isCompleted: isDone,
-						priority: dynamicPriority,
-						assignedTo: assignedOfficer,
-					});
-				}
-			});
-		});
-	});
+						priority: (task.priority || "Medium") as
+							| "Low"
+							| "Medium"
+							| "High"
+							| "Urgent",
+						assignedTo:
+							task.user?.name ||
+							(task.user?.email
+								? task.user.email.split("@")[0]
+								: "Unassigned Realm"),
+					};
+				});
+		}),
+	);
 
-	// Summary Metrics Calculations
 	const totalTasksCount = realTasks.length;
 	const completedTasksCount = realTasks.filter((t) => t.isCompleted).length;
 	const deadlinesThisWeekCount = realTasks.filter((t) => !t.isCompleted).length;
-	const milestoneCount = userProjects.length || 0;
+	const milestoneCount = userProjects.length;
 
 	return (
-		<div className="min-h-screen bg-[#15100C] text-[#F8EEDB] font-serif p-4 sm:p-8 relative select-none overflow-hidden antialiased">
-			{/* Torch Glow & Castle Strategy Room Ambient Vignette */}
-			<div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_15%,rgba(215,176,92,0.14),transparent_65%)] mix-blend-screen" />
-			<div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,transparent_20%,rgba(0,0,0,0.92)_100%)] mix-blend-multiply" />
+		<div className="relative min-h-screen w-full min-w-0 bg-[#15100C] font-serif text-[#F8EEDB] antialiased p-3 sm:p-6 lg:p-8">
+			{/* Torch Glow Ambient Vignette */}
+			<div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_10%,rgba(215,176,92,0.12),transparent_55%)]" />
+			<div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,transparent_15%,rgba(0,0,0,0.88)_100%)]" />
 
-			<div className="max-w-7xl mx-auto space-y-8 relative z-10">
-				{/* Header Bar */}
-				<div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6">
-					<div>
-						<div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
-							<span>⚔</span>
-							<span>Quest Ledger</span>
-							<span>⚔</span>
+			<main className="relative z-10 mx-auto w-full max-w-7xl min-w-0 space-y-6">
+				{/* Page Header */}
+				<header className="border-b border-[#4A2C1D] pb-4 sm:pb-6">
+					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+						<div className="min-w-0">
+							<div className="flex items-center gap-2 font-sans text-[9px] font-extrabold uppercase tracking-[0.24em] text-[#D7B05C] sm:text-xs">
+								<span>⚔</span>
+								<span>Quest Ledger</span>
+								<span>⚔</span>
+							</div>
+							<h1 className="bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.08em] text-transparent drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] truncate">
+								Calendar
+							</h1>
+							<p className="mt-1 font-sans text-xs sm:text-sm text-[#D7B05C]/80 italic max-w-2xl">
+								Manage project deadlines, strategic milestones, and kingdom
+								schedules.
+							</p>
 						</div>
-						<h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-							Calendar
-						</h1>
-						<p className="text-xs sm:text-sm font-sans text-[#D7B05C]/80 mt-2 italic max-w-2xl leading-relaxed">
-							Manage project deadlines, strategic milestones, and kingdom
-							schedules.
-						</p>
-					</div>
 
-					{/* Add Calendar Event Button */}
-					<button
-						type="button"
-						className="group relative inline-flex items-center px-6 py-3 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#F8EEDB] font-sans text-xs font-black uppercase tracking-[0.2em] rounded-xs shadow-[0_10px_25px_rgba(0,0,0,0.8)] transition-all duration-200 hover:text-white hover:border-[#FFF5D6] hover:shadow-[0_0_30px_rgba(215,176,92,0.5)] active:translate-y-0.5 hover:-translate-y-0.5 cursor-pointer shrink-0"
-					>
-						<Plus
-							size={18}
-							className="mr-2 text-[#D7B05C] group-hover:scale-110 transition-transform"
-						/>
-						<span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+						<button
+							type="button"
+							className="hidden sm:inline-flex shrink-0 items-center justify-center gap-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] px-5 py-3 font-sans text-xs font-black uppercase tracking-[0.16em] text-[#F8EEDB] shadow-md transition-all hover:border-[#FFF5D6] hover:text-white active:translate-y-0.5 cursor-pointer"
+						>
+							<Plus size={16} className="text-[#D7B05C]" />
 							Add Calendar Event
-						</span>
-					</button>
+						</button>
+					</div>
+				</header>
+
+				{/* DESKTOP HIERARCHY: Legend + Stats */}
+				<div className="hidden lg:block space-y-5">
+					<CalendarLegend />
+					<CalendarStats
+						totalTasks={totalTasksCount}
+						deadlinesCount={deadlinesThisWeekCount}
+						completedCount={completedTasksCount}
+						milestonesCount={milestoneCount}
+					/>
 				</div>
-
-				{/* Legend Index Bar */}
-				<CalendarLegend />
-
-				{/* Quest Summary Statistics */}
-				<CalendarStats
-					totalTasks={totalTasksCount}
-					deadlinesCount={deadlinesThisWeekCount}
-					completedCount={completedTasksCount}
-					milestonesCount={milestoneCount}
-				/>
 
 				{/* Decorative Divider */}
-				<div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
-					<div className="h-px w-32 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
+				<div className="flex items-center justify-center gap-2 sm:gap-4 text-[#B78B3E] text-[10px] sm:text-xs py-1">
+					<div className="h-px w-16 sm:w-32 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
 					<span>⚔ ──── ⚜ ──── ⚔</span>
-					<div className="h-px w-32 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
+					<div className="h-px w-16 sm:w-32 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
 				</div>
 
-				{/* Main Calendar Grid */}
-				<CalendarGrid tasks={realTasks} />
+				{/* Main Calendar Section */}
+				<section className="w-full min-w-0">
+					<CalendarGrid tasks={realTasks} />
+				</section>
 
-				{/* Lower Dashboard Split: Today's Sidebar + Upcoming Quests */}
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
-					<div className="lg:col-span-1">
+				{/* Lower Information: Today's Decrees + Upcoming Quests */}
+				<section className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+					<div className="lg:col-span-1 min-w-0">
 						<TodaySidebar />
 					</div>
-					<div className="lg:col-span-2">
+					<div className="lg:col-span-2 min-w-0">
 						<Upcomingquests tasks={realTasks.slice(0, 5)} />
 					</div>
-				</div>
-			</div>
+				</section>
+
+				{/* MOBILE HIERARCHY: Legend + Stats moved to bottom */}
+				<section className="space-y-4 border-t border-[#8F6236]/30 pt-5 lg:hidden">
+					<CalendarLegend />
+					<CalendarStats
+						totalTasks={totalTasksCount}
+						deadlinesCount={deadlinesThisWeekCount}
+						completedCount={completedTasksCount}
+						milestonesCount={milestoneCount}
+					/>
+				</section>
+			</main>
 		</div>
 	);
 }

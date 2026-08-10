@@ -1,205 +1,369 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Crown } from "lucide-react";
-import { type CalendarTask, PROJECT_RIBBONS, TASK_TYPE_CONFIG } from "./types";
+import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { CalendarTask, TaskType } from "./types";
 
 interface CalendarGridProps {
 	tasks: CalendarTask[];
-	currentMonthName?: string;
-	currentYear?: number;
 }
 
-export function CalendarGrid({
-	tasks,
-	currentMonthName = "JULY",
-	currentYear = 2026,
-}: CalendarGridProps) {
-	const daysInMonth = 31;
-	const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-	const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAYS_OF_WEEK = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const MOBILE_DAYS = ["S", "M", "T", "W", "T", "F", "S"];
+
+const typeColorMap: Record<
+	TaskType,
+	{ bg: string; border: string; dot: string }
+> = {
+	deadline: {
+		bg: "bg-rose-500",
+		border: "border-rose-600/60",
+		dot: "bg-rose-500",
+	},
+	meeting: {
+		bg: "bg-amber-500",
+		border: "border-amber-600/60",
+		dot: "bg-amber-500",
+	},
+	completed: {
+		bg: "bg-emerald-500",
+		border: "border-emerald-600/60",
+		dot: "bg-emerald-500",
+	},
+	reminder: {
+		bg: "bg-amber-400",
+		border: "border-amber-500/60",
+		dot: "bg-amber-400",
+	},
+	milestone: {
+		bg: "bg-purple-500",
+		border: "border-purple-600/60",
+		dot: "bg-purple-500",
+	},
+};
+
+function getDateKey(date: Date) {
+	return [
+		date.getFullYear(),
+		String(date.getMonth() + 1).padStart(2, "0"),
+		String(date.getDate()).padStart(2, "0"),
+	].join("-");
+}
+
+function isSameDate(a: Date, b: Date) {
+	return a.toDateString() === b.toDateString();
+}
+
+export function CalendarGrid({ tasks }: CalendarGridProps) {
+	const today = useMemo(() => new Date(), []);
+	const [currentDate, setCurrentDate] = useState(() => new Date());
+	const [selectedDate, setSelectedDate] = useState(() => new Date());
+
+	const year = currentDate.getFullYear();
+	const month = currentDate.getMonth();
+
+	const monthName = currentDate.toLocaleString("default", { month: "long" });
+
+	const tasksByDate = useMemo(() => {
+		const map = new Map<string, CalendarTask[]>();
+		for (const task of tasks) {
+			const key = getDateKey(new Date(task.dueDate));
+			const existing = map.get(key);
+			if (existing) existing.push(task);
+			else map.set(key, [task]);
+		}
+		return map;
+	}, [tasks]);
+
+	const calendarDays = useMemo(() => {
+		const days: { date: Date; isCurrentMonth: boolean }[] = [];
+		const firstDayOfMonth = new Date(year, month, 1);
+		const firstDayOfWeek = firstDayOfMonth.getDay();
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+		for (let i = firstDayOfWeek; i > 0; i--) {
+			days.push({
+				date: new Date(year, month, 1 - i),
+				isCurrentMonth: false,
+			});
+		}
+
+		for (let day = 1; day <= daysInMonth; day++) {
+			days.push({ date: new Date(year, month, day), isCurrentMonth: true });
+		}
+
+		const remainder = days.length % 7;
+		if (remainder !== 0) {
+			const remaining = 7 - remainder;
+			for (let day = 1; day <= remaining; day++) {
+				days.push({
+					date: new Date(year, month + 1, day),
+					isCurrentMonth: false,
+				});
+			}
+		}
+
+		return days;
+	}, [year, month]);
+
+	const selectedDateKey = getDateKey(selectedDate);
+	const selectedDayTasks = tasksByDate.get(selectedDateKey) ?? [];
+
+	const handlePreviousMonth = () => {
+		const nextDate = new Date(year, month - 1, 1);
+		setCurrentDate(nextDate);
+		setSelectedDate(nextDate);
+	};
+
+	const handleNextMonth = () => {
+		const nextDate = new Date(year, month + 1, 1);
+		setCurrentDate(nextDate);
+		setSelectedDate(nextDate);
+	};
+
+	const handleSelectDate = (date: Date) => {
+		setSelectedDate(date);
+		if (date.getMonth() !== month || date.getFullYear() !== year) {
+			setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
+		}
+	};
+
+	const formatShortDate = (date: Date) => {
+		return `${date.getDate()} ${date
+			.toLocaleString("default", { month: "short" })
+			.toUpperCase()}`;
+	};
 
 	return (
-		<div className="relative rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#4A2C1D] via-[#2D1B10] to-[#15100C] p-4 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden">
-			{/* Forged Brass Corner Plates with Rivets */}
-			<div className="absolute left-1.5 top-1.5 z-30 h-5 w-5 border-2 border-[#1A120C] bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md flex items-center justify-center">
-				<div className="w-1 h-1 bg-[#1A120C] rounded-full" />
-			</div>
-			<div className="absolute right-1.5 top-1.5 z-30 h-5 w-5 border-2 border-[#1A120C] bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md flex items-center justify-center">
-				<div className="w-1 h-1 bg-[#1A120C] rounded-full" />
-			</div>
-			<div className="absolute bottom-1.5 left-1.5 z-30 h-5 w-5 border-2 border-[#1A120C] bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md flex items-center justify-center">
-				<div className="w-1 h-1 bg-[#1A120C] rounded-full" />
-			</div>
-			<div className="absolute bottom-1.5 right-1.5 z-30 h-5 w-5 border-2 border-[#1A120C] bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md flex items-center justify-center">
-				<div className="w-1 h-1 bg-[#1A120C] rounded-full" />
-			</div>
-
-			{/* Outer Wooden Table Inner Shadow */}
-			<div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_30px_rgba(0,0,0,0.8)] z-10" />
-
-			{/* Month Navigation Banner */}
-			<div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 relative z-20 pb-4 border-b-2 border-[#4A2C1D]">
-				{/* Carved Wooden Month Controls */}
-				<div className="flex items-center space-x-2 sm:space-x-4">
-					<button
-						type="button"
-						className="flex items-center gap-1 px-3 py-2 border-2 border-[#8F6236] bg-gradient-to-b from-[#3B2415] to-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] active:scale-95 rounded-xs transition-all duration-200 shadow-md cursor-pointer group"
-					>
-						<ChevronLeft
-							size={20}
-							className="group-hover:-translate-x-0.5 transition-transform"
-						/>
-						<span className="hidden sm:inline text-xs font-sans font-black tracking-widest text-[#D7B05C]">
-							◀─
-						</span>
-					</button>
-
-					<h2 className="text-xl sm:text-3xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.25em] px-2 text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-						{currentMonthName} {currentYear}
+		<div className="w-full min-w-0 space-y-4">
+			{/* DESKTOP CALENDAR GRID (md and above) */}
+			<div className="hidden md:block w-full rounded-xs border-2 border-[#8F6236] bg-[#1A120C] p-5 shadow-2xl">
+				{/* Desktop Header */}
+				<div className="flex items-center justify-between border-b border-[#8F6236]/30 pb-4">
+					<h2 className="font-serif text-xl font-black uppercase tracking-widest text-[#D7B05C]">
+						{monthName} {year}
 					</h2>
 
-					<button
-						type="button"
-						className="flex items-center gap-1 px-3 py-2 border-2 border-[#8F6236] bg-gradient-to-b from-[#3B2415] to-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] active:scale-95 rounded-xs transition-all duration-200 shadow-md cursor-pointer group"
-					>
-						<span className="hidden sm:inline text-xs font-sans font-black tracking-widest text-[#D7B05C]">
-							─▶
-						</span>
-						<ChevronRight
-							size={20}
-							className="group-hover:translate-x-0.5 transition-transform"
-						/>
-					</button>
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handlePreviousMonth}
+							className="flex h-9 w-9 items-center justify-center rounded-xs border border-[#8F6236] bg-[#0F0B08] text-[#D7B05C] hover:border-[#D7B05C] cursor-pointer"
+							aria-label="Previous month"
+						>
+							<ChevronLeft size={18} />
+						</button>
+						<button
+							type="button"
+							onClick={handleNextMonth}
+							className="flex h-9 w-9 items-center justify-center rounded-xs border border-[#8F6236] bg-[#0F0B08] text-[#D7B05C] hover:border-[#D7B05C] cursor-pointer"
+							aria-label="Next month"
+						>
+							<ChevronRight size={18} />
+						</button>
+						<div className="ml-1 rounded-xs border border-[#8F6236]/40 bg-[#0F0B08] px-3 py-2 text-[10px] font-sans font-black uppercase tracking-wider text-[#D7B05C]">
+							Month
+						</div>
+					</div>
 				</div>
 
-				{/* View Selection Engraved Tabs */}
-				<div className="flex space-x-1 bg-[#100A07] p-1 border border-[#4A2C1D] rounded-xs">
-					{["Month", "Week", "Day"].map((view, i) => (
-						<button
-							key={view}
-							type="button"
-							className={`px-3.5 py-1.5 text-xs font-sans font-black uppercase tracking-wider rounded-xs transition-all duration-150 cursor-pointer ${
-								i === 0
-									? "bg-gradient-to-b from-[#5B3922] to-[#2D1B10] text-[#FFF5D6] border border-[#D7B05C]/70 shadow-md"
-									: "text-[#D7B05C]/60 hover:text-[#D7B05C] hover:bg-[#2D1B10]/40"
-							}`}
+				{/* Desktop Weekday Labels */}
+				<div className="mt-4 grid grid-cols-7 gap-2 border-b border-[#8F6236]/20 pb-2 text-center">
+					{DAYS_OF_WEEK.map((day) => (
+						<span
+							key={day}
+							className="text-[10px] font-sans font-black tracking-wider text-[#D7B05C]"
 						>
-							{view}
-						</button>
+							{day}
+						</span>
 					))}
 				</div>
-			</div>
 
-			{/* Weekday Labels */}
-			<div className="grid grid-cols-7 gap-2 text-center font-sans font-black text-xs text-[#D7B05C] uppercase tracking-[0.2em] mb-3 relative z-20">
-				{weekDays.map((day) => (
-					<div
-						key={day}
-						className="py-2 bg-[#15100C]/90 border border-[#4A2C1D] rounded-xs shadow-inner"
-					>
-						{day}
-					</div>
-				))}
-			</div>
+				{/* Desktop Month Grid */}
+				<div className="mt-2 grid grid-cols-7 gap-2">
+					{calendarDays.map(({ date, isCurrentMonth }) => {
+						const dateKey = getDateKey(date);
+						const dayTasks = tasksByDate.get(dateKey) ?? [];
+						const isSelected = isSameDate(selectedDate, date);
+						const isToday = isSameDate(today, date);
 
-			{/* 31-Day Interactive Parchment Tile Grid */}
-			<div className="grid grid-cols-7 gap-2.5 sm:gap-3 relative z-20">
-				{days.map((day) => {
-					const dayTasks = tasks.filter((t) => t.dueDate.getDate() === day);
-					const isToday = day === 27;
-					const ribbonClass =
-						PROJECT_RIBBONS[dayTasks[0]?.projectName] ||
-						PROJECT_RIBBONS.Default;
-
-					return (
-						<div
-							key={day}
-							className={`min-h-28 sm:min-h-32 p-2 border-2 rounded-xs flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:scale-[1.01] shadow-md relative overflow-hidden group/tile ${
-								isToday
-									? "border-[#D7B05C] bg-[#FAF0D7] shadow-[0_0_25px_rgba(215,176,92,0.45)] ring-2 ring-[#D7B05C]/30"
-									: "border-[#8F6236]/70 bg-[#F4E4C1] hover:bg-[#FAF0D7] hover:border-[#D7B05C]"
-							}`}
-							style={{
-								backgroundImage: `
-                  repeating-linear-gradient(
-                    0deg,
-                    rgba(0,0,0,0.03),
-                    rgba(0,0,0,0.03) 1px,
-                    transparent 1px,
-                    transparent 8px
-                  )
-                `,
-							}}
-						>
-							{/* Today Candlelight Radial Glow Overlay */}
-							{isToday && (
-								<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(215,176,92,0.35),transparent_70%)] animate-pulse" />
-							)}
-
-							{/* Weathered Parchment Vignette */}
-							<div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_12px_rgba(59,36,21,0.2)] mix-blend-multiply" />
-
-							{/* Header: Date Number + Decree Crest */}
-							<div className="flex justify-between items-center relative z-10 border-b border-[#2D1B10]/10 pb-1">
-								<span
-									className={`text-xs sm:text-sm font-sans font-black ${
-										isToday ? "text-[#1A120C] font-black" : "text-[#2D1B10]"
-									}`}
-								>
-									{day}
-								</span>
-
-								{isToday ? (
-									<span className="flex items-center gap-1 px-1.5 py-0.5 text-[8px] font-sans font-black uppercase tracking-wider bg-[#3B2415] text-[#FFF5D6] rounded-xs border border-[#D7B05C] shadow-sm">
-										<Crown size={10} className="text-[#D7B05C]" />
-										Decree
+						return (
+							<button
+								type="button"
+								key={`desktop-${dateKey}`}
+								onClick={() => handleSelectDate(date)}
+								className={[
+									"group flex min-h-[100px] min-w-0 flex-col justify-between rounded-xs border p-2 text-left transition-all cursor-pointer relative",
+									!isCurrentMonth
+										? "border-[#8F6236]/20 bg-[#0F0B08]/40 text-[#F8EEDB]/30"
+										: isSelected
+											? "border-[#D7B05C] bg-[#FAF0D7] text-[#1A120C] shadow-md ring-2 ring-[#D7B05C]"
+											: isToday
+												? "border-[#D7B05C] bg-[#2A1D13] text-[#F8EEDB] ring-1 ring-[#D7B05C]/70"
+												: "border-[#8F6236]/50 bg-[#FAF0D7]/90 text-[#1A120C] hover:border-[#D7B05C]",
+								].join(" ")}
+							>
+								<div className="flex items-center justify-between w-full">
+									<span className="font-serif text-xs font-black">
+										{date.getDate()}
 									</span>
-								) : (
-									dayTasks.length > 0 && (
-										<span className="text-[9px] font-sans font-bold text-[#8F6236]">
-											{dayTasks.length}{" "}
-											{dayTasks.length === 1 ? "event" : "events"}
+									{isToday && (
+										<span className="px-1 py-0.5 rounded-xs bg-[#D7B05C] text-[#1A120C] text-[8px] font-sans font-extrabold uppercase tracking-tighter">
+											Today
 										</span>
-									)
-								)}
-							</div>
+									)}
+								</div>
 
-							{/* Body: Task Chips or Faint Empty State */}
-							<div className="space-y-1.5 mt-1.5 flex-1 relative z-10">
-								{dayTasks.length > 0 ? (
-									<>
-										{dayTasks.slice(0, 2).map((t) => {
-											const cfg =
-												TASK_TYPE_CONFIG[t.type] || TASK_TYPE_CONFIG.deadline;
+								<div className="w-full min-w-0 space-y-1">
+									{dayTasks.slice(0, 3).map((task) => (
+										<div
+											key={task.id}
+											className="w-full min-w-0 truncate rounded-xs border border-[#8F6236] bg-[#1A120C] px-1.5 py-0.5 text-[9px] font-sans font-medium text-[#D7B05C]"
+										>
+											{task.title}
+										</div>
+									))}
+									{dayTasks.length > 3 && (
+										<div className="text-[8px] font-sans font-black text-[#8F6236]">
+											+{dayTasks.length - 3} more
+										</div>
+									)}
+								</div>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* MOBILE CALENDAR (Samsung-Inspired Compact) */}
+			<div className="block w-full min-w-0 md:hidden space-y-3">
+				<div className="w-full min-w-0 overflow-hidden rounded-xs border border-[#8F6236]/50 bg-[#1A120C]">
+					<div className="flex items-center justify-between px-2 py-2">
+						<button
+							type="button"
+							onClick={handlePreviousMonth}
+							className="flex h-8 w-8 items-center justify-center rounded-full text-[#D7B05C]"
+							aria-label="Previous month"
+						>
+							<ChevronLeft size={18} />
+						</button>
+						<h2 className="font-serif text-sm font-black uppercase tracking-wider text-[#F8EEDB]">
+							{monthName} {year}
+						</h2>
+						<button
+							type="button"
+							onClick={handleNextMonth}
+							className="flex h-8 w-8 items-center justify-center rounded-full text-[#D7B05C]"
+							aria-label="Next month"
+						>
+							<ChevronRight size={18} />
+						</button>
+					</div>
+
+					<div className="grid grid-cols-7 border-y border-[#8F6236]/30 bg-[#0F0B08]/60">
+						{MOBILE_DAYS.map((day, idx) => (
+							<div
+								key={`${day}-${idx}`}
+								className="py-1.5 text-center text-[10px] font-sans font-black text-[#D7B05C]/70"
+							>
+								{day}
+							</div>
+						))}
+					</div>
+
+					<div className="grid grid-cols-7 gap-0 p-1">
+						{calendarDays.map(({ date, isCurrentMonth }) => {
+							const dateKey = getDateKey(date);
+							const dayTasks = tasksByDate.get(dateKey) ?? [];
+							const isSelected = isSameDate(selectedDate, date);
+							const isToday = isSameDate(today, date);
+
+							return (
+								<button
+									type="button"
+									key={`mobile-${dateKey}`}
+									onClick={() => handleSelectDate(date)}
+									className="flex flex-col items-center justify-start py-1 cursor-pointer"
+								>
+									<span
+										className={[
+											"flex aspect-square w-7 items-center justify-center rounded-full text-[11px] font-sans font-semibold transition-all",
+											isSelected
+												? "bg-[#D7B05C] font-black text-[#1A120C]"
+												: isToday
+													? "border border-[#D7B05C] font-bold text-[#D7B05C]"
+													: isCurrentMonth
+														? "text-[#F8EEDB]"
+														: "text-[#F8EEDB]/25",
+										].join(" ")}
+									>
+										{date.getDate()}
+									</span>
+
+									<div className="mt-1 flex min-h-1 items-center justify-center gap-0.5">
+										{dayTasks.slice(0, 3).map((task) => {
+											const style =
+												typeColorMap[task.type] ?? typeColorMap.deadline;
 											return (
-												<div
-													key={t.id}
-													className={`text-[9.5px] font-sans font-extrabold p-1 rounded-xs flex items-center justify-between gap-1 shadow-xs border border-l-4 ${ribbonClass} bg-[#2D1B10] text-[#F8EEDB] hover:text-[#D7B05C] transition-colors`}
-												>
-													<span className="truncate">{t.title}</span>
-													<span className="text-[9px] shrink-0">
-														{cfg.icon}
-													</span>
-												</div>
+												<span
+													key={task.id}
+													className={`h-1 w-1 rounded-full ${style.dot}`}
+												/>
 											);
 										})}
-										{dayTasks.length > 2 && (
-											<p className="text-[8px] font-sans font-bold text-[#5B3922] text-right tracking-tight">
-												+{dayTasks.length - 2} more
-											</p>
-										)}
-									</>
-								) : (
-									<div className="h-full flex items-center justify-center opacity-30 select-none">
-										<span className="text-[9px] font-serif italic text-[#3B2415]">
-											No quests
-										</span>
 									</div>
-								)}
-							</div>
+								</button>
+							);
+						})}
+					</div>
+				</div>
+
+				{/* Selected Day Agenda */}
+				<div className="space-y-2">
+					<div className="flex items-center justify-between border-b border-[#8F6236]/40 pb-1">
+						<h3 className="font-serif text-xs font-black uppercase text-[#D7B05C]">
+							{formatShortDate(selectedDate)}
+						</h3>
+						<span className="text-[9px] font-sans font-bold text-[#D7B05C]/70 uppercase">
+							{selectedDayTasks.length} Quests
+						</span>
+					</div>
+
+					{selectedDayTasks.length > 0 ? (
+						<div className="space-y-1.5">
+							{selectedDayTasks.map((task) => {
+								const style = typeColorMap[task.type] ?? typeColorMap.deadline;
+								return (
+									<div
+										key={task.id}
+										className="rounded-xs border border-[#8F6236]/70 bg-[#0F0B08] p-2.5 text-xs"
+									>
+										<div className="flex items-center justify-between gap-2">
+											<span className="font-serif font-bold text-[#F8EEDB] truncate">
+												{task.title}
+											</span>
+											<span
+												className={`px-1.5 py-0.5 text-[8px] font-black uppercase ${style.border} text-[#D7B05C] border bg-[#1A120C]`}
+											>
+												{task.type}
+											</span>
+										</div>
+										<div className="mt-1 flex items-center justify-between text-[9px] text-[#D7B05C]/60">
+											<span>{task.projectName}</span>
+											<span className="flex items-center gap-1">
+												<Clock size={10} /> {task.assignedTo}
+											</span>
+										</div>
+									</div>
+								);
+							})}
 						</div>
-					);
-				})}
+					) : (
+						<div className="border border-dashed border-[#8F6236]/40 p-3 text-center text-xs italic text-[#D7B05C]/50">
+							No quests scheduled for this date.
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);
