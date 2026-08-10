@@ -1,4 +1,5 @@
 import { Shield } from "lucide-react";
+import { getUserSettings } from "@/actions/settings";
 import { SettingsClient } from "@/components/settings/settings-client";
 import { getOrCreateDbUser } from "@/lib/auth";
 
@@ -23,6 +24,8 @@ export default async function SettingsPage() {
 		);
 	}
 
+	const settingsRes = await getUserSettings();
+
 	return (
 		<SettingsClient
 			user={{
@@ -31,6 +34,7 @@ export default async function SettingsPage() {
 				role: dbUser.role,
 				createdAt: dbUser.createdAt,
 			}}
+			initialSettings={settingsRes.data}
 		/>
 	);
 }
