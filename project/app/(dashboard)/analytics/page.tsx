@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray, or } from "drizzle-orm";
 import { Shield } from "lucide-react";
 import { ActivityArchive } from "@/components/analytics/activity-archive";
 import { IntelligenceStats } from "@/components/analytics/intelligence-stats";
@@ -7,7 +7,7 @@ import { WorkspaceHealthScore } from "@/components/analytics/workspace-health-sc
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { activityLogs, projects } from "@/lib/db/schema";
+import { activityLogs, projectMembers, projects } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +31,25 @@ export default async function AnalyticsPage() {
 		);
 	}
 
-	// 1. Fetch user projects with nested lists & tasks
+	// 1. Fetch project IDs where user is an assigned member
+	const memberRecords = await db
+		.select({ projectId: projectMembers.projectId })
+		.from(projectMembers)
+		.where(eq(projectMembers.userId, dbUser.id));
+
+	const assignedProjectIds = memberRecords.map((m) => m.projectId);
+
+	// 2. Query projects owned OR assigned via projectMembers
+	const condition =
+		assignedProjectIds.length > 0
+			? or(
+					eq(projects.userId, dbUser.id),
+					inArray(projects.id, assignedProjectIds),
+				)
+			: eq(projects.userId, dbUser.id);
+
 	const userProjects = await db.query.projects.findMany({
-		where: eq(projects.userId, dbUser.id),
+		where: condition,
 		with: {
 			lists: {
 				with: {
@@ -43,14 +59,14 @@ export default async function AnalyticsPage() {
 		},
 	});
 
-	// 2. Fetch recent activity logs for this user
+	// 3. Fetch recent activity logs for live dispatch log
 	const recentActivities = await db.query.activityLogs.findMany({
 		where: eq(activityLogs.userId, dbUser.id),
 		orderBy: [desc(activityLogs.createdAt)],
 		limit: 6,
 	});
 
-	// 3. Compute live analytics metrics
+	// 4. Compute primary operational metrics
 	let totalTasks = 0;
 	let completedTasks = 0;
 	let overdueTasks = 0;
@@ -98,8 +114,8 @@ export default async function AnalyticsPage() {
 
 	return (
 		<DashboardLayoutContainer>
-			{/* Hero Header */}
-			<div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b-2 border-[#4A2C1D] pb-6 relative">
+			{/* Page Header */}
+			<div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b-2 border-[#4A2C1D] pb-6 relative min-w-0">
 				<div>
 					<div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
 						<span>⚔</span>
@@ -116,8 +132,8 @@ export default async function AnalyticsPage() {
 				</div>
 			</div>
 
-			<div className="space-y-8 mt-6">
-				{/* 1. Executive KPI Summary Cards */}
+			<div className="space-y-6 sm:space-y-8 mt-6 min-w-0">
+				{/* 1. WHAT IS HAPPENING? Executive KPI Cards */}
 				<IntelligenceStats
 					overallEfficiency={overallCompletionRate}
 					completedTasks={completedTasks}
@@ -126,7 +142,7 @@ export default async function AnalyticsPage() {
 					overdueTasks={overdueTasks}
 				/>
 
-				{/* 2. Signature Feature: Workspace Health Score & Operational Summary */}
+				{/* 2. HOW HEALTHY IS THE WORKSPACE? Workspace Health Panel */}
 				<WorkspaceHealthScore
 					totalProjects={userProjects.length}
 					overallEfficiency={overallCompletionRate}
@@ -135,14 +151,14 @@ export default async function AnalyticsPage() {
 					overdueTasks={overdueTasks}
 				/>
 
-				{/* Decorative Divider */}
+				{/* Subtle Heraldic Divider */}
 				<div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
-					<div className="h-px w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
+					<div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
 					<span>⚔ ──── ⚜ ──── ⚔</span>
-					<div className="h-px w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
+					<div className="h-px w-24 sm:w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
 				</div>
 
-				{/* 3. Visual Performance Charts */}
+				{/* 3 & 4. WHERE ARE TASKS CURRENTLY? & HOW ARE PROJECTS PROGRESSING? */}
 				<VisualPerformanceCharts
 					projects={projectAnalytics}
 					totalTasks={totalTasks}
@@ -151,7 +167,7 @@ export default async function AnalyticsPage() {
 					overdueTasks={overdueTasks}
 				/>
 
-				{/* 4. Activity Chronicle Feed */}
+				{/* 5. WHAT RECENTLY HAPPENED? Quest Logs */}
 				<ActivityArchive activities={recentActivities} />
 			</div>
 		</DashboardLayoutContainer>

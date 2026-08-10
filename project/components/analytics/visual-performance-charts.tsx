@@ -26,22 +26,22 @@ export function VisualPerformanceCharts({
 	overdueTasks,
 }: VisualPerformanceChartsProps) {
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-			{/* CHART 1: TASK STATUS DISTRIBUTION */}
-			<div className="p-5 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-4">
+		<div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 min-w-0">
+			{/* SECTION 1: TASK DISTRIBUTION */}
+			<div className="p-4 sm:p-5 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-4 min-w-0">
 				<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-3">
 					<div className="flex items-center gap-2 text-[#D7B05C]">
-						<PieChart size={18} />
+						<PieChart size={18} className="shrink-0" />
 						<h3 className="font-serif font-black uppercase text-sm tracking-wider text-[#F8EEDB]">
-							Task Status Distribution
+							Task Distribution
 						</h3>
 					</div>
 					<span className="text-[10px] font-serif italic text-[#D7B05C]/60">
-						Workload Breakdown
+						Stage Ratio
 					</span>
 				</div>
 
-				<div className="space-y-3 pt-2">
+				<div className="space-y-3 pt-1">
 					{/* Completed Bar */}
 					<div className="space-y-1">
 						<div className="flex justify-between text-xs font-sans font-bold text-[#F8EEDB]">
@@ -65,7 +65,7 @@ export function VisualPerformanceCharts({
 						</div>
 					</div>
 
-					{/* Active / In Progress Bar */}
+					{/* In Progress Bar */}
 					<div className="space-y-1">
 						<div className="flex justify-between text-xs font-sans font-bold text-[#F8EEDB]">
 							<span className="text-sky-400">
@@ -111,31 +111,33 @@ export function VisualPerformanceCharts({
 				</div>
 			</div>
 
-			{/* CHART 2: PROJECT COMPLETION COMPARISON */}
-			<div className="p-5 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-4">
+			{/* SECTION 2: PROJECT PROGRESS */}
+			<div className="p-4 sm:p-5 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-4 min-w-0">
 				<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-3">
 					<div className="flex items-center gap-2 text-[#D7B05C]">
-						<BarChart3 size={18} />
+						<BarChart3 size={18} className="shrink-0" />
 						<h3 className="font-serif font-black uppercase text-sm tracking-wider text-[#F8EEDB]">
-							Projects Progress Rate
+							Project Progress
 						</h3>
 					</div>
 					<span className="text-[10px] font-serif italic text-[#D7B05C]/60">
-						Comparative Velocity
+						{projects.length} {projects.length === 1 ? "Project" : "Projects"}
 					</span>
 				</div>
 
 				{projects.length === 0 ? (
 					<p className="text-xs font-serif italic text-[#D7B05C]/60 text-center py-6">
-						No projects found to compare.
+						No active project dispatches found.
 					</p>
 				) : (
 					<div className="space-y-3 pt-1">
-						{projects.slice(0, 4).map((proj) => (
+						{projects.map((proj) => (
 							<div key={proj.id} className="space-y-1">
 								<div className="flex justify-between text-xs font-sans font-bold text-[#F8EEDB]">
-									<span className="truncate max-w-[200px]">{proj.name}</span>
-									<span className="font-mono text-[#D7B05C]">
+									<span className="truncate max-w-[200px] sm:max-w-[280px]">
+										{proj.name}
+									</span>
+									<span className="font-mono text-[#D7B05C] shrink-0 ml-2">
 										{proj.completionRate}%
 									</span>
 								</div>
