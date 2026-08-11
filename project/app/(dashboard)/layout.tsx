@@ -69,7 +69,6 @@ export default function DashboardLayout({
 	const lastScrollY = useRef(0);
 	const { isCollapsed, setCollapsed } = useSidebarStore();
 
-	// Check if any modal or task detail workspace is currently open
 	const {
 		editingTask,
 		isCreateTaskModalOpen,
@@ -103,7 +102,6 @@ export default function DashboardLayout({
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
-	// Lock body scroll and hide navbar/sidebar chrome when a modal/workspace is active
 	if (isModalOrWorkspaceActive) {
 		return (
 			<div className="min-h-screen bg-[#15100C] text-[#F8EEDB] font-serif antialiased selection:bg-[#D7B05C] selection:text-[#15100C] overflow-hidden">
@@ -127,6 +125,7 @@ export default function DashboardLayout({
 
 			{/* Sidebar Navigation */}
 			<aside
+				aria-label="Command Sidebar"
 				className={`fixed inset-y-0 left-0 z-50 border-r-2 border-[#4A2C1D] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-2xl transition-all duration-300 ease-in-out transform lg:translate-x-0 ${
 					mobileOpen
 						? "translate-x-0 w-64"
@@ -140,6 +139,7 @@ export default function DashboardLayout({
 							<button
 								type="button"
 								onClick={() => setCollapsed(false)}
+								aria-label="Expand Command Sidebar"
 								className="group relative p-2.5 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#FFF5D6] transition-all shadow-md cursor-pointer flex items-center justify-center"
 								title="Expand Command Sidebar"
 							>
@@ -157,6 +157,7 @@ export default function DashboardLayout({
 						<>
 							<Link
 								href="/dashboard"
+								aria-label="Roundtable Home"
 								className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden"
 							>
 								<div className="p-1.5 rounded-xs border border-[#D7B05C] bg-[#15100C] text-[#D7B05C] shadow-md shrink-0">
@@ -166,7 +167,7 @@ export default function DashboardLayout({
 									<span className="block text-sm sm:text-base font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wide leading-tight truncate">
 										Roundtable
 									</span>
-									<span className="block text-[7.5px] font-sans font-bold text-[#D7B05C]/70 uppercase tracking-wider truncate">
+									<span className="block text-[7.5px] font-sans font-bold text-[#E3C279] uppercase tracking-wider truncate">
 										Royal Command Center
 									</span>
 								</div>
@@ -175,6 +176,7 @@ export default function DashboardLayout({
 							<button
 								type="button"
 								onClick={() => setCollapsed(true)}
+								aria-label="Collapse Command Sidebar"
 								className="hidden lg:flex shrink-0 p-1.5 rounded-xs border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C] hover:text-[#FFF5D6] hover:border-[#D7B05C] transition-colors cursor-pointer ml-1"
 								title="Collapse Sidebar"
 							>
@@ -186,14 +188,18 @@ export default function DashboardLayout({
 					<button
 						type="button"
 						onClick={() => setMobileOpen(false)}
-						className="lg:hidden shrink-0 p-1.5 text-[#D7B05C] hover:text-white"
+						aria-label="Close Mobile Navigation Menu"
+						className="lg:hidden shrink-0 p-1.5 text-[#D7B05C] hover:text-white cursor-pointer"
 					>
 						<X size={20} />
 					</button>
 				</div>
 
 				{/* Navigation Items */}
-				<nav className="mt-6 px-3 space-y-2 overflow-x-hidden">
+				<nav
+					aria-label="Main Navigation"
+					className="mt-6 px-3 space-y-2 overflow-x-hidden"
+				>
 					{navigation.map((item) => {
 						const isActive =
 							pathname === item.href || pathname?.startsWith(`${item.href}/`);
@@ -212,7 +218,7 @@ export default function DashboardLayout({
 								className={`flex items-center px-3.5 py-3 rounded-xs border transition-all duration-200 ${
 									isActive
 										? "border-[#D7B05C] bg-gradient-to-r from-[#5B3922] to-[#2D1B10] text-[#FFF5D6] shadow-[0_0_15px_rgba(215,176,92,0.3)]"
-										: "border-transparent text-[#D7B05C]/70 hover:text-[#FFF5D6] hover:bg-[#2D1B10]/60 hover:border-[#8F6236]/40"
+										: "border-transparent text-[#E3C279] hover:text-[#FFF5D6] hover:bg-[#2D1B10]/60 hover:border-[#8F6236]/40"
 								} ${isCollapsed && !mobileOpen ? "justify-center px-0" : ""}`}
 							>
 								<Icon size={20} className="shrink-0 text-[#D7B05C]" />
@@ -221,7 +227,7 @@ export default function DashboardLayout({
 										<span className="block text-xs font-sans font-black uppercase tracking-wider truncate">
 											{item.name}
 										</span>
-										<span className="block text-[9px] font-serif italic text-[#D7B05C]/60 truncate">
+										<span className="block text-[9px] font-serif italic text-[#E3C279] truncate">
 											{item.subtext}
 										</span>
 									</div>
@@ -247,7 +253,9 @@ export default function DashboardLayout({
 					<button
 						type="button"
 						onClick={() => setMobileOpen(true)}
-						className="lg:hidden p-2 text-[#D7B05C] hover:text-white"
+						aria-label="Open Mobile Command Menu"
+						aria-expanded={mobileOpen}
+						className="lg:hidden p-2 text-[#D7B05C] hover:text-white cursor-pointer"
 					>
 						<Menu size={22} />
 					</button>
@@ -258,6 +266,7 @@ export default function DashboardLayout({
 						<button
 							type="button"
 							onClick={openDrawer}
+							aria-label={`View Notifications (${unreadCount} unread)`}
 							className="p-2.5 rounded-xs border border-[#8F6236]/60 bg-[#2D1B10] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] transition-colors relative cursor-pointer shadow-md"
 							title="Notifications"
 						>
