@@ -46,7 +46,7 @@ export function KingdomHealthWidget({
 
 				<div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#4A2C1D]/60 text-xs font-sans">
 					<div className="p-2 bg-[#15100C] border border-[#4A2C1D] rounded-xs">
-						<span className="flex items-center gap-1 text-[9px] font-bold text-[#D7B05C]/70 uppercase">
+						<span className="flex items-center gap-1 text-[9px] font-bold text-[#E3C279] uppercase">
 							<AlertCircle size={10} className="text-rose-400" /> Overdue
 							Objectives
 						</span>
@@ -56,7 +56,7 @@ export function KingdomHealthWidget({
 					</div>
 
 					<div className="p-2 bg-[#15100C] border border-[#4A2C1D] rounded-xs">
-						<span className="flex items-center gap-1 text-[9px] font-bold text-[#D7B05C]/70 uppercase">
+						<span className="flex items-center gap-1 text-[9px] font-bold text-[#E3C279] uppercase">
 							<Users size={10} className="text-sky-300" /> Officer Capacity
 						</span>
 						<p className="text-sm font-serif font-black text-sky-300 mt-0.5">
@@ -65,7 +65,7 @@ export function KingdomHealthWidget({
 					</div>
 
 					<div className="p-2 bg-[#15100C] border border-[#4A2C1D] rounded-xs">
-						<span className="flex items-center gap-1 text-[9px] font-bold text-[#D7B05C]/70 uppercase">
+						<span className="flex items-center gap-1 text-[9px] font-bold text-[#E3C279] uppercase">
 							<Activity size={10} className="text-emerald-400" /> Weekly
 							Velocity
 						</span>
@@ -75,7 +75,7 @@ export function KingdomHealthWidget({
 					</div>
 
 					<div className="p-2 bg-[#15100C] border border-[#4A2C1D] rounded-xs">
-						<span className="flex items-center gap-1 text-[9px] font-bold text-[#D7B05C]/70 uppercase">
+						<span className="flex items-center gap-1 text-[9px] font-bold text-[#E3C279] uppercase">
 							Overdue Rate
 						</span>
 						<p className="text-sm font-serif font-black text-[#F8EEDB] mt-0.5">

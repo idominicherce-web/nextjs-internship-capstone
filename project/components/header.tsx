@@ -17,9 +17,10 @@ export function Header() {
 
 			<div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
 				<div className="flex h-16 items-center justify-between gap-2">
-					{/* Branding Logo & Title */}
+					{/* Branding Logo & Title with accessible label */}
 					<Link
 						href="/"
+						aria-label="The Roundtable Home"
 						className="flex items-center space-x-2 sm:space-x-3 shrink-0 active:scale-95 transition-transform"
 					>
 						<div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-amber-600/60 bg-gradient-to-br from-amber-900 to-amber-950 shadow-md">
@@ -32,7 +33,6 @@ export function Header() {
 
 					{/* Controls & Navigation */}
 					<div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
-						{/* Theme Toggle Button */}
 						<button
 							type="button"
 							onClick={() => setTheme(theme === "light" ? "dark" : "light")}
