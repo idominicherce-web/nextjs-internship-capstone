@@ -1,7 +1,9 @@
+import { eq } from "drizzle-orm";
 import { Shield } from "lucide-react";
-import { getUserSettings } from "@/actions/settings";
 import { SettingsClient } from "@/components/settings/settings-client";
 import { getOrCreateDbUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { userSettings } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -10,31 +12,36 @@ export default async function SettingsPage() {
 
 	if (!dbUser) {
 		return (
-			<div className="min-h-screen bg-[#15100C] flex items-center justify-center p-6 text-center text-[#D7B05C] font-serif">
-				<div className="p-8 border-2 border-[#8F6236] bg-[#2D1B10] rounded-xs shadow-2xl">
+			<div className="flex min-h-screen items-center justify-center bg-[#15100C] p-6 text-center font-serif text-[#D7B05C]">
+				<div className="w-full max-w-md rounded-xs border-2 border-[#8F6236] bg-[#2D1B10] p-8 shadow-2xl">
 					<Shield className="mx-auto mb-3 text-[#D7B05C]" size={32} />
-					<h2 className="text-xl font-black uppercase tracking-widest text-[#F8EEDB]">
+					<h1 className="text-xl font-black uppercase tracking-widest text-[#F8EEDB]">
 						Access Denied
-					</h2>
-					<p className="text-xs font-sans text-[#D7B05C]/70 mt-2">
-						Unauthorized traveler. Please sign in to configure realm settings.
+					</h1>
+					<p className="mt-2 font-sans text-xs text-[#E3C279]">
+						Unauthorized traveler. Please sign in to view settings.
 					</p>
 				</div>
 			</div>
 		);
 	}
 
-	const settingsRes = await getUserSettings();
+	// Fetch existing user settings from DB
+	const settings = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, dbUser.id),
+	});
 
 	return (
-		<SettingsClient
-			user={{
-				name: dbUser.name,
-				email: dbUser.email,
-				role: dbUser.role,
-				createdAt: dbUser.createdAt,
-			}}
-			initialSettings={settingsRes.data}
-		/>
+		<main className="min-w-0">
+			<SettingsClient
+				user={{
+					name: dbUser.name,
+					email: dbUser.email,
+					role: dbUser.role,
+					createdAt: dbUser.createdAt,
+				}}
+				initialSettings={settings}
+			/>
+		</main>
 	);
 }

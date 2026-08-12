@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { updateUserProfile } from "@/actions/users";
+import { updateUserProfile } from "@/actions/settings";
 
 interface ProfileSettingsFormProps {
 	user: {
@@ -25,7 +25,7 @@ interface ProfileSettingsFormProps {
 
 export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 	const [fullName, setFullName] = useState(user.name || "");
-	const [email, setEmail] = useState(user.email || "");
+	const [email] = useState(user.email || "");
 	const [role, setRole] = useState(user.role || "Project Manager");
 	const [isSaved, setIsSaved] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +47,6 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 		try {
 			const res = await updateUserProfile({
 				name: fullName,
-				email,
 				role,
 			});
 
@@ -74,17 +73,17 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 					<div>
 						<div className="flex items-center gap-2">
 							<User size={18} className="text-[#D7B05C]" />
-							<h3 className="font-serif font-black text-xl text-[#F8EEDB]">
+							<h2 className="font-serif font-black text-xl text-[#F8EEDB]">
 								Profile Settings
-							</h3>
+							</h2>
 						</div>
-						<p className="text-xs font-sans text-[#D7B05C]/80 mt-1 italic">
+						<p className="text-xs font-sans text-[#E3C279] mt-1 italic">
 							Update your personal information, contact email, and workspace
 							role.
 						</p>
 					</div>
 
-					<span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#D7B05C]/60 bg-[#15100C] border border-[#8F6236]/40 px-2.5 py-1 rounded-xs shrink-0">
+					<span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#E3C279] bg-[#15100C] border border-[#8F6236]/40 px-2.5 py-1 rounded-xs shrink-0">
 						Royal Identity
 					</span>
 				</div>
@@ -95,15 +94,15 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 						{initials}
 					</div>
 					<div className="min-w-0 flex-1 space-y-0.5">
-						<h4 className="font-serif font-black text-[#F8EEDB] text-base truncate">
+						<h3 className="font-serif font-black text-[#F8EEDB] text-base truncate">
 							{displayName}
-						</h4>
-						<div className="flex flex-wrap items-center gap-3 text-[11px] font-sans text-[#D7B05C]/80">
+						</h3>
+						<div className="flex flex-wrap items-center gap-3 text-[11px] font-sans text-[#E3C279]">
 							<span className="flex items-center gap-1">
 								<Shield size={12} className="text-[#D7B05C]" /> {role}
 							</span>
 							<span className="text-[#8F6236]/40">•</span>
-							<span className="flex items-center gap-1 italic text-[#D7B05C]/60">
+							<span className="flex items-center gap-1 italic text-[#E3C279]">
 								<Calendar size={12} className="text-[#D7B05C]" />
 								Member since{" "}
 								{user.createdAt
@@ -111,51 +110,65 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 											month: "short",
 											year: "numeric",
 										})
-									: "Jan 2025"}
+									: "Jan 2026"}
 							</span>
 						</div>
 					</div>
 				</div>
 
-				{/* Restrained Form Body (Max Width ~620px for high readability) */}
+				{/* Form Body */}
 				<form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
 					{/* Full Name */}
 					<div className="space-y-1.5">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
+						<label
+							htmlFor="full-name-input"
+							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+						>
 							Full Name
 						</label>
 						<input
+							id="full-name-input"
 							type="text"
 							value={fullName}
 							onChange={(e) => setFullName(e.target.value)}
 							required
-							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/80 focus:outline-none focus:border-[#D7B05C] focus:ring-1 focus:ring-[#D7B05C] shadow-inner transition-colors"
+							aria-label="Full Name"
+							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/80 focus:outline-hidden focus:border-[#D7B05C] focus:ring-1 focus:ring-[#D7B05C] shadow-inner transition-colors"
 						/>
 					</div>
 
-					{/* Email Address */}
+					{/* Email Address (Read-only) */}
 					<div className="space-y-1.5">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
+						<label
+							htmlFor="email-input"
+							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+						>
 							Email Address
 						</label>
 						<input
+							id="email-input"
 							type="email"
 							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							required
-							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-xs font-sans font-extrabold text-[#1A120C] placeholder-[#8F6236]/80 focus:outline-none focus:border-[#D7B05C] focus:ring-1 focus:ring-[#D7B05C] shadow-inner transition-colors"
+							disabled
+							aria-label="Email Address"
+							className="w-full px-3.5 py-2.5 bg-[#15100C] border border-[#4A2C1D] rounded-xs text-xs font-sans font-bold text-[#E3C279]/60 cursor-not-allowed shadow-inner"
 						/>
 					</div>
 
 					{/* Workspace Role */}
 					<div className="space-y-1.5">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
+						<label
+							htmlFor="role-select"
+							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+						>
 							Workspace Role
 						</label>
 						<select
+							id="role-select"
 							value={role}
 							onChange={(e) => setRole(e.target.value)}
-							className="w-full px-3.5 py-2.5 bg-[#2D1B10] border border-[#8F6236] text-[#D7B05C] font-sans text-xs font-bold uppercase rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer shadow-md"
+							aria-label="Workspace Role"
+							className="w-full px-3.5 py-2.5 bg-[#2D1B10] border border-[#8F6236] text-[#D7B05C] font-sans text-xs font-bold uppercase rounded-xs focus:outline-hidden focus:border-[#D7B05C] cursor-pointer shadow-md"
 						>
 							<option value="Workspace Owner">
 								Workspace Owner (Royal Sovereign)
@@ -187,8 +200,8 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 								<CheckCircle2 size={16} /> Profile changes saved to database.
 							</span>
 						) : (
-							<span className="text-[11px] font-serif italic text-[#D7B05C]/60">
-								Ensure all decrees are verified before updating records.
+							<span className="text-[11px] font-serif italic text-[#E3C279]">
+								Ensure all information are verified before updating records.
 							</span>
 						)}
 
@@ -198,11 +211,11 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 								disabled={isLoading}
 								onClick={() => {
 									setFullName(user.name || "");
-									setEmail(user.email || "");
 									setRole(user.role || "Project Manager");
 									setErrorMessage(null);
 								}}
-								className="px-4 py-2 border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C]/80 hover:text-white hover:border-[#8F6236] text-xs font-sans font-bold uppercase rounded-xs transition-colors cursor-pointer disabled:opacity-50"
+								aria-label="Cancel Profile Edits"
+								className="px-4 py-2 border border-[#8F6236]/60 bg-[#15100C] text-[#E3C279] hover:text-white hover:border-[#8F6236] text-xs font-sans font-bold uppercase rounded-xs transition-colors cursor-pointer disabled:opacity-50"
 							>
 								Cancel
 							</button>
@@ -210,7 +223,8 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 							<button
 								type="submit"
 								disabled={isLoading}
-								className="px-5 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-wider rounded-xs shadow-md hover:border-[#FFF5D6] hover:shadow-[0_0_15px_rgba(215,176,92,0.3)] transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+								aria-label="Save Profile Changes"
+								className="px-5 py-2 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] font-sans text-xs font-black uppercase tracking-wider rounded-xs shadow-md hover:border-[#FFF5D6] transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
 							>
 								{isLoading && (
 									<Loader2 size={14} className="animate-spin text-[#D7B05C]" />
@@ -222,7 +236,7 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 				</form>
 			</div>
 
-			{/* Standalone Session Status Card */}
+			{/* Session Status Card */}
 			<div className="p-4 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 				<div className="flex items-center gap-3">
 					<div className="p-2 rounded-full border border-emerald-700 bg-emerald-950 text-emerald-400 shrink-0">
@@ -230,22 +244,22 @@ export function ProfileSettingsForm({ user }: ProfileSettingsFormProps) {
 					</div>
 					<div>
 						<div className="flex items-center gap-2">
-							<h4 className="font-sans font-black text-xs uppercase tracking-wider text-[#F8EEDB]">
+							<h3 className="font-sans font-black text-xs uppercase tracking-wider text-[#F8EEDB]">
 								Current Session
-							</h4>
+							</h3>
 							<span className="px-1.5 py-0.2 text-[9px] font-sans font-black bg-emerald-950 text-emerald-300 rounded-xs border border-emerald-700 uppercase">
 								Active
 							</span>
 						</div>
-						<p className="text-[11px] font-serif italic text-[#D7B05C]/70 mt-0.5">
+						<p className="text-[11px] font-serif italic text-[#E3C279] mt-0.5">
 							Connected securely to High Command Chamber.
 						</p>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-4 text-[11px] font-sans text-[#D7B05C]/80 border-t sm:border-t-0 border-[#4A2C1D] pt-2 sm:pt-0 w-full sm:w-auto">
+				<div className="flex items-center gap-4 text-[11px] font-sans text-[#E3C279] border-t sm:border-t-0 border-[#4A2C1D] pt-2 sm:pt-0 w-full sm:w-auto">
 					<span className="flex items-center gap-1">
-						<Monitor size={12} className="text-[#D7B05C]" /> Chrome on Windows
+						<Monitor size={12} className="text-[#D7B05C]" /> Active Client
 					</span>
 					<span className="text-[#8F6236]/40">•</span>
 					<span className="flex items-center gap-1">
