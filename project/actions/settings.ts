@@ -1,12 +1,10 @@
-// actions/settings.ts
-
 "use server";
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { userSettings } from "@/lib/db/schema";
+import { userSettings, users } from "@/lib/db/schema";
 
 export async function getUserSettings() {
 	try {
@@ -55,7 +53,6 @@ export async function updateUserSettings(payload: {
 		const dbUser = await getOrCreateDbUser();
 		if (!dbUser) return { success: false, error: "Unauthorized access." };
 
-		// Changed 'let' to 'const' to satisfy Biome
 		const settings = await db.query.userSettings.findFirst({
 			where: eq(userSettings.userId, dbUser.id),
 		});
@@ -80,5 +77,39 @@ export async function updateUserSettings(payload: {
 	} catch (error) {
 		console.error("Failed to update user settings:", error);
 		return { success: false, error: "Failed to update settings." };
+	}
+}
+
+export async function updateUserProfile(payload: {
+	name?: string;
+	email?: string;
+	role?: string;
+}) {
+	try {
+		const dbUser = await getOrCreateDbUser();
+		if (!dbUser) return { success: false, error: "Unauthorized access." };
+
+		if (payload.name && payload.name.trim().length < 2) {
+			return {
+				success: false,
+				error: "Officer name must be at least 2 characters long.",
+			};
+		}
+
+		await db
+			.update(users)
+			.set({
+				name: payload.name?.trim(),
+				role: payload.role,
+				updatedAt: new Date(),
+			})
+			.where(eq(users.id, dbUser.id));
+
+		revalidatePath("/settings");
+		revalidatePath("/dashboard");
+		return { success: true };
+	} catch (error) {
+		console.error("Failed to update user profile:", error);
+		return { success: false, error: "Failed to update profile." };
 	}
 }
