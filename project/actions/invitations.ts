@@ -1,11 +1,9 @@
 "use server";
 
-import { desc, eq } from "drizzle-orm";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getOrCreateDbUser } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { users, workspaceInvitations } from "@/lib/db/schema";
 import { logActivity } from "@/lib/logger";
 
 export type ActionResponse<T = unknown> = {
@@ -15,24 +13,58 @@ export type ActionResponse<T = unknown> = {
 	fieldErrors?: Record<string, string[]>;
 };
 
-const inviteMemberSchema = z.object({
-	email: z.string().trim().email("Please provide a valid email address."),
-	role: z.enum(["Viewer", "Member", "Admin"]),
-	projectId: z.string().min(1, "Project identifier is required."),
+const inviteWorkspaceSchema = z.object({
+	email: z.string().trim().email("Please enter a valid email address."),
+	role: z.enum(["org:admin", "org:member"], {
+		message: "Invalid workspace role selected.",
+	}),
 });
 
+/**
+ * Creates a workspace invitation using Clerk Organization Invitations API.
+ * Requires an active orgId and org:admin / admin role in Clerk.
+ */
 export async function inviteWorkspaceMember(
 	projectId: string,
 	email: string,
-	role: "Viewer" | "Member" | "Admin",
+	roleInput: string,
 ): Promise<ActionResponse> {
 	try {
+		const { userId, orgId, orgRole } = await auth();
 		const dbUser = await getOrCreateDbUser();
-		if (!dbUser) {
-			return { success: false, error: "Unauthorized access." };
+
+		if (!userId || !dbUser) {
+			return { success: false, error: "Unauthorized access. Please sign in." };
 		}
 
-		const parsed = inviteMemberSchema.safeParse({ email, role, projectId });
+		// STRICT SECURITY: Require an active orgId in context
+		if (!orgId) {
+			return {
+				success: false,
+				error: "No active workspace organization selected.",
+			};
+		}
+
+		// STRICT SECURITY: Require admin role explicitly
+		if (orgRole !== "org:admin" && orgRole !== "admin") {
+			return {
+				success: false,
+				error:
+					"You do not have administrative permissions to invite members to this workspace.",
+			};
+		}
+
+		// Map to Clerk's Organization role strings
+		const clerkRole =
+			roleInput === "Admin" || roleInput === "org:admin"
+				? "org:admin"
+				: "org:member";
+
+		const parsed = inviteWorkspaceSchema.safeParse({
+			email,
+			role: clerkRole,
+		});
+
 		if (!parsed.success) {
 			const flattened = parsed.error.flatten();
 			const firstError =
@@ -40,102 +72,145 @@ export async function inviteWorkspaceMember(
 			return { success: false, error: firstError };
 		}
 
-		// Check if invitation already pending
-		const existingInvite = await db.query.workspaceInvitations.findFirst({
-			where: eq(workspaceInvitations.email, email.toLowerCase()),
-		});
+		const client = await clerkClient();
 
-		if (existingInvite && existingInvite.status === "pending") {
+		// Check for existing pending invitation in Clerk
+		const existingInvites =
+			await client.organizations.getOrganizationInvitationList({
+				organizationId: orgId,
+				status: ["pending"],
+			});
+
+		const isAlreadyInvited = existingInvites.data.some(
+			(inv) => inv.emailAddress.toLowerCase() === email.toLowerCase(),
+		);
+
+		if (isAlreadyInvited) {
 			return {
 				success: false,
-				error: "A pending invitation already exists for this email address.",
+				error:
+					"A pending workspace invitation already exists for this email address.",
 			};
 		}
 
-		// Create invitation record
-		const [newInvitation] = await db
-			.insert(workspaceInvitations)
-			.values({
-				email: email.toLowerCase(),
-				role,
-				invitedById: dbUser.id,
-				status: "pending",
-			})
-			.returning();
+		// Determine application origin dynamically
+		const appOrigin =
+			process.env.NEXT_PUBLIC_APP_URL ||
+			(process.env.VERCEL_URL
+				? `https://${process.env.VERCEL_URL}`
+				: "http://localhost:3000");
+
+		// Create Clerk Organization Invitation with explicit redirectUrl
+		const invitation = await client.organizations.createOrganizationInvitation({
+			organizationId: orgId,
+			emailAddress: email.toLowerCase(),
+			role: clerkRole,
+			inviterUserId: userId,
+			redirectUrl: `${appOrigin}/accept-invitation`,
+		});
 
 		await logActivity({
 			userId: dbUser.id,
-			action: "Invited Member",
+			action: "Invited Workspace Member",
 			entityType: "project",
 			entityName: email,
-			details: `Sent ${role} invitation to ${email}`,
+			details: `Dispatched workspace invitation (${clerkRole}) to ${email}`,
 		});
 
-		revalidatePath(`/projects/${projectId}`);
+		revalidatePath("/team");
 		revalidatePath("/dashboard");
 
-		return { success: true, data: newInvitation };
-	} catch (error) {
-		console.error("Failed to invite workspace member:", error);
-		return { success: false, error: "Failed to send invitation dispatch." };
+		return {
+			success: true,
+			data: {
+				id: invitation.id,
+				email: invitation.emailAddress,
+				role: invitation.role,
+			},
+		};
+	} catch (error: any) {
+		console.error("Failed to create Clerk organization invitation.");
+		const message =
+			error?.errors?.[0]?.longMessage ||
+			error?.message ||
+			"Failed to dispatch workspace invitation.";
+		return { success: false, error: message };
 	}
 }
 
+/**
+ * Fetches real pending invitations directly from Clerk Organizations.
+ */
 export async function getWorkspaceInvitations() {
 	try {
-		const invitations = await db
-			.select({
-				id: workspaceInvitations.id,
-				email: workspaceInvitations.email,
-				role: workspaceInvitations.role,
-				status: workspaceInvitations.status,
-				createdAt: workspaceInvitations.createdAt,
-				invitedBy: {
-					name: users.name,
-					email: users.email,
-				},
-			})
-			.from(workspaceInvitations)
-			.leftJoin(users, eq(workspaceInvitations.invitedById, users.id))
-			.orderBy(desc(workspaceInvitations.createdAt));
+		const { orgId } = await auth();
+		if (!orgId) return { success: true, data: [] };
 
-		return { success: true, data: invitations };
-	} catch (error) {
-		console.error("Failed to fetch invitations:", error);
-		return { success: false, data: [] };
+		const client = await clerkClient();
+		const response = await client.organizations.getOrganizationInvitationList({
+			organizationId: orgId,
+			status: ["pending"],
+		});
+
+		const formattedInvites = response.data.map((inv) => ({
+			id: inv.id,
+			email: inv.emailAddress,
+			role: inv.role === "org:admin" ? "Admin" : "Member",
+			createdAt: inv.createdAt,
+		}));
+
+		return { success: true, data: formattedInvites };
+	} catch {
+		console.error("Failed to fetch Clerk invitations.");
+		return { success: true, data: [] };
 	}
 }
 
+/**
+ * Revokes a pending Clerk Organization Invitation.
+ */
 export async function revokeInvitation(
 	invitationId: string,
-	projectId: string,
+	_projectId = "global",
 ): Promise<ActionResponse> {
 	try {
+		const { userId, orgId, orgRole } = await auth();
 		const dbUser = await getOrCreateDbUser();
-		if (!dbUser) {
+
+		if (!userId || !dbUser || !orgId) {
 			return { success: false, error: "Unauthorized access." };
 		}
 
-		const [revoked] = await db
-			.update(workspaceInvitations)
-			.set({ status: "cancelled" })
-			.where(eq(workspaceInvitations.id, invitationId))
-			.returning();
-
-		if (revoked) {
-			await logActivity({
-				userId: dbUser.id,
-				action: "Revoked Invitation",
-				entityType: "project",
-				entityName: revoked.email,
-				details: `Revoked pending invitation for ${revoked.email}`,
-			});
+		// STRICT SECURITY: Require admin role explicitly
+		if (orgRole !== "org:admin" && orgRole !== "admin") {
+			return {
+				success: false,
+				error: "You do not have permission to revoke workspace invitations.",
+			};
 		}
 
-		revalidatePath(`/projects/${projectId}`);
+		const client = await clerkClient();
+		await client.organizations.revokeOrganizationInvitation({
+			organizationId: orgId,
+			invitationId,
+			requestingUserId: userId,
+		});
+
+		await logActivity({
+			userId: dbUser.id,
+			action: "Revoked Workspace Invitation",
+			entityType: "project",
+			entityName: invitationId,
+			details: `Revoked pending invitation ID ${invitationId}`,
+		});
+
+		revalidatePath("/team");
 		return { success: true };
-	} catch (error) {
-		console.error("Failed to revoke invitation:", error);
-		return { success: false, error: "Failed to revoke member invitation." };
+	} catch (error: any) {
+		console.error("Failed to revoke Clerk invitation.");
+		return {
+			success: false,
+			error: error?.errors?.[0]?.longMessage || "Failed to revoke invitation.",
+		};
 	}
 }

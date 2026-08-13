@@ -2,13 +2,13 @@
 
 import { Plus, Scroll } from "lucide-react";
 import { useMemo, useState } from "react";
-import { CreateProjectButton } from "@/components/create-project-button";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { CreateProjectModal } from "@/components/modals/create-project-modal";
 import {
 	ArchiveOrderDropdown,
 	type SortOption,
 } from "@/components/projects/archive-order-dropdown";
+import { CreateProjectButton } from "@/components/projects/create-project-button";
 import {
 	LeatherProjectCard,
 	type ProjectData,

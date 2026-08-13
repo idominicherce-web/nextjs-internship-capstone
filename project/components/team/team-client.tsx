@@ -2,10 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { revokeInvitation } from "@/actions/invitations";
+import { removeMemberAction } from "@/actions/team";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { AssignProjectMemberModal } from "@/components/modals/assign-project-member-modal";
+import { ChangeRoleModal } from "@/components/modals/change-role-modal";
 import { InviteMemberModal } from "@/components/modals/invite-member-modal";
-import { MemberDetailsDrawer } from "@/components/team/member-details-drawer";
+import { MemberActionsModal } from "@/components/team/modals/member-actions-modal";
+import { MemberDetailsModal } from "@/components/team/modals/member-details-modal";
+import { RemoveMemberModal } from "@/components/team/modals/remove-member-modal";
 import {
 	type ActivityItem,
 	TeamActivityChronicle,
@@ -19,10 +23,8 @@ import {
 	type PendingInvite,
 	TeamPendingInvitations,
 } from "@/components/team/team-pending-invitations";
-import { TeamQuickActions } from "@/components/team/team-quick-actions";
 import { TeamSearch } from "@/components/team/team-search";
 import { TeamStats } from "@/components/team/team-stats";
-import { useKanbanStore } from "@/stores/use-kanban-store";
 import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface TeamClientProps {
@@ -32,32 +34,29 @@ interface TeamClientProps {
 }
 
 export function TeamClient({
-	initialMembers,
+	initialMembers: rawMembers,
 	activities,
 	pendingInvitations: initialPendingInvitations,
 }: TeamClientProps) {
+	const [members, setMembers] = useState<Member[]>(rawMembers);
 	const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+	const [activeModal, setActiveModal] = useState<
+		"actions" | "view" | "assign" | "role" | "invite" | "remove" | null
+	>(null);
+
 	const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>(
 		initialPendingInvitations,
 	);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedRole, setSelectedRole] = useState("all");
 	const [selectedStatus, setSelectedStatus] = useState("all");
-	const [isInviteOpen, setIsInviteOpen] = useState(false);
-
-	const {
-		isAssignProjectMemberModalOpen,
-		openAssignProjectMemberModal,
-		closeAssignProjectMemberModal,
-	} = useKanbanStore();
 
 	const addNotification = useNotificationStore(
 		(state) => state.addNotification,
 	);
 
-	// Filter members based on search query, role, and status
 	const filteredMembers = useMemo(() => {
-		return initialMembers.filter((m) => {
+		return members.filter((m) => {
 			const matchesQuery =
 				m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 				m.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -73,7 +72,7 @@ export function TeamClient({
 
 			return matchesQuery && matchesRole && matchesStatus;
 		});
-	}, [initialMembers, searchQuery, selectedRole, selectedStatus]);
+	}, [members, searchQuery, selectedRole, selectedStatus]);
 
 	const handleResetFilters = () => {
 		setSearchQuery("");
@@ -81,8 +80,29 @@ export function TeamClient({
 		setSelectedStatus("all");
 	};
 
-	const handleInviteMember = () => {
-		setIsInviteOpen(true);
+	const handleConfirmRemoveMember = async (member: Member) => {
+		const res = await removeMemberAction(member.id);
+		if (res.success) {
+			setMembers((prev) => prev.filter((m) => m.id !== member.id));
+			setActiveModal(null);
+			setSelectedMember(null);
+			addNotification({
+				title: "Officer Discharged",
+				description: "Member removed from workspace.",
+				type: "team",
+			});
+		}
+	};
+
+	const handleResendInvite = (invitationId: string) => {
+		const targetInvite = pendingInvites.find((i) => i.id === invitationId);
+		if (targetInvite) {
+			addNotification({
+				title: "Invitation Resent",
+				description: `Dispatch resent to ${targetInvite.email}.`,
+				type: "team",
+			});
+		}
 	};
 
 	const handleCancelInvite = async (invitationId: string) => {
@@ -103,17 +123,15 @@ export function TeamClient({
 
 	return (
 		<DashboardLayoutContainer>
-			<div className="space-y-8">
+			<div className="space-y-6 sm:space-y-8 min-w-0">
 				{/* Header */}
-				<TeamHeader onInviteClick={handleInviteMember} />
+				<TeamHeader onInviteClick={() => setActiveModal("invite")} />
 
-				{/* Stats Row */}
+				{/* Summary Stats Row */}
 				<TeamStats
-					totalMembers={initialMembers.length}
-					activeThisWeek={
-						initialMembers.filter((m) => m.status !== "Offline").length
-					}
-					totalProjectAssignments={initialMembers.reduce(
+					totalMembers={members.length}
+					activeThisWeek={members.filter((m) => m.status !== "Offline").length}
+					totalProjectAssignments={members.reduce(
 						(acc, m) => acc + m.projectCount,
 						0,
 					)}
@@ -121,9 +139,9 @@ export function TeamClient({
 				/>
 
 				{/* Main Grid Layout */}
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-					{/* Main Content Area */}
-					<div className="lg:col-span-2 space-y-4">
+				<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)] gap-6 min-w-0">
+					{/* Member Directory */}
+					<div className="space-y-4 min-w-0">
 						<TeamSearch
 							searchQuery={searchQuery}
 							onSearchChange={setSearchQuery}
@@ -136,18 +154,18 @@ export function TeamClient({
 
 						<TeamDirectoryTable
 							members={filteredMembers}
-							onSelectMember={(member) => setSelectedMember(member)}
+							onOpenActions={(m) => {
+								setSelectedMember(m);
+								setActiveModal("actions");
+							}}
 						/>
 					</div>
 
-					{/* Right Sidebar */}
-					<div className="space-y-6">
-						<TeamQuickActions
-							onInviteMember={handleInviteMember}
-							onAssignProject={openAssignProjectMemberModal}
-						/>
+					{/* Sidebar: Pending Invitations & Activity Chronicle */}
+					<div className="space-y-6 min-w-0">
 						<TeamPendingInvitations
 							invitations={pendingInvites}
+							onResend={handleResendInvite}
 							onCancel={handleCancelInvite}
 						/>
 						<TeamActivityChronicle activities={activities} />
@@ -155,22 +173,79 @@ export function TeamClient({
 				</div>
 			</div>
 
-			{/* Member Details Side Drawer */}
-			<MemberDetailsDrawer
+			{/* Central Member Actions Hub Modal */}
+			<MemberActionsModal
 				member={selectedMember}
-				onClose={() => setSelectedMember(null)}
+				isOpen={activeModal === "actions"}
+				onClose={() => {
+					setActiveModal(null);
+					setSelectedMember(null);
+				}}
+				onViewMember={() => setActiveModal("view")}
+				onAssignProject={() => setActiveModal("assign")}
+				onChangeRole={() => setActiveModal("role")}
+				onRemoveMember={() => setActiveModal("remove")}
+			/>
+
+			{/* Member Details Modal */}
+			<MemberDetailsModal
+				member={selectedMember}
+				isOpen={activeModal === "view"}
+				onClose={() => {
+					setActiveModal(null);
+					setSelectedMember(null);
+				}}
+				onRemoveMember={() => setActiveModal("remove")}
+			/>
+
+			{/* Remove Member Confirmation Modal */}
+			<RemoveMemberModal
+				member={selectedMember}
+				isOpen={activeModal === "remove"}
+				onClose={() => {
+					setActiveModal(null);
+					setSelectedMember(null);
+				}}
+				onConfirm={handleConfirmRemoveMember}
 			/>
 
 			{/* Invite Member Modal */}
 			<InviteMemberModal
-				isOpen={isInviteOpen}
-				onClose={() => setIsInviteOpen(false)}
+				isOpen={activeModal === "invite"}
+				onClose={() => setActiveModal(null)}
 			/>
 
-			{/* Assign Project Officer Modal */}
+			{/* Assign Project Modal */}
 			<AssignProjectMemberModal
-				isOpen={isAssignProjectMemberModalOpen}
-				onClose={closeAssignProjectMemberModal}
+				isOpen={activeModal === "assign"}
+				onClose={() => {
+					setActiveModal(null);
+					setSelectedMember(null);
+				}}
+				selectedMember={
+					selectedMember
+						? {
+								id: selectedMember.id,
+								name: selectedMember.name,
+								email: selectedMember.email,
+							}
+						: undefined
+				}
+			/>
+
+			{/* Change Member Role Modal */}
+			<ChangeRoleModal
+				member={selectedMember}
+				isOpen={activeModal === "role"}
+				onClose={() => {
+					setActiveModal(null);
+					setSelectedMember(null);
+				}}
+				onRoleUpdated={(userId, newRole) => {
+					setMembers((prev) =>
+						prev.map((m) => (m.id === userId ? { ...m, role: newRole } : m)),
+					);
+				}}
 			/>
 		</DashboardLayoutContainer>
 	);

@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import {
 	ArrowRight,
 	BarChart3,
@@ -8,9 +9,16 @@ import {
 	Users,
 } from "lucide-react";
 import Link from "next/link";
-import { Header } from "@/components/header";
+import { Header } from "@/components/common/header";
+import { getOrCreateDbUser } from "@/lib/auth";
 
-export default function HomePage() {
+export default async function HomePage() {
+	// Sync authenticated user into Neon DB if session exists upon landing
+	const { userId } = await auth();
+	if (userId) {
+		await getOrCreateDbUser();
+	}
+
 	return (
 		<div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-x-hidden bg-[#1A120C] font-serif select-none text-[#F8EED5] antialiased">
 			{/* Reusable Header */}

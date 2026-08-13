@@ -1,3 +1,4 @@
+// app\(dashboard)\analytics\page.tsx
 import { desc, eq, inArray, or } from "drizzle-orm";
 import { Shield } from "lucide-react";
 import { ActivityArchive } from "@/components/analytics/activity-archive";

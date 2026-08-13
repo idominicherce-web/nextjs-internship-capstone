@@ -4,7 +4,7 @@ import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
 import { Moon, Shield, Sun } from "lucide-react";
 import Link from "next/link";
 
-import { useTheme } from "./theme-provider";
+import { useTheme } from "../theme-provider";
 
 export function Header() {
 	const { theme, setTheme } = useTheme();
@@ -17,7 +17,7 @@ export function Header() {
 
 			<div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
 				<div className="flex h-16 items-center justify-between gap-2">
-					{/* Branding Logo & Title with accessible label */}
+					{/* Branding Logo & Title */}
 					<Link
 						href="/"
 						aria-label="The Roundtable Home"

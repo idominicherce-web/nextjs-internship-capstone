@@ -7,12 +7,14 @@ import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface InviteMemberModalProps {
 	projectId?: string;
+	projectName?: string;
 	isOpen: boolean;
 	onClose: () => void;
 }
 
 export function InviteMemberModal({
 	projectId = "global",
+	projectName,
 	isOpen,
 	onClose,
 }: InviteMemberModalProps) {
@@ -26,7 +28,6 @@ export function InviteMemberModal({
 		(state) => state.addNotification,
 	);
 
-	// Lock body scroll when modal is active
 	useEffect(() => {
 		if (isOpen) {
 			document.body.style.overflow = "hidden";
@@ -41,6 +42,8 @@ export function InviteMemberModal({
 
 	if (!isOpen) return null;
 
+	const isProjectContext = projectId !== "global";
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!email.trim() || isLoading) return;
@@ -54,8 +57,10 @@ export function InviteMemberModal({
 			if (res.success) {
 				setIsSuccess(true);
 				addNotification({
-					title: "Royal Summons Dispatched",
-					description: `Invitation sent to ${email.trim()} with ${role} permissions.`,
+					title: isProjectContext
+						? "Project Invite Sent"
+						: "Workspace Invitation Dispatched",
+					description: `Invitation dispatched to ${email.trim()} with ${role} permissions.`,
 					type: "team",
 				});
 
@@ -63,13 +68,13 @@ export function InviteMemberModal({
 					setEmail("");
 					setIsSuccess(false);
 					onClose();
-				}, 1200);
+				}, 1000);
 			} else {
-				setError(res.error || "Failed to dispatch summons.");
+				setError(res.error || "Failed to send invitation.");
 			}
 		} catch (err) {
 			console.error(err);
-			setError("An unexpected error occurred while dispatching decree.");
+			setError("An unexpected error occurred while sending invitation.");
 		} finally {
 			setIsLoading(false);
 		}
@@ -77,78 +82,77 @@ export function InviteMemberModal({
 
 	return (
 		<div
-			className="fixed inset-0 z-[100] h-screen w-screen bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200 font-serif"
+			role="dialog"
+			aria-modal="true"
+			className="fixed inset-0 z-[100] h-screen w-screen bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150 font-serif"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
 		>
-			<div className="w-full max-w-md rounded-xs border-2 border-[#8F6236] bg-[#1A120C] p-6 shadow-2xl space-y-5 relative my-auto">
-				{/* Modal Header */}
+			<div className="w-full max-w-md rounded-xs border-2 border-[#8F6236] bg-[#1A120C] p-6 shadow-2xl space-y-5 relative my-auto text-[#F8EEDB]">
 				<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-3">
 					<div className="flex items-center gap-2">
-						<UserPlus className="text-[#D7B05C]" size={20} />
-						<h3 className="font-serif font-black text-lg text-[#F8EEDB] uppercase tracking-wider">
-							Summon Ally
-						</h3>
+						<UserPlus size={20} className="text-[#D7B05C]" />
+						<h2 className="font-serif font-black text-lg text-[#F8EEDB] uppercase tracking-wider">
+							{isProjectContext ? "Invite to Project" : "Invite Member"}
+						</h2>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="text-[#D7B05C]/60 hover:text-[#F8EEDB] transition-colors p-1 cursor-pointer"
+						aria-label="Close modal"
+						className="text-[#E3C279] hover:text-[#F8EEDB] transition-colors p-1 cursor-pointer"
 					>
 						<X size={18} />
 					</button>
 				</div>
 
-				{/* Modal Form */}
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<p className="text-xs font-serif italic text-[#D7B05C]/80 leading-relaxed">
-						Dispatch a royal decree to invite a new officer to your workspace
-						realm.
-					</p>
+					{isProjectContext && projectName && (
+						<div className="p-3 rounded-xs border border-[#4A2C1D] bg-[#15100C] space-y-1">
+							<span className="block text-[10px] font-sans font-extrabold uppercase text-[#E3C279]">
+								Target Project
+							</span>
+							<p className="text-sm font-bold text-[#F8EEDB]">{projectName}</p>
+						</div>
+					)}
 
-					{/* Email Input */}
-					<div className="space-y-1.5">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
-							Officer Email Address
+					<div className="space-y-1.5 font-sans">
+						<label className="block text-xs font-extrabold uppercase tracking-wider text-[#D7B05C]">
+							Email Address
 						</label>
 						<input
 							type="email"
 							required
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
-							placeholder="e.g. chancellor@realm.com"
-							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold placeholder-[#8F6236]/70 rounded-xs focus:outline-none focus:border-[#D7B05C]"
+							placeholder="colleague@company.com"
+							className="w-full px-3.5 py-2.5 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] text-xs font-bold placeholder-[#8F6236]/70 rounded-xs focus:outline-hidden focus:border-[#D7B05C]"
 						/>
 					</div>
 
-					{/* Role Select */}
-					<div className="space-y-1.5">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
-							Designated Office Role
+					<div className="space-y-1.5 font-sans">
+						<label className="block text-xs font-extrabold uppercase tracking-wider text-[#D7B05C]">
+							Workspace Role
 						</label>
 						<select
 							value={role}
-							onChange={(e) =>
-								setRole(e.target.value as "Viewer" | "Member" | "Admin")
-							}
-							className="w-full px-3.5 py-2.5 bg-[#2D1B10] border border-[#8F6236] text-[#D7B05C] font-sans text-xs font-bold uppercase rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer"
+							onChange={(e) => setRole(e.target.value as "Member" | "Admin")}
+							aria-label="Select Workspace Role"
+							className="w-full px-3.5 py-2.5 bg-[#2D1B10] border border-[#8F6236] text-[#D7B05C] text-xs font-bold uppercase rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer"
 						>
-							<option value="Viewer">Viewer (Read-only Access)</option>
-							<option value="Member">Member (Create & Edit)</option>
-							<option value="Admin">Admin (Full Realm Control)</option>
+							<option value="Member">Member (Standard workspace access)</option>
+							<option value="Admin">Admin (Full workspace control)</option>
 						</select>
 					</div>
 
-					{/* Success Feedback */}
 					{isSuccess && (
 						<div className="p-3 rounded-xs bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs flex items-center gap-2 font-sans">
 							<CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-							<span>Decree successfully dispatched to officer!</span>
+							<span>Invitation successfully dispatched!</span>
 						</div>
 					)}
 
-					{/* Error Feedback */}
 					{error && (
 						<div className="p-3 rounded-xs bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center gap-2 font-sans">
 							<AlertCircle size={16} className="text-rose-400 shrink-0" />
@@ -156,13 +160,12 @@ export function InviteMemberModal({
 						</div>
 					)}
 
-					{/* Actions */}
 					<div className="flex items-center justify-end gap-3 pt-3 border-t border-[#4A2C1D]">
 						<button
 							type="button"
 							onClick={onClose}
 							disabled={isLoading}
-							className="px-4 py-2 border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C]/80 hover:text-white text-xs font-sans font-bold uppercase rounded-xs transition-colors disabled:opacity-50 cursor-pointer"
+							className="px-4 py-2 border border-[#8F6236]/60 bg-[#15100C] text-[#E3C279] hover:text-white text-xs font-sans font-bold uppercase rounded-xs transition-colors disabled:opacity-50 cursor-pointer"
 						>
 							Cancel
 						</button>
@@ -176,7 +179,7 @@ export function InviteMemberModal({
 							) : (
 								<UserPlus size={14} className="text-[#D7B05C]" />
 							)}
-							<span>{isLoading ? "Dispatching..." : "Send Decree"}</span>
+							<span>{isLoading ? "Sending..." : "Send Invitation"}</span>
 						</button>
 					</div>
 				</form>

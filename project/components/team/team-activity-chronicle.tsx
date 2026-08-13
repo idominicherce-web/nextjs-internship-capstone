@@ -1,12 +1,20 @@
 "use client";
 
-import { Clock, Scroll } from "lucide-react";
+import {
+	Clock,
+	Mail,
+	Scroll,
+	UserCheck,
+	UserMinus,
+	UserPlus,
+} from "lucide-react";
 
 export interface ActivityItem {
 	id: string;
 	user: string;
 	action: string;
 	timeAgo: string;
+	type?: "invite" | "accept" | "revoke" | "assign" | "general";
 }
 
 interface TeamActivityChronicleProps {
@@ -14,8 +22,37 @@ interface TeamActivityChronicleProps {
 }
 
 export function TeamActivityChronicle({
-	activities,
+	activities = [],
 }: TeamActivityChronicleProps) {
+	const renderActivityIcon = (type?: string, action?: string) => {
+		const lowerAction = action?.toLowerCase() || "";
+
+		if (type === "invite" || lowerAction.includes("invited")) {
+			return <Mail size={12} className="text-[#D7B05C] shrink-0 mt-0.5" />;
+		}
+		if (
+			type === "accept" ||
+			lowerAction.includes("joined") ||
+			lowerAction.includes("accepted")
+		) {
+			return (
+				<UserCheck size={12} className="text-emerald-400 shrink-0 mt-0.5" />
+			);
+		}
+		if (
+			type === "revoke" ||
+			lowerAction.includes("revoked") ||
+			lowerAction.includes("discharged")
+		) {
+			return <UserMinus size={12} className="text-rose-400 shrink-0 mt-0.5" />;
+		}
+		if (type === "assign" || lowerAction.includes("assigned")) {
+			return <UserPlus size={12} className="text-amber-400 shrink-0 mt-0.5" />;
+		}
+
+		return <Scroll size={12} className="text-[#D7B05C] shrink-0 mt-0.5" />;
+	};
+
 	return (
 		<div className="p-4 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-3">
 			<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-2">
@@ -26,25 +63,36 @@ export function TeamActivityChronicle({
 					</h3>
 				</div>
 				<span className="text-[9px] font-serif italic text-[#D7B05C]/60">
-					Council Comments
+					Council Chronicles
 				</span>
 			</div>
 
 			<div className="space-y-3 pt-1">
-				{activities.map((act) => (
-					<div
-						key={act.id}
-						className="text-xs font-sans space-y-1 border-b border-[#4A2C1D]/40 pb-2.5 last:border-0 last:pb-0"
-					>
-						<p className="text-[#F8EEDB] leading-tight">
-							<span className="font-extrabold text-[#D7B05C]">{act.user}</span>{" "}
-							{act.action}
-						</p>
-						<span className="flex items-center gap-1 text-[10px] text-[#D7B05C]/60 font-serif italic">
-							<Clock size={10} /> {act.timeAgo}
-						</span>
+				{activities.length === 0 ? (
+					<div className="py-4 text-center text-xs font-serif italic text-[#E3C279]/60">
+						No council activities recorded yet.
 					</div>
-				))}
+				) : (
+					activities.map((act) => (
+						<div
+							key={act.id}
+							className="text-xs font-sans space-y-1 border-b border-[#4A2C1D]/40 pb-2.5 last:border-0 last:pb-0"
+						>
+							<div className="flex items-start gap-2">
+								{renderActivityIcon(act.type, act.action)}
+								<p className="text-[#F8EEDB] leading-tight">
+									<span className="font-extrabold text-[#D7B05C]">
+										{act.user}
+									</span>{" "}
+									{act.action}
+								</p>
+							</div>
+							<span className="flex items-center gap-1 text-[10px] text-[#D7B05C]/60 font-serif italic pl-5">
+								<Clock size={10} /> {act.timeAgo}
+							</span>
+						</div>
+					))
+				)}
 			</div>
 		</div>
 	);

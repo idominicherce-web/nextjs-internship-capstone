@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { userSettings, users, workspaceInvitations } from "@/lib/db/schema";
+import { userSettings, users } from "@/lib/db/schema";
 
 // --- EXISTING FUNCTIONS ---
 export async function getUsers() {
@@ -88,42 +88,5 @@ export async function updateNotificationPreferences(data: {
 	} catch (error) {
 		console.error("Failed to update notification preferences:", error);
 		return { success: false, error: "Failed to save preferences" };
-	}
-}
-
-export async function sendWorkspaceInvite(email: string, role: string) {
-	try {
-		const dbUser = await getOrCreateDbUser();
-		if (!dbUser) throw new Error("Unauthorized");
-
-		await db.insert(workspaceInvitations).values({
-			email,
-			role,
-			invitedById: dbUser.id,
-			status: "pending",
-		});
-
-		revalidatePath("/team");
-		return { success: true };
-	} catch (error) {
-		console.error("Failed to send invitation:", error);
-		return { success: false, error: "Failed to send invitation" };
-	}
-}
-
-export async function cancelWorkspaceInvite(inviteId: string) {
-	try {
-		const dbUser = await getOrCreateDbUser();
-		if (!dbUser) throw new Error("Unauthorized");
-
-		await db
-			.delete(workspaceInvitations)
-			.where(eq(workspaceInvitations.id, inviteId));
-
-		revalidatePath("/team");
-		return { success: true };
-	} catch (error) {
-		console.error("Failed to cancel invitation:", error);
-		return { success: false, error: "Failed to cancel invitation" };
 	}
 }
