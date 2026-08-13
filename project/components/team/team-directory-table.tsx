@@ -1,7 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Scroll, Users } from "lucide-react";
-import { getDisciplineTheme } from "@/lib/roles";
+import { MoreHorizontal } from "lucide-react";
 
 export interface Member {
 	id: string;
@@ -10,129 +9,126 @@ export interface Member {
 	email: string;
 	avatar: string;
 	projectCount: number;
-	status: "Online" | "Away" | "Offline";
+	status: "Online" | "Offline" | "Away";
 	lastActive: string;
 }
 
 interface TeamDirectoryTableProps {
 	members: Member[];
-	onSelectMember: (member: Member) => void;
+	onOpenActions?: (member: Member) => void;
 }
+
+const ROLE_FLAVOR_MAP: Record<string, string> = {
+	"Workspace Owner": "Royal Sovereign",
+	Administrator: "Chancellor",
+	"Project Manager": "High Commander",
+	Developer: "Royal Engineer",
+	Designer: "Master Artisan",
+	"QA Engineer": "Royal Inquisitor",
+	Member: "Knight",
+};
 
 export function TeamDirectoryTable({
 	members,
-	onSelectMember,
+	onOpenActions,
 }: TeamDirectoryTableProps) {
-	if (members.length === 0) {
-		return (
-			<div className="p-8 rounded-xs border-2 border-dashed border-[#8F6236]/50 bg-[#15100C] text-center space-y-3">
-				<Users className="mx-auto h-10 w-10 text-[#D7B05C]/50" />
-				<h3 className="font-serif font-black text-lg text-[#F8EEDB]">
-					No Team Members Found
-				</h3>
-				<p className="text-xs font-sans text-[#D7B05C]/70 max-w-md mx-auto">
-					No team members have joined this workspace. Invite collaborators to
-					begin managing projects together.
-				</p>
-				<p className="text-[11px] font-serif italic text-[#D7B05C]/50">
-					The Roundtable awaits its first officers.
-				</p>
-			</div>
-		);
-	}
-
 	return (
-		<div className="rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl overflow-hidden">
-			<div className="overflow-x-auto">
-				<table className="w-full text-left border-collapse">
+		<div className="relative w-full min-w-0">
+			{/* DESKTOP TABLE */}
+			<div className="hidden md:block w-full min-w-0 overflow-x-auto rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl">
+				<table className="w-full text-left font-serif border-collapse">
 					<thead>
-						<tr className="border-b-2 border-[#4A2C1D] bg-[#15100C] text-[10px] font-sans font-black uppercase tracking-wider text-[#D7B05C]">
-							<th className="p-3.5 pl-5">Member</th>
-							<th className="p-3.5">Role</th>
-							<th className="p-3.5">Projects</th>
-							<th className="p-3.5">Status</th>
-							<th className="p-3.5">Last Active</th>
-							<th className="p-3.5 pr-5 text-right">Actions</th>
+						<tr className="border-b-2 border-[#4A2C1D] bg-[#2D1B10]/80 text-[10px] font-sans font-black uppercase tracking-[0.18em] text-[#E3C279] whitespace-nowrap">
+							<th className="px-4 py-3.5">Member</th>
+							<th className="px-4 py-3.5">Role</th>
+							<th className="px-4 py-3.5 text-center">Projects</th>
+							<th className="px-4 py-3.5 text-center">Status</th>
+							<th className="hidden lg:table-cell px-4 py-3.5 text-right">
+								Last Active
+							</th>
+							<th className="px-4 py-3.5 text-center">Actions</th>
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-[#4A2C1D]/60 text-xs font-sans">
-						{members.map((member) => {
-							const theme = getDisciplineTheme(member.role);
-
-							const statusBadge =
-								member.status === "Online"
-									? "bg-emerald-950 text-emerald-300 border-emerald-700"
-									: member.status === "Away"
-										? "bg-amber-950 text-amber-300 border-amber-700"
-										: "bg-[#2D1B10] text-[#D7B05C]/60 border-[#8F6236]";
-
+						{members.map((m) => {
+							const flavorText = ROLE_FLAVOR_MAP[m.role] || "Council Member";
 							return (
 								<tr
-									key={member.id}
-									onClick={() => onSelectMember(member)}
-									className="hover:bg-[#2D1B10]/60 transition-colors cursor-pointer group"
+									key={m.id}
+									className="hover:bg-[#2D1B10]/50 transition-colors"
 								>
-									{/* Name & Avatar */}
-									<td className="p-3.5 pl-5">
+									{/* Member Info */}
+									<td className="px-4 py-3.5 whitespace-nowrap">
 										<div className="flex items-center gap-3">
-											<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xs border border-[#D7B05C]/50 bg-[#15100C] text-[#D7B05C] font-black text-xs shadow-md">
-												{member.avatar}
+											<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xs border border-[#D7B05C] bg-[#15100C] font-serif font-black text-xs text-[#D7B05C] shadow-sm">
+												{m.avatar}
 											</div>
-											<div>
-												<span className="block font-serif font-black text-[#F8EEDB] group-hover:text-[#D7B05C] transition-colors text-sm">
-													{member.name}
+											<div className="min-w-0">
+												<span className="block font-serif font-bold text-[#F8EEDB] whitespace-nowrap">
+													{m.name}
 												</span>
-												<span className="block text-[10px] text-[#D7B05C]/70 italic">
-													{member.email}
+												<span className="block text-[10px] text-[#E3C279] truncate max-w-[180px] lg:max-w-[220px]">
+													{m.email}
 												</span>
 											</div>
 										</div>
 									</td>
 
-									{/* Role & Royal Title */}
-									<td className="p-3.5">
+									{/* Role Column */}
+									<td className="px-4 py-3.5 whitespace-nowrap">
 										<div>
-											<span
-												className={`inline-block font-sans text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs border ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText}`}
-											>
-												{member.role}
+											<span className="block font-sans text-xs font-black uppercase tracking-wider text-[#D7B05C] whitespace-nowrap">
+												{m.role}
 											</span>
-											<span className="block text-[9.5px] font-serif italic text-[#D7B05C]/60 mt-0.5">
-												{theme.royalTitle}
+											<span className="block font-serif italic text-[10px] text-[#E3C279] whitespace-nowrap">
+												{flavorText}
 											</span>
 										</div>
 									</td>
 
 									{/* Projects */}
-									<td className="p-3.5 font-bold text-[#F8EEDB]">
-										<span className="inline-flex items-center gap-1 text-[#D7B05C]">
-											<Scroll size={13} /> {member.projectCount} Projects
+									<td className="px-4 py-3.5 text-center whitespace-nowrap">
+										<span className="font-mono text-xs font-extrabold text-[#F8EEDB]">
+											{m.projectCount} Active
 										</span>
 									</td>
 
-									{/* Status */}
-									<td className="p-3.5">
+									{/* Status Badge */}
+									<td className="px-4 py-3.5 text-center whitespace-nowrap">
 										<span
-											className={`inline-flex items-center px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-xs border ${statusBadge}`}
+											className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-xs text-[9px] font-sans font-bold uppercase border whitespace-nowrap leading-none ${
+												m.status === "Online"
+													? "border-emerald-800 bg-emerald-950 text-emerald-300"
+													: m.status === "Away"
+														? "border-amber-800 bg-amber-950 text-amber-300"
+														: "border-[#8F6236]/40 bg-[#15100C] text-[#E3C279]"
+											}`}
 										>
-											{member.status}
+											<span
+												className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+													m.status === "Online"
+														? "bg-emerald-400"
+														: m.status === "Away"
+															? "bg-amber-400"
+															: "bg-[#E3C279]"
+												}`}
+											/>
+											<span>{m.status}</span>
 										</span>
 									</td>
 
 									{/* Last Active */}
-									<td className="p-3.5 text-[#D7B05C]/70 text-[11px] font-serif italic">
-										{member.lastActive}
+									<td className="hidden lg:table-cell px-4 py-3.5 text-right font-serif italic text-[#E3C279] whitespace-nowrap">
+										{m.lastActive}
 									</td>
 
-									{/* Actions */}
-									<td className="p-3.5 pr-5 text-right">
+									{/* Actions Trigger */}
+									<td className="px-4 py-3.5 text-center whitespace-nowrap">
 										<button
 											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												onSelectMember(member);
-											}}
-											className="p-1.5 text-[#D7B05C]/60 hover:text-[#D7B05C] hover:bg-[#15100C] rounded-xs transition-colors"
+											onClick={() => onOpenActions?.(m)}
+											aria-label={`Open actions for ${m.name}`}
+											className="p-1.5 rounded-xs border border-[#8F6236]/60 bg-[#15100C] text-[#D7B05C] hover:text-white hover:border-[#D7B05C] transition-colors cursor-pointer inline-flex items-center justify-center"
 										>
 											<MoreHorizontal size={16} />
 										</button>
@@ -142,6 +138,82 @@ export function TeamDirectoryTable({
 						})}
 					</tbody>
 				</table>
+			</div>
+
+			{/* MOBILE CARDS (Visible only below md breakpoint) */}
+			<div className="block md:hidden space-y-3">
+				{members.map((m) => {
+					const flavorText = ROLE_FLAVOR_MAP[m.role] || "Council Member";
+					return (
+						<div
+							key={m.id}
+							className="p-3.5 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-lg space-y-3 font-serif"
+						>
+							<div className="flex items-start justify-between gap-2">
+								<div className="flex items-center gap-2.5 min-w-0">
+									<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xs border border-[#D7B05C] bg-[#15100C] font-black text-xs text-[#D7B05C]">
+										{m.avatar}
+									</div>
+									<div className="min-w-0">
+										<h3 className="font-bold text-sm text-[#F8EEDB] truncate">
+											{m.name}
+										</h3>
+										<span className="block text-[10px] text-[#E3C279] truncate">
+											{m.email}
+										</span>
+									</div>
+								</div>
+
+								<span
+									className={`inline-flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-xs text-[9px] font-sans font-bold uppercase border shrink-0 whitespace-nowrap leading-none ${
+										m.status === "Online"
+											? "border-emerald-800 bg-emerald-950 text-emerald-300"
+											: m.status === "Away"
+												? "border-amber-800 bg-amber-950 text-amber-300"
+												: "border-[#8F6236]/40 bg-[#15100C] text-[#E3C279]"
+									}`}
+								>
+									<span
+										className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+											m.status === "Online"
+												? "bg-emerald-400"
+												: m.status === "Away"
+													? "bg-amber-400"
+													: "bg-[#E3C279]"
+										}`}
+									/>
+									<span>{m.status}</span>
+								</span>
+							</div>
+
+							<div className="flex items-center justify-between pt-2 border-t border-[#4A2C1D]/60 text-xs font-sans">
+								<div className="min-w-0">
+									<span className="block text-[10px] font-bold uppercase text-[#D7B05C] truncate">
+										{m.role}
+									</span>
+									<span className="block text-[9px] font-serif italic text-[#E3C279] truncate">
+										{flavorText}
+									</span>
+								</div>
+								<span className="text-[11px] font-bold text-[#F8EEDB] shrink-0">
+									{m.projectCount} Projects
+								</span>
+							</div>
+
+							<div className="flex items-center justify-between gap-2 pt-1">
+								<button
+									type="button"
+									onClick={() => onOpenActions?.(m)}
+									aria-label={`Open actions for ${m.name}`}
+									className="flex-1 py-2 border border-[#8F6236] bg-[#2D1B10] text-[#D7B05C] hover:text-white font-sans text-xs font-extrabold uppercase rounded-xs transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5"
+								>
+									<span>Member Actions</span>
+									<MoreHorizontal size={14} />
+								</button>
+							</div>
+						</div>
+					);
+				})}
 			</div>
 		</div>
 	);

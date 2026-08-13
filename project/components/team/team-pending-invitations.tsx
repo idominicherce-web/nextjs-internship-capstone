@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, X } from "lucide-react";
+import { Clock, Mail, RefreshCw, XCircle } from "lucide-react";
 
 export interface PendingInvite {
 	id: string;
@@ -11,76 +11,72 @@ export interface PendingInvite {
 
 interface TeamPendingInvitationsProps {
 	invitations: PendingInvite[];
-	onResend?: (id: string) => void;
-	onCancel?: (id: string) => void;
+	onResend: (id: string) => void;
+	onCancel: (id: string) => void;
 }
 
 export function TeamPendingInvitations({
-	invitations,
+	invitations = [],
 	onResend,
 	onCancel,
 }: TeamPendingInvitationsProps) {
 	return (
-		<div className="p-4 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-3">
+		<div className="p-4 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-3 font-serif">
 			<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-2">
 				<div className="flex items-center gap-2 text-[#D7B05C]">
 					<Mail size={16} />
 					<h3 className="font-serif font-black uppercase text-xs tracking-wider text-[#F8EEDB]">
-						Pending Invitations
+						Pending Invites ({invitations.length})
 					</h3>
 				</div>
-				<span className="text-[9px] font-serif italic text-[#D7B05C]/60">
-					Royal Summons
-				</span>
 			</div>
 
-			{invitations.length === 0 ? (
-				<p className="text-xs font-serif italic text-[#D7B05C]/60 py-2 text-center">
-					No royal summons awaiting acceptance.
-				</p>
-			) : (
-				<div className="space-y-2.5">
-					{invitations.map((invite) => (
+			<div className="space-y-2.5 pt-1">
+				{invitations.length === 0 ? (
+					<div className="py-4 text-center text-xs italic text-[#E3C279]/60">
+						No pending workspace invitations.
+					</div>
+				) : (
+					invitations.map((inv) => (
 						<div
-							key={invite.id}
-							className="flex items-center justify-between p-2.5 bg-[#2D1B10]/60 border border-[#8F6236]/40 rounded-xs text-xs"
+							key={inv.id}
+							className="p-2.5 rounded-xs border border-[#4A2C1D] bg-[#15100C] flex items-center justify-between text-xs font-sans"
 						>
-							<div className="min-w-0 flex-1 pr-2">
-								<p className="font-bold text-[#F8EEDB] truncate">
-									{invite.email}
-								</p>
-								<div className="flex items-center gap-2 mt-0.5">
-									{invite.role && (
-										<span className="px-1.5 py-0.2 bg-[#1A120C] border border-[#8F6236] rounded-2xs text-[#D7B05C] font-sans font-bold text-[9px] uppercase tracking-wider">
-											{invite.role}
-										</span>
-									)}
-									<span className="text-[10px] text-[#D7B05C]/60 italic font-serif">
-										Invited {invite.invitedAgo}
+							<div className="space-y-0.5 min-w-0 pr-2">
+								<p className="font-bold text-[#F8EEDB] truncate">{inv.email}</p>
+								<div className="flex items-center gap-2 text-[10px] text-[#E3C279]">
+									<span className="uppercase font-extrabold text-[#D7B05C]">
+										{inv.role || "Member"}
+									</span>
+									<span>•</span>
+									<span className="flex items-center gap-1 italic">
+										<Clock size={10} /> {inv.invitedAgo}
 									</span>
 								</div>
 							</div>
-							<div className="flex items-center gap-1.5 shrink-0">
+
+							<div className="flex items-center gap-1 shrink-0">
 								<button
 									type="button"
-									onClick={() => onResend?.(invite.id)}
-									className="px-2 py-1 text-[10px] font-bold text-[#D7B05C] hover:text-white border border-[#8F6236] bg-[#15100C] rounded-xs transition-colors cursor-pointer"
+									onClick={() => onResend(inv.id)}
+									title="Resend Invitation"
+									className="p-1.5 text-[#E3C279] hover:text-[#F8EEDB] transition-colors cursor-pointer"
 								>
-									Resend
+									<RefreshCw size={14} />
 								</button>
 								<button
 									type="button"
-									onClick={() => onCancel?.(invite.id)}
-									className="p-1 text-[#D7B05C]/60 hover:text-rose-400 transition-colors cursor-pointer"
-									title="Cancel invite"
+									onClick={() => onCancel(inv.id)}
+									title="Revoke Invitation"
+									className="p-1.5 text-rose-400 hover:text-rose-200 transition-colors cursor-pointer"
 								>
-									<X size={14} />
+									<XCircle size={14} />
 								</button>
 							</div>
 						</div>
-					))}
-				</div>
-			)}
+					))
+				)}
+			</div>
 		</div>
 	);
 }

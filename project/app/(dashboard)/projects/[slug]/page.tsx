@@ -1,9 +1,7 @@
-// app/(dashboard)/projects/[slug]/page.tsx
-
 import { and, asc, eq, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { AssignOfficerButton } from "@/components/kanban/board/assign-officer-button";
 import { KanbanBoard } from "@/components/kanban/board/kanban-board";
+import { ProjectHeaderActions } from "@/components/kanban/board/project-header-actions";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -32,7 +30,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 		return notFound();
 	}
 
-	// 2. Access control check: user must be the owner OR assigned in projectMembers
+	// 2. Access control check: user must be owner OR assigned in projectMembers
 	const isOwner = project.userId === dbUser.id;
 	let isMember = false;
 
@@ -79,7 +77,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 				</div>
 
 				<div className="shrink-0">
-					<AssignOfficerButton />
+					{/* Bound Project Action Triggers */}
+					<ProjectHeaderActions
+						projectId={project.id}
+						projectName={project.name}
+					/>
 				</div>
 			</div>
 

@@ -39,15 +39,16 @@ export const userSettings = pgTable("user_settings", {
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// WORKSPACE INVITATIONS TABLE
-export const workspaceInvitations = pgTable("workspace_invitations", {
+// NOTIFICATIONS TABLE
+export const notifications = pgTable("notifications", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	email: text("email").notNull(),
-	role: text("role").default("Project Manager").notNull(),
-	invitedById: text("invited_by_id")
+	userId: text("user_id")
 		.notNull()
 		.references(() => users.id, { onDelete: "cascade" }),
-	status: text("status").default("pending").notNull(), // 'pending', 'accepted', 'cancelled'
+	title: text("title").notNull(),
+	description: text("description"),
+	type: text("type").default("system").notNull(),
+	read: boolean("read").default(false).notNull(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -75,7 +76,7 @@ export const projectMembers = pgTable("project_members", {
 	userId: text("user_id")
 		.notNull()
 		.references(() => users.id, { onDelete: "cascade" }),
-	role: text("role").default("Member").notNull(), // 'Viewer', 'Member', 'Admin'
+	role: text("role").default("Member").notNull(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -147,21 +148,18 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 		fields: [users.id],
 		references: [userSettings.userId],
 	}),
-	sentInvitations: many(workspaceInvitations),
 	projects: many(projects),
 	tasks: many(tasks),
 	projectMemberships: many(projectMembers),
+	notifications: many(notifications),
 }));
 
-export const workspaceInvitationsRelations = relations(
-	workspaceInvitations,
-	({ one }) => ({
-		invitedBy: one(users, {
-			fields: [workspaceInvitations.invitedById],
-			references: [users.id],
-		}),
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+	user: one(users, {
+		fields: [notifications.userId],
+		references: [users.id],
 	}),
-);
+}));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
 	user: one(users, {

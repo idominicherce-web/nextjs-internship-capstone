@@ -1,14 +1,15 @@
+// app\(dashboard)\dashboard\page.tsx
 import { desc, eq } from "drizzle-orm";
 import { Shield } from "lucide-react";
 import { ActivityArchive } from "@/components/analytics/activity-archive";
-import { CreateProjectButton } from "@/components/create-project-button";
 import { CommandAlerts } from "@/components/dashboard/command-alerts";
 import { KingdomHealthWidget } from "@/components/dashboard/kingdom-health-widget";
 import { KingdomOverviewStats } from "@/components/dashboard/kingdom-overview-stats";
 import { OnboardingDashboard } from "@/components/dashboard/onboarding-dashboard";
 import { QuickActionsPanel } from "@/components/dashboard/quick-actions-panel";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
-import { RecentProjects } from "@/components/recent-projects";
+import { CreateProjectButton } from "@/components/projects/create-project-button";
+import { RecentProjects } from "@/components/projects/recent-projects";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { activityLogs, projects } from "@/lib/db/schema";

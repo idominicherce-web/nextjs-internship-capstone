@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import type React from "react";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import { ScrollToTop } from "@/components/scroll-to-top";
+import { ScrollToTop } from "@/components/common/scroll-to-top";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
