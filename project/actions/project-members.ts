@@ -82,7 +82,7 @@ export async function assignUserToProject(
 
 		await logActivity({
 			userId: dbUser.id,
-			action: "Assigned Project Officer",
+			action: "Assigned Project Member",
 			entityType: "project",
 			entityName: project.name,
 			details: `Assigned ${targetUser.name || targetUser.email} as ${role} to ${project.name}`,
@@ -128,7 +128,7 @@ export async function removeUserFromProject(
 		if (targetUser && project) {
 			await logActivity({
 				userId: dbUser.id,
-				action: "Removed Project Officer",
+				action: "Removed Project Member",
 				entityType: "project",
 				entityName: project.name,
 				details: `Removed ${targetUser.name || targetUser.email} from ${project.name}`,

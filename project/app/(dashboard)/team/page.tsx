@@ -1,10 +1,10 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { inArray } from "drizzle-orm";
+import { desc, eq, inArray, like, or } from "drizzle-orm";
 import { TeamClient } from "@/components/team/team-client";
 import type { Member } from "@/components/team/team-directory-table";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { projects, users } from "@/lib/db/schema";
+import { activityLogs, projects, users } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +78,7 @@ export default async function TeamPage() {
 					}),
 				}));
 
-				// 2. Fetch live organization members from Clerk (getOrganizationMembershipList)
+				// 2. Fetch live organization members from Clerk
 				const clerkMemberships =
 					await client.organizations.getOrganizationMembershipList({
 						organizationId: targetOrgId,
@@ -88,23 +88,32 @@ export default async function TeamPage() {
 					.map((mem) => mem.publicUserData?.userId)
 					.filter(Boolean) as string[];
 
-				// Sync with database users for project count calculations
+				// Sync with database users matching by clerkId or internal UUID
 				const dbUsersList =
 					clerkUserIds.length > 0
 						? await db
 								.select()
 								.from(users)
-								.where(inArray(users.id, clerkUserIds))
+								.where(
+									or(
+										inArray(users.clerkId, clerkUserIds),
+										inArray(users.id, clerkUserIds),
+									),
+								)
 						: [];
 
 				const allProjects = await db.select().from(projects);
 
 				mappedMembers = clerkMemberships.data.map((mem, idx: number) => {
 					const memberUserId = mem.publicUserData?.userId || "";
-					const matchingDbUser = dbUsersList.find((u) => u.id === memberUserId);
+					const matchingDbUser = dbUsersList.find(
+						(u) => u.clerkId === memberUserId || u.id === memberUserId,
+					);
 
 					const userProjectsCount = allProjects.filter(
-						(p) => p.userId === memberUserId,
+						(p) =>
+							p.userId === memberUserId ||
+							(matchingDbUser && p.userId === matchingDbUser.id),
 					).length;
 
 					const firstName = mem.publicUserData?.firstName || "";
@@ -126,9 +135,8 @@ export default async function TeamPage() {
 						.slice(0, 2);
 
 					const roleTitle =
-						mem.role === "org:admin"
-							? "Workspace Owner"
-							: matchingDbUser?.role || "Project Manager";
+						matchingDbUser?.role ||
+						(mem.role === "org:admin" ? "Workspace Owner" : "Project Manager");
 
 					return {
 						id: memberUserId,
@@ -177,19 +185,93 @@ export default async function TeamPage() {
 		});
 	}
 
-	const sampleActivities = [
-		{
-			id: "1",
-			user: dbUser?.name || "Workspace Admin",
-			action: "invited team member to workspace",
-			timeAgo: "Recently",
-		},
-	];
+	// Fetch Team-related Activity Logs, joining users on either users.id or users.clerkId
+	const dbLogs = await db
+		.select({
+			id: activityLogs.id,
+			action: activityLogs.action,
+			entityName: activityLogs.entityName,
+			details: activityLogs.details,
+			createdAt: activityLogs.createdAt,
+			userName: users.name,
+			userEmail: users.email,
+		})
+		.from(activityLogs)
+		.leftJoin(
+			users,
+			or(
+				eq(activityLogs.userId, users.id),
+				eq(activityLogs.userId, users.clerkId),
+			),
+		)
+		.where(
+			or(
+				like(activityLogs.action, "%Invite%"),
+				like(activityLogs.action, "%Revoked%"),
+				like(activityLogs.action, "%Role%"),
+				like(activityLogs.action, "%Discharged%"),
+				like(activityLogs.action, "%Joined%"),
+				like(activityLogs.action, "%Officer%"),
+			),
+		)
+		.orderBy(desc(activityLogs.createdAt))
+		.limit(10);
+
+	const formattedActivities = dbLogs.map((log) => {
+		const actorName =
+			log.userName || log.userEmail?.split("@")[0] || "Council Officer";
+
+		// Clean up raw detail strings
+		let rawDetails = log.details || `${log.action} ${log.entityName}`;
+
+		rawDetails = rawDetails
+			.replace(/\borg:admin\b/g, "Admin")
+			.replace(/\borg:member\b/g, "Member");
+
+		// Correct relative time calculation
+		const diffMinutes = Math.floor(
+			(Date.now() - new Date(log.createdAt).getTime()) / (1000 * 60),
+		);
+		let timeAgo = "Just now";
+		if (diffMinutes >= 60 * 24) {
+			timeAgo = `${Math.floor(diffMinutes / (60 * 24))}d ago`;
+		} else if (diffMinutes >= 60) {
+			timeAgo = `${Math.floor(diffMinutes / 60)}h ago`;
+		} else if (diffMinutes > 0) {
+			timeAgo = `${diffMinutes}m ago`;
+		}
+
+		// Icon mapping
+		const lowerAction = log.action.toLowerCase();
+		let type: "invite" | "accept" | "revoke" | "assign" | "general" = "general";
+		if (lowerAction.includes("invited")) type = "invite";
+		else if (lowerAction.includes("joined") || lowerAction.includes("accepted"))
+			type = "accept";
+		else if (
+			lowerAction.includes("revoked") ||
+			lowerAction.includes("discharged")
+		)
+			type = "revoke";
+		else if (
+			lowerAction.includes("assigned") ||
+			lowerAction.includes("officer") ||
+			lowerAction.includes("role")
+		)
+			type = "assign";
+
+		return {
+			id: log.id,
+			user: actorName,
+			action: rawDetails.trim(),
+			timeAgo,
+			type,
+		};
+	});
 
 	return (
 		<TeamClient
 			initialMembers={mappedMembers}
-			activities={sampleActivities}
+			activities={formattedActivities}
 			pendingInvitations={mappedPendingInvites}
 		/>
 	);

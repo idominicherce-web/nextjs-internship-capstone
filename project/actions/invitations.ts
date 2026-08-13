@@ -22,7 +22,6 @@ const inviteWorkspaceSchema = z.object({
 
 /**
  * Creates a workspace invitation using Clerk Organization Invitations API.
- * Requires an active orgId and org:admin / admin role in Clerk.
  */
 export async function inviteWorkspaceMember(
 	projectId: string,
@@ -37,7 +36,6 @@ export async function inviteWorkspaceMember(
 			return { success: false, error: "Unauthorized access. Please sign in." };
 		}
 
-		// STRICT SECURITY: Require an active orgId in context
 		if (!orgId) {
 			return {
 				success: false,
@@ -45,7 +43,6 @@ export async function inviteWorkspaceMember(
 			};
 		}
 
-		// STRICT SECURITY: Require admin role explicitly
 		if (orgRole !== "org:admin" && orgRole !== "admin") {
 			return {
 				success: false,
@@ -54,7 +51,6 @@ export async function inviteWorkspaceMember(
 			};
 		}
 
-		// Map to Clerk's Organization role strings
 		const clerkRole =
 			roleInput === "Admin" || roleInput === "org:admin"
 				? "org:admin"
@@ -74,7 +70,6 @@ export async function inviteWorkspaceMember(
 
 		const client = await clerkClient();
 
-		// Check for existing pending invitation in Clerk
 		const existingInvites =
 			await client.organizations.getOrganizationInvitationList({
 				organizationId: orgId,
@@ -93,14 +88,12 @@ export async function inviteWorkspaceMember(
 			};
 		}
 
-		// Determine application origin dynamically
 		const appOrigin =
 			process.env.NEXT_PUBLIC_APP_URL ||
 			(process.env.VERCEL_URL
 				? `https://${process.env.VERCEL_URL}`
 				: "http://localhost:3000");
 
-		// Create Clerk Organization Invitation with explicit redirectUrl
 		const invitation = await client.organizations.createOrganizationInvitation({
 			organizationId: orgId,
 			emailAddress: email.toLowerCase(),
@@ -109,12 +102,14 @@ export async function inviteWorkspaceMember(
 			redirectUrl: `${appOrigin}/accept-invitation`,
 		});
 
+		const friendlyRole = clerkRole === "org:admin" ? "Admin" : "Member";
+
 		await logActivity({
 			userId: dbUser.id,
 			action: "Invited Workspace Member",
 			entityType: "project",
 			entityName: email,
-			details: `Dispatched workspace invitation (${clerkRole}) to ${email}`,
+			details: `Dispatched workspace invitation (${friendlyRole}) to ${email}`,
 		});
 
 		revalidatePath("/team");
@@ -181,7 +176,6 @@ export async function revokeInvitation(
 			return { success: false, error: "Unauthorized access." };
 		}
 
-		// STRICT SECURITY: Require admin role explicitly
 		if (orgRole !== "org:admin" && orgRole !== "admin") {
 			return {
 				success: false,
@@ -190,18 +184,38 @@ export async function revokeInvitation(
 		}
 
 		const client = await clerkClient();
+
+		// Fetch target invitation email address before revoking
+		let targetEmail = "Workspace Member";
+		try {
+			const pendingInvites =
+				await client.organizations.getOrganizationInvitationList({
+					organizationId: orgId,
+					status: ["pending"],
+				});
+			const matchingInvite = pendingInvites.data.find(
+				(inv) => inv.id === invitationId,
+			);
+			if (matchingInvite) {
+				targetEmail = matchingInvite.emailAddress;
+			}
+		} catch {
+			console.warn("Could not resolve target invitation email address");
+		}
+
 		await client.organizations.revokeOrganizationInvitation({
 			organizationId: orgId,
 			invitationId,
 			requestingUserId: userId,
 		});
 
+		// Log human-readable target email instead of invitation ID
 		await logActivity({
 			userId: dbUser.id,
 			action: "Revoked Workspace Invitation",
 			entityType: "project",
-			entityName: invitationId,
-			details: `Revoked pending invitation ID ${invitationId}`,
+			entityName: targetEmail,
+			details: `Revoked pending invitation for ${targetEmail}`,
 		});
 
 		revalidatePath("/team");

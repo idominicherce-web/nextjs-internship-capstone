@@ -35,10 +35,12 @@ interface TeamClientProps {
 
 export function TeamClient({
 	initialMembers: rawMembers,
-	activities,
+	activities: initialActivities = [],
 	pendingInvitations: initialPendingInvitations,
 }: TeamClientProps) {
 	const [members, setMembers] = useState<Member[]>(rawMembers);
+	const [activityList, setActivityList] =
+		useState<ActivityItem[]>(initialActivities);
 	const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 	const [activeModal, setActiveModal] = useState<
 		"actions" | "view" | "assign" | "role" | "invite" | "remove" | null
@@ -54,6 +56,22 @@ export function TeamClient({
 	const addNotification = useNotificationStore(
 		(state) => state.addNotification,
 	);
+
+	// Helper to dynamically record activity feed items on client
+	const appendActivity = (
+		user: string,
+		action: string,
+		type: ActivityItem["type"] = "general",
+	) => {
+		const newActivity: ActivityItem = {
+			id: crypto.randomUUID(),
+			user,
+			action,
+			timeAgo: "Just now",
+			type,
+		};
+		setActivityList((prev) => [newActivity, ...prev]);
+	};
 
 	const filteredMembers = useMemo(() => {
 		return members.filter((m) => {
@@ -84,6 +102,7 @@ export function TeamClient({
 		const res = await removeMemberAction(member.id);
 		if (res.success) {
 			setMembers((prev) => prev.filter((m) => m.id !== member.id));
+			appendActivity(member.name, "was discharged from workspace", "revoke");
 			setActiveModal(null);
 			setSelectedMember(null);
 			addNotification({
@@ -97,6 +116,11 @@ export function TeamClient({
 	const handleResendInvite = (invitationId: string) => {
 		const targetInvite = pendingInvites.find((i) => i.id === invitationId);
 		if (targetInvite) {
+			appendActivity(
+				"Admin",
+				`resent invitation dispatch to ${targetInvite.email}`,
+				"invite",
+			);
 			addNotification({
 				title: "Invitation Resent",
 				description: `Dispatch resent to ${targetInvite.email}.`,
@@ -112,6 +136,11 @@ export function TeamClient({
 		if (res.success) {
 			setPendingInvites((prev) => prev.filter((i) => i.id !== invitationId));
 			if (targetInvite) {
+				appendActivity(
+					"Admin",
+					`revoked invitation summons for ${targetInvite.email}`,
+					"revoke",
+				);
 				addNotification({
 					title: "Decree Revoked",
 					description: `Invitation for ${targetInvite.email} has been cancelled.`,
@@ -168,7 +197,7 @@ export function TeamClient({
 							onResend={handleResendInvite}
 							onCancel={handleCancelInvite}
 						/>
-						<TeamActivityChronicle activities={activities} />
+						<TeamActivityChronicle activities={activityList} />
 					</div>
 				</div>
 			</div>
@@ -245,6 +274,13 @@ export function TeamClient({
 					setMembers((prev) =>
 						prev.map((m) => (m.id === userId ? { ...m, role: newRole } : m)),
 					);
+					if (selectedMember) {
+						appendActivity(
+							selectedMember.name,
+							`workspace role updated to ${newRole}`,
+							"general",
+						);
+					}
 				}}
 			/>
 		</DashboardLayoutContainer>

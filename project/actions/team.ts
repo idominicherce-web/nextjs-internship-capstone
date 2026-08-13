@@ -5,13 +5,9 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { activityLogs, projectMembers, users } from "@/lib/db/schema";
+import { projectMembers, users } from "@/lib/db/schema";
 import { logActivity } from "@/lib/logger";
 
-/**
- * Removes a member from the Clerk Organization, deletes their global Clerk user,
- * and cleans up their project assignments, activity logs, and user record in Neon DB.
- */
 export async function removeMemberAction(targetUserId: string) {
 	try {
 		const { userId, orgId, orgRole } = await auth();
@@ -25,7 +21,6 @@ export async function removeMemberAction(targetUserId: string) {
 			return { success: false, error: "No active workspace organization." };
 		}
 
-		// STRICT SECURITY: Require admin permissions to discharge members
 		if (orgRole !== "org:admin" && orgRole !== "admin") {
 			return {
 				success: false,
@@ -35,69 +30,51 @@ export async function removeMemberAction(targetUserId: string) {
 
 		const client = await clerkClient();
 
-		// 1. Find the target Neon DB user record first (matching clerkId or id)
+		// Resolve target display name or email from Neon DB first
 		const targetDbUser = await db.query.users.findFirst({
 			where: (u, { eq, or }) =>
 				or(eq(u.clerkId, targetUserId), eq(u.id, targetUserId)),
 		});
 
-		// 2. Revoke Clerk Organization Membership
+		const displayName =
+			targetDbUser?.name || targetDbUser?.email || "Workspace Member";
+
+		// 1. Revoke Clerk Org Membership
 		try {
 			await client.organizations.deleteOrganizationMembership({
 				organizationId: orgId,
 				userId: targetUserId,
 			});
 		} catch (err) {
-			console.warn(
-				"Could not delete Clerk org membership (may already be removed):",
-				err,
-			);
+			console.warn("Could not delete Clerk org membership:", err);
 		}
 
-		// 3. Delete global user from Clerk Backend
+		// 2. Delete global user from Clerk Backend
 		try {
 			await client.users.deleteUser(targetUserId);
 		} catch (err) {
-			console.warn(
-				"Could not delete global Clerk user (may be managed externally):",
-				err,
-			);
+			console.warn("Could not delete global Clerk user:", err);
 		}
 
-		// 4. Clean up Neon DB user record and foreign key dependencies
+		// 3. Clean up Neon DB user
 		if (targetDbUser) {
 			try {
-				// Delete project memberships
 				await db
 					.delete(projectMembers)
 					.where(eq(projectMembers.userId, targetDbUser.id));
-
-				// Delete activity logs linked to this user
-				await db
-					.delete(activityLogs)
-					.where(eq(activityLogs.userId, targetDbUser.id));
-
-				// Delete user record from Neon DB
 				await db.delete(users).where(eq(users.id, targetDbUser.id));
 			} catch (err) {
 				console.error("Failed to delete user from Neon DB:", err);
 			}
-		} else {
-			// Fallback: Attempt deletion matching targetUserId against clerkId directly
-			try {
-				await db.delete(users).where(eq(users.clerkId, targetUserId));
-			} catch (err) {
-				console.error("Fallback Neon deletion failed:", err);
-			}
 		}
 
-		// Log discharge activity
+		// Write clean human-readable log entry to Neon activity_logs
 		await logActivity({
 			userId: dbUser.id,
-			action: "Discharged Workspace Member",
+			action: "Discharged Member",
 			entityType: "project",
-			entityName: targetUserId,
-			details: `Removed member ${targetUserId} from workspace and database.`,
+			entityName: displayName,
+			details: `Discharged ${displayName} from workspace`,
 		});
 
 		revalidatePath("/team");
@@ -113,9 +90,6 @@ export async function removeMemberAction(targetUserId: string) {
 	}
 }
 
-/**
- * Updates a member's workspace role in Clerk Organization and logs the activity.
- */
 export async function updateMemberRoleAction(
 	targetUserId: string,
 	newRoleInput: string,
@@ -132,7 +106,6 @@ export async function updateMemberRoleAction(
 			return { success: false, error: "No active workspace organization." };
 		}
 
-		// STRICT SECURITY: Require admin permissions to update member roles
 		if (orgRole !== "org:admin" && orgRole !== "admin") {
 			return {
 				success: false,
@@ -143,26 +116,45 @@ export async function updateMemberRoleAction(
 
 		const client = await clerkClient();
 
-		// Map to Clerk Organization role strings
+		// Resolve target display name or email from Neon DB first
+		const targetDbUser = await db.query.users.findFirst({
+			where: (u, { eq, or }) =>
+				or(eq(u.clerkId, targetUserId), eq(u.id, targetUserId)),
+		});
+
+		const displayName =
+			targetDbUser?.name || targetDbUser?.email || "Workspace Member";
+
 		const clerkRole =
 			newRoleInput === "Admin" || newRoleInput === "org:admin"
 				? "org:admin"
 				: "org:member";
 
-		// Update role in Clerk Organization
+		// 1. Update Clerk Organization Membership
 		await client.organizations.updateOrganizationMembership({
 			organizationId: orgId,
 			userId: targetUserId,
 			role: clerkRole,
 		});
 
-		// Log activity
+		// 2. Persist updated role in Neon DB
+		if (targetDbUser) {
+			await db
+				.update(users)
+				.set({
+					role: newRoleInput,
+					updatedAt: new Date(),
+				})
+				.where(eq(users.id, targetDbUser.id));
+		}
+
+		// Write clean human-readable log entry to Neon activity_logs
 		await logActivity({
 			userId: dbUser.id,
-			action: "Updated Member Workspace Role",
+			action: "Updated Member Role",
 			entityType: "project",
-			entityName: targetUserId,
-			details: `Updated role for member ID ${targetUserId} to ${clerkRole}`,
+			entityName: displayName,
+			details: `Updated workspace role for ${displayName} to ${newRoleInput}`,
 		});
 
 		revalidatePath("/team");
@@ -173,10 +165,7 @@ export async function updateMemberRoleAction(
 		console.error("Failed to update workspace member role:", error);
 		return {
 			success: false,
-			error:
-				error?.errors?.[0]?.longMessage ||
-				error?.message ||
-				"Failed to update member role.",
+			error: error?.message || "Failed to update member role.",
 		};
 	}
 }
