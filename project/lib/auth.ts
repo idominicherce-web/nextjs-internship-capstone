@@ -1,8 +1,8 @@
-// lib/auth.ts
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { logActivity } from "@/lib/logger";
 
 export async function getOrCreateDbUser() {
 	const clerkUser = await currentUser();
@@ -53,6 +53,16 @@ export async function getOrCreateDbUser() {
 			imageUrl: clerkUser.imageUrl,
 		})
 		.returning();
+
+	if (newUser) {
+		await logActivity({
+			userId: newUser.id,
+			action: "Joined Workspace",
+			entityType: "project",
+			entityName: fullName || primaryEmail,
+			details: `${fullName || primaryEmail} accepted summons and joined the workspace council.`,
+		});
+	}
 
 	return newUser;
 }

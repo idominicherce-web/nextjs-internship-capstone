@@ -84,7 +84,8 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 					</p>
 				</div>
 			) : (
-				<div className="space-y-3">
+				/* Fixed max height with custom smooth scrollbar container */
+				<div className="space-y-3 max-h-[480px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#8F6236] scrollbar-track-[#15100C]">
 					{activities.map((log) => {
 						const config = getActionConfig(log.action);
 						const ActionIcon = config.icon;
@@ -106,14 +107,14 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 
 								<div className="flex-1 min-w-0">
 									<div className="flex flex-wrap items-center justify-between gap-1">
-										<p className="text-xs font-sans font-black text-[#F8EEDB] group-hover:text-[#D7B05C] transition-colors">
+										<p className="text-xs font-sans font-black text-[#F8EEDB] group-hover:text-[#D7B05C] transition-colors break-words">
 											<span className="capitalize">{log.action}</span>{" "}
 											<span className="text-[#D7B05C] italic">
 												"{log.entityName}"
 											</span>
 										</p>
 
-										<span className="flex items-center gap-1 text-[9.5px] font-mono text-[#D7B05C]/60">
+										<span className="flex items-center gap-1 text-[9.5px] font-mono text-[#D7B05C]/60 shrink-0">
 											<Clock size={10} />
 											{new Date(log.createdAt).toLocaleTimeString([], {
 												hour: "2-digit",
@@ -122,8 +123,9 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 										</span>
 									</div>
 
+									{/* Render full log details without truncating */}
 									{displayDetails && (
-										<p className="text-[11px] font-sans text-[#D7B05C]/70 mt-0.5 line-clamp-1 italic">
+										<p className="text-[11px] font-sans text-[#D7B05C]/70 mt-0.5 italic break-words leading-relaxed">
 											{displayDetails}
 										</p>
 									)}
