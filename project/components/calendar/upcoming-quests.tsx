@@ -1,127 +1,72 @@
 "use client";
 
-import { AlertCircle, CheckCircle, Clock, Shield, User } from "lucide-react";
-import { type CalendarTask, TASK_TYPE_CONFIG } from "./types";
+import { Calendar, Clock } from "lucide-react";
+import type { CalendarTask } from "./types";
 
-interface UpcomingquestsProps {
+interface UpcomingQuestsProps {
 	tasks: CalendarTask[];
 }
 
-export function Upcomingquests({ tasks }: UpcomingquestsProps) {
-	const getPriorityBadgeStyle = (priority?: string) => {
-		switch (priority) {
-			case "Urgent":
-				return "text-rose-400 font-black";
-			case "High":
-				return "text-amber-400 font-bold";
-			case "Low":
-				return "text-[#D7B05C]/60 font-medium";
-			default:
-				return "text-[#D7B05C] font-bold";
-		}
-	};
-
+export function Upcomingquests({ tasks = [] }: UpcomingQuestsProps) {
 	return (
-		<div className="space-y-4">
-			<div className="flex items-center gap-3 text-sm font-sans font-black uppercase tracking-[0.2em] text-[#D7B05C]">
-				<span>📜</span>
-				<h2>Upcoming Tasks & Priorities</h2>
-				<div className="h-px flex-1 bg-gradient-to-r from-[#4A2C1D] to-transparent" />
+		<div className="rounded-xs border-2 border-[#8F6236] bg-[#1A120C] p-4 shadow-xl space-y-3 font-serif">
+			<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-2">
+				<div className="flex items-center gap-2 text-[#D7B05C]">
+					<Calendar size={16} />
+					<h3 className="font-serif font-black uppercase text-xs tracking-wider text-[#F8EEDB]">
+						Upcoming Tasks & Priorities
+					</h3>
+				</div>
+				<span className="text-[10px] font-sans font-extrabold uppercase text-[#D7B05C]/70">
+					Next Objectives
+				</span>
 			</div>
 
-			{tasks.length === 0 ? (
-				<div className="p-8 border-2 border-dashed border-[#8F6236]/50 bg-[#15100C] text-center rounded-xs">
-					<p className="font-serif italic text-[#D7B05C]/80 text-sm">
-						📜 The Royal Scribe has recorded no quests for this season.
-					</p>
-				</div>
-			) : (
-				<div className="grid grid-cols-1 gap-3">
-					{tasks.map((event) => {
-						const cfg =
-							TASK_TYPE_CONFIG[event.type] || TASK_TYPE_CONFIG.deadline;
-						const daysRemaining = Math.max(
-							0,
-							Math.ceil(
-								(event.dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-							),
-						);
-
-						return (
-							<div
-								key={event.id}
-								className="group relative flex flex-col md:flex-row items-start md:items-center justify-between p-4 border-2 border-[#8F6236]/60 bg-gradient-to-b from-[#2D1B10] to-[#15100C] rounded-xs shadow-xl transition-all duration-200 hover:border-[#D7B05C] hover:shadow-[0_0_20px_rgba(215,176,92,0.2)] hover:-translate-y-0.5"
-							>
-								<div className="flex items-center gap-4">
-									<div
-										className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 shadow-md ${cfg.bg} ${cfg.border} ${cfg.color}`}
-									>
-										{event.isCompleted ? (
-											<CheckCircle size={20} />
-										) : (
-											<Clock size={20} />
-										)}
-									</div>
-
-									<div>
-										<div className="flex items-center gap-2">
-											<h3 className="font-serif font-black text-[#F8EEDB] text-base group-hover:text-[#D7B05C] transition-colors">
-												{event.title}
-											</h3>
-											<span
-												className={`text-[9px] font-sans font-black uppercase px-2 py-0.5 rounded-xs border ${cfg.bg} ${cfg.border} ${cfg.color}`}
-											>
-												{cfg.icon} {cfg.label}
-											</span>
-										</div>
-
-										<div className="flex flex-wrap items-center gap-3 text-xs font-sans text-[#D7B05C]/80 mt-1">
-											<span className="flex items-center gap-1">
-												<Shield size={12} /> {event.projectName}
-											</span>
-											{event.assignedTo && (
-												<span className="flex items-center gap-1 text-[#F8EEDB]/80">
-													<User size={12} /> {event.assignedTo}
-												</span>
-											)}
-											{event.priority && (
-												<span
-													className={`flex items-center gap-1 ${getPriorityBadgeStyle(
-														event.priority,
-													)}`}
-												>
-													<AlertCircle size={12} /> {event.priority} Priority
-												</span>
-											)}
-										</div>
-									</div>
-								</div>
-
-								<div className="mt-3 md:mt-0 flex items-center gap-3">
-									<div className="text-right">
-										<span className="block text-[10px] font-sans uppercase font-bold text-[#D7B05C]/60">
-											Countdown
-										</span>
-										<span className="text-xs font-sans font-black text-[#F8EEDB]">
-											{daysRemaining === 0
-												? "Due Today"
-												: `In ${daysRemaining} days`}
-										</span>
-									</div>
-
-									<div className="font-sans text-xs font-black uppercase tracking-wider text-[#1A120C] bg-[#FAF0D7] px-3 py-1.5 rounded-xs border border-[#8F6236] shadow-xs">
-										Due:{" "}
-										{event.dueDate.toLocaleDateString("en-US", {
-											month: "short",
-											day: "numeric",
-										})}
-									</div>
-								</div>
+			<div className="space-y-2">
+				{tasks.length === 0 ? (
+					<div className="py-4 text-center text-xs italic text-[#D7B05C]/50">
+						No upcoming tasks scheduled.
+					</div>
+				) : (
+					tasks.map((task) => (
+						<div
+							key={task.id}
+							className="rounded-xs border border-[#8F6236]/60 bg-[#0F0B08] p-2.5 text-xs transition-colors hover:border-[#D7B05C]"
+						>
+							<div className="flex items-start justify-between gap-2">
+								<span className="font-serif font-bold text-[#F8EEDB] truncate">
+									{task.title}
+								</span>
+								<span
+									className={`shrink-0 rounded-xs px-1.5 py-0.5 text-[9px] font-sans font-black uppercase border ${
+										task.isCompleted
+											? "bg-emerald-950 border-emerald-700 text-emerald-300"
+											: task.priority === "Urgent" || task.priority === "High"
+												? "bg-rose-950 border-rose-800 text-rose-300"
+												: "bg-[#1A120C] border-[#8F6236] text-[#D7B05C]"
+									}`}
+								>
+									{task.isCompleted ? "Completed" : task.priority || "Medium"}
+								</span>
 							</div>
-						);
-					})}
-				</div>
-			)}
+
+							<div className="mt-1 flex items-center justify-between text-[10px] text-[#D7B05C]/70 font-sans">
+								<span className="truncate">
+									{task.projectName} · {task.assignedTo || "Unassigned"}
+								</span>
+								<span className="flex items-center gap-1 shrink-0 italic">
+									<Clock size={10} />
+									Due{" "}
+									{new Date(task.dueDate).toLocaleDateString("en-US", {
+										month: "short",
+										day: "numeric",
+									})}
+								</span>
+							</div>
+						</div>
+					))
+				)}
+			</div>
 		</div>
 	);
 }
