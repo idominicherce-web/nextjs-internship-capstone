@@ -1,24 +1,23 @@
-describe("Server Actions Response Handlers", () => {
-	const mockActionHandler = async (payload: { title?: string }) => {
-		if (!payload.title || payload.title.trim() === "") {
-			return { success: false as const, error: "Title parameter is required." };
+import type { ActionResponse } from "@/actions/tasks";
+
+describe("Server Actions Response Shape Standard", () => {
+	const createTaskMock = async (title: string): Promise<ActionResponse> => {
+		if (!title.trim()) {
+			return {
+				success: false,
+				error: "Title parameter is required.",
+				fieldErrors: { title: ["Title is required"] },
+			};
 		}
-		return { success: true as const, data: { id: "task-999", title: payload.title } };
+		return { success: true, data: { id: "task-1", title } };
 	};
 
-	it("returns success payload when valid inputs are supplied", async () => {
-		const response = await mockActionHandler({ title: "Forge Royal Decree" });
-		expect(response.success).toBe(true);
-		if (response.success && response.data) {
-			expect(response.data.title).toBe("Forge Royal Decree");
-		}
-	});
-
-	it("returns structured error response when required inputs are missing", async () => {
-		const response = await mockActionHandler({ title: "" });
-		expect(response.success).toBe(false);
-		if (!response.success) {
-			expect(response.error).toBe("Title parameter is required.");
+	it("returns standardized field errors on validation failure", async () => {
+		const res = await createTaskMock("");
+		expect(res.success).toBe(false);
+		if (!res.success) {
+			expect(res.fieldErrors?.title).toBeDefined();
+			expect(res.fieldErrors?.title?.[0]).toBe("Title is required");
 		}
 	});
 });

@@ -5,21 +5,37 @@ import { useEffect, useState } from "react";
 import { createTask } from "@/actions/tasks";
 import { useNotificationStore } from "@/stores/use-notification-store";
 
-interface CreateTaskModalProps {
-	projectId: string;
+interface ProjectOption {
+	id: string;
+	name: string;
 	lists: { id: string; name: string }[];
+}
+
+interface CreateTaskModalProps {
+	projectId?: string;
+	lists?: { id: string; name: string }[];
+	projects?: ProjectOption[];
 	users?: { id: string; name: string | null; email: string }[];
+	initialDueDate?: Date | string;
 	isOpen: boolean;
 	onClose: () => void;
 }
 
 export function CreateTaskModal({
-	projectId,
-	lists,
+	projectId: initialProjectId,
+	lists: initialLists = [],
+	projects = [],
 	users = [],
+	initialDueDate,
 	isOpen,
 	onClose,
 }: CreateTaskModalProps) {
+	const [selectedProjectId, setSelectedProjectId] = useState(
+		initialProjectId || "",
+	);
+	const [availableLists, setAvailableLists] =
+		useState<{ id: string; name: string }[]>(initialLists);
+
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [listId, setListId] = useState("");
@@ -36,13 +52,51 @@ export function CreateTaskModal({
 		(state) => state.addNotification,
 	);
 
+	// Format initial due date string (YYYY-MM-DD) using local date components
 	useEffect(() => {
-		if (lists.length > 0 && !listId) {
-			setListId(lists[0].id);
+		if (initialDueDate) {
+			const d = new Date(initialDueDate);
+			if (!Number.isNaN(d.getTime())) {
+				const year = d.getFullYear();
+				const month = String(d.getMonth() + 1).padStart(2, "0");
+				const day = String(d.getDate()).padStart(2, "0");
+				setDueDate(`${year}-${month}-${day}`);
+			}
 		}
-	}, [lists, listId]);
+	}, [initialDueDate]);
 
-	// Lock body scroll when active and listen to Escape key
+	// Set initial selected project if provided via props
+	useEffect(() => {
+		if (initialProjectId) {
+			setSelectedProjectId(initialProjectId);
+			setAvailableLists(initialLists);
+		} else if (projects.length > 0 && !selectedProjectId) {
+			setSelectedProjectId(projects[0].id);
+			setAvailableLists(projects[0].lists);
+		}
+	}, [initialProjectId, initialLists, projects, selectedProjectId]);
+
+	// Update available columns when project changes
+	const handleProjectChange = (projId: string) => {
+		setSelectedProjectId(projId);
+		const foundProj = projects.find((p) => p.id === projId);
+		if (foundProj && foundProj.lists.length > 0) {
+			setAvailableLists(foundProj.lists);
+			setListId(foundProj.lists[0].id);
+		} else {
+			setAvailableLists([]);
+			setListId("");
+		}
+	};
+
+	// Ensure listId default selection
+	useEffect(() => {
+		if (availableLists.length > 0 && !listId) {
+			setListId(availableLists[0].id);
+		}
+	}, [availableLists, listId]);
+
+	// Lock body scroll when active & escape listener
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -63,6 +117,10 @@ export function CreateTaskModal({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!selectedProjectId) {
+			setError("Please select a target project.");
+			return;
+		}
 		if (!title.trim() || !listId || isLoading) return;
 
 		setIsLoading(true);
@@ -70,7 +128,7 @@ export function CreateTaskModal({
 
 		try {
 			const res = await createTask(null, {
-				projectId,
+				projectId: selectedProjectId,
 				listId,
 				title: title.trim(),
 				description: description.trim() || undefined,
@@ -82,8 +140,8 @@ export function CreateTaskModal({
 			if (res.success) {
 				setIsSuccess(true);
 				addNotification({
-					title: "Royal Task Objective Commissioned",
-					description: `'${title.trim()}' has been logged into the quest ledger.`,
+					title: "Task Created",
+					description: `'${title.trim()}' has been added to the project.`,
 					type: "task",
 				});
 
@@ -96,7 +154,7 @@ export function CreateTaskModal({
 					onClose();
 				}, 1000);
 			} else {
-				setError(res.error || "Failed to create task objective.");
+				setError(res.error || "Failed to create task.");
 			}
 		} catch (err) {
 			console.error(err);
@@ -119,7 +177,7 @@ export function CreateTaskModal({
 					<div className="flex items-center gap-2">
 						<Scroll className="text-[#D7B05C]" size={20} />
 						<h3 className="font-serif font-black text-sm sm:text-lg text-[#F8EEDB] uppercase tracking-wider">
-							Create Task Objective
+							Create Task
 						</h3>
 					</div>
 					<button
@@ -131,14 +189,65 @@ export function CreateTaskModal({
 					</button>
 				</div>
 
-				{/* Fixed Non-Scrollable Modal Form Body */}
+				{/* Modal Form */}
 				<form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
-					{/* Target Stage Column */}
+					{/* Project Selection */}
+					{!initialProjectId && projects.length > 0 && (
+						<div className="space-y-1">
+							<label
+								htmlFor="task-project-select"
+								className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+							>
+								Project <span className="text-rose-400">*</span>
+							</label>
+							<select
+								id="task-project-select"
+								value={selectedProjectId}
+								onChange={(e) => handleProjectChange(e.target.value)}
+								required
+								className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer"
+							>
+								<option value="" disabled>
+									Select Project...
+								</option>
+								{projects.map((proj) => (
+									<option key={proj.id} value={proj.id}>
+										{proj.name}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
+
+					{/* Task Title */}
 					<div className="space-y-1">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
-							Target Stage / Column <span className="text-rose-400">*</span>
+						<label
+							htmlFor="task-title-input"
+							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+						>
+							Task Title <span className="text-rose-400">*</span>
+						</label>
+						<input
+							id="task-title-input"
+							type="text"
+							required
+							value={title}
+							onChange={(e) => setTitle(e.target.value)}
+							placeholder="e.g. Implement API Endpoints"
+							className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold placeholder-[#8F6236]/70 rounded-xs focus:outline-none focus:border-[#D7B05C]"
+						/>
+					</div>
+
+					{/* Column / Stage Selection */}
+					<div className="space-y-1">
+						<label
+							htmlFor="task-stage-select"
+							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+						>
+							Column / Stage <span className="text-rose-400">*</span>
 						</label>
 						<select
+							id="task-stage-select"
 							value={listId}
 							onChange={(e) => setListId(e.target.value)}
 							required
@@ -147,7 +256,7 @@ export function CreateTaskModal({
 							<option value="" disabled>
 								Select Stage Column...
 							</option>
-							{lists.map((list) => (
+							{availableLists.map((list) => (
 								<option key={list.id} value={list.id}>
 									{list.name}
 								</option>
@@ -155,41 +264,34 @@ export function CreateTaskModal({
 						</select>
 					</div>
 
-					{/* Objective Title */}
+					{/* Description */}
 					<div className="space-y-1">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
-							Objective Title <span className="text-rose-400">*</span>
-						</label>
-						<input
-							type="text"
-							required
-							value={title}
-							onChange={(e) => setTitle(e.target.value)}
-							placeholder="e.g. Fortify Front-End Infrastructure"
-							className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold placeholder-[#8F6236]/70 rounded-xs focus:outline-none focus:border-[#D7B05C]"
-						/>
-					</div>
-
-					{/* Quest Brief / Description */}
-					<div className="space-y-1">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
-							Quest Brief / Description
+						<label
+							htmlFor="task-description-textarea"
+							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+						>
+							Description
 						</label>
 						<textarea
+							id="task-description-textarea"
 							rows={2}
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							placeholder="Specify requirements and tactical deliverables..."
+							placeholder="Task notes and specifications..."
 							className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold placeholder-[#8F6236]/70 rounded-xs focus:outline-none focus:border-[#D7B05C] resize-none"
 						/>
 					</div>
 
-					{/* Assigned Officer */}
+					{/* Assignee */}
 					<div className="space-y-1">
-						<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
-							Assigned Officer
+						<label
+							htmlFor="task-assignee-select"
+							className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+						>
+							Assignee
 						</label>
 						<select
+							id="task-assignee-select"
 							value={userId}
 							onChange={(e) => setUserId(e.target.value)}
 							className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer"
@@ -203,13 +305,17 @@ export function CreateTaskModal({
 						</select>
 					</div>
 
-					{/* Priority & Due Date Grid */}
+					{/* Priority & Due Date */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<div className="space-y-1">
-							<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
-								Quest Priority
+							<label
+								htmlFor="task-priority-select"
+								className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+							>
+								Priority
 							</label>
 							<select
+								id="task-priority-select"
 								value={priority}
 								onChange={(e) =>
 									setPriority(
@@ -226,11 +332,16 @@ export function CreateTaskModal({
 						</div>
 
 						<div className="space-y-1">
-							<label className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]">
-								Target Deadline
+							<label
+								htmlFor="task-due-date-input"
+								className="block text-xs font-sans font-extrabold uppercase tracking-wider text-[#D7B05C]"
+							>
+								Due Date <span className="text-rose-400">*</span>
 							</label>
 							<input
+								id="task-due-date-input"
 								type="date"
+								required
 								value={dueDate}
 								onChange={(e) => setDueDate(e.target.value)}
 								className="w-full px-3 py-2 bg-[#FAF0D7] border border-[#8F6236] text-[#1A120C] font-sans text-xs font-bold rounded-xs focus:outline-none focus:border-[#D7B05C]"
@@ -242,7 +353,7 @@ export function CreateTaskModal({
 					{isSuccess && (
 						<div className="p-2.5 rounded-xs bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs flex items-center gap-2 font-sans">
 							<CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-							<span>Task objective created successfully!</span>
+							<span>Task created successfully!</span>
 						</div>
 					)}
 
@@ -253,7 +364,7 @@ export function CreateTaskModal({
 						</div>
 					)}
 
-					{/* Modal Action Buttons */}
+					{/* Buttons */}
 					<div className="flex items-center justify-end gap-3 pt-2.5 border-t border-[#4A2C1D]">
 						<button
 							type="button"
@@ -273,7 +384,7 @@ export function CreateTaskModal({
 							) : (
 								<Scroll size={14} className="text-[#D7B05C]" />
 							)}
-							<span>{isLoading ? "Commissioning..." : "Create Objective"}</span>
+							<span>{isLoading ? "Creating..." : "Create Task"}</span>
 						</button>
 					</div>
 				</form>

@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { IntelligenceStats } from "@/components/analytics/intelligence-stats";
 
 describe("IntelligenceStats Component", () => {
-	it("renders all four operational KPI metrics", () => {
+	it("renders all four operational KPI metrics correctly", () => {
 		render(
 			<IntelligenceStats
 				overallEfficiency={85}
@@ -24,5 +24,20 @@ describe("IntelligenceStats Component", () => {
 
 		expect(screen.getByText("Overdue Tasks")).toBeInTheDocument();
 		expect(screen.getByText("1")).toBeInTheDocument();
+	});
+
+	it("handles zero edge cases gracefully without NaN errors", () => {
+		render(
+			<IntelligenceStats
+				overallEfficiency={0}
+				completedTasks={0}
+				totalTasks={0}
+				inProgressTasks={0}
+				overdueTasks={0}
+			/>,
+		);
+
+		expect(screen.getByText("0%")).toBeInTheDocument();
+		expect(screen.getByText("0 / 0")).toBeInTheDocument();
 	});
 });
