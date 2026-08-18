@@ -3,6 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { notifyProjectMembers } from "@/actions/notifications";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { projectMembers, projects, users } from "@/lib/db/schema";
@@ -36,7 +37,6 @@ export async function assignUserToProject(
 			return { success: false, error: "Invalid assignment request." };
 		}
 
-		// Verify target project exists
 		const project = await db.query.projects.findFirst({
 			where: eq(projects.id, projectId),
 		});
@@ -45,7 +45,6 @@ export async function assignUserToProject(
 			return { success: false, error: "Project campaign not found." };
 		}
 
-		// Verify target user exists
 		const targetUser = await db.query.users.findFirst({
 			where: eq(users.id, userId),
 		});
@@ -54,7 +53,6 @@ export async function assignUserToProject(
 			return { success: false, error: "Officer record not found." };
 		}
 
-		// Upsert assignment record
 		const existingAssignment = await db.query.projectMembers.findFirst({
 			where: and(
 				eq(projectMembers.projectId, projectId),
@@ -81,11 +79,19 @@ export async function assignUserToProject(
 		}
 
 		await logActivity({
+			projectId,
 			userId: dbUser.id,
 			action: "Assigned Project Member",
 			entityType: "project",
 			entityName: project.name,
 			details: `Assigned ${targetUser.name || targetUser.email} as ${role} to ${project.name}`,
+		});
+
+		await notifyProjectMembers({
+			projectId,
+			title: "Realm Officer Enlisted",
+			description: `${targetUser.name || targetUser.email} was added as ${role}.`,
+			type: "team",
 		});
 
 		revalidatePath(`/projects/${projectId}`);
@@ -127,11 +133,19 @@ export async function removeUserFromProject(
 
 		if (targetUser && project) {
 			await logActivity({
+				projectId,
 				userId: dbUser.id,
 				action: "Removed Project Member",
 				entityType: "project",
 				entityName: project.name,
 				details: `Removed ${targetUser.name || targetUser.email} from ${project.name}`,
+			});
+
+			await notifyProjectMembers({
+				projectId,
+				title: "Officer Discharged",
+				description: `${targetUser.name || targetUser.email} was removed from the project.`,
+				type: "team",
 			});
 		}
 

@@ -1,5 +1,5 @@
 // __tests__/components/calendar-grid.test.tsx
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 
 jest.mock("@/actions/tasks", () => ({
@@ -37,7 +37,11 @@ describe("CalendarGrid Component", () => {
 		expect(screen.getAllByText("Fortify Castle Walls").length).toBeGreaterThan(0);
 		expect(screen.getAllByText("Inspect Armory").length).toBeGreaterThan(0);
 
-		// 2. Selected-Date Task List Assertion: Target container heading matches selected date
+		// 2. Select August 17 on the calendar grid explicitly
+		const aug17Button = screen.getByRole("button", { name: /17 Fortify Castle Walls/i });
+		fireEvent.click(aug17Button);
+
+		// 3. Selected-Date Task List Assertion: Target container heading matches selected date
 		const selectedDateHeading = screen.getByRole("heading", {
 			name: /TASKS FOR AUGUST 17, 2026/i,
 		});

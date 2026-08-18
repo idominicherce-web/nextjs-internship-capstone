@@ -1,5 +1,4 @@
-// app\(dashboard)\dashboard\page.tsx
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray, or } from "drizzle-orm";
 import { Shield } from "lucide-react";
 import { ActivityArchive } from "@/components/analytics/activity-archive";
 import { CommandAlerts } from "@/components/dashboard/command-alerts";
@@ -12,7 +11,7 @@ import { CreateProjectButton } from "@/components/projects/create-project-button
 import { RecentProjects } from "@/components/projects/recent-projects";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { activityLogs, projects } from "@/lib/db/schema";
+import { activityLogs, projectMembers, projects } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -36,9 +35,25 @@ export default async function DashboardPage() {
 		);
 	}
 
-	// 1. Fetch user projects with nested lists and tasks
+	// 1. Fetch project IDs where user is an assigned member
+	const memberRecords = await db
+		.select({ projectId: projectMembers.projectId })
+		.from(projectMembers)
+		.where(eq(projectMembers.userId, dbUser.id));
+
+	const assignedProjectIds = memberRecords.map((m) => m.projectId);
+
+	// 2. Query projects owned OR assigned via projectMembers
+	const projectCondition =
+		assignedProjectIds.length > 0
+			? or(
+					eq(projects.userId, dbUser.id),
+					inArray(projects.id, assignedProjectIds),
+				)
+			: eq(projects.userId, dbUser.id);
+
 	const userProjects = await db.query.projects.findMany({
-		where: eq(projects.userId, dbUser.id),
+		where: projectCondition,
 		orderBy: [desc(projects.updatedAt)],
 		with: {
 			lists: {
@@ -49,14 +64,27 @@ export default async function DashboardPage() {
 		},
 	});
 
-	// 2. Fetch live recent activity logs
+	// Collect all accessible project IDs (owned + assigned)
+	const allUserProjectIds = Array.from(
+		new Set([...userProjects.map((p) => p.id), ...assignedProjectIds]),
+	);
+
+	// 3. Fetch live recent activity logs across all accessible projects
+	const activityCondition =
+		allUserProjectIds.length > 0
+			? or(
+					inArray(activityLogs.projectId, allUserProjectIds),
+					eq(activityLogs.userId, dbUser.id),
+				)
+			: eq(activityLogs.userId, dbUser.id);
+
 	const recentActivities = await db.query.activityLogs.findMany({
-		where: eq(activityLogs.userId, dbUser.id),
+		where: activityCondition,
 		orderBy: [desc(activityLogs.createdAt)],
 		limit: 5,
 	});
 
-	// 3. Compute live metrics
+	// 4. Compute live metrics
 	const totalProjects = userProjects.length;
 	let totalTasks = 0;
 	let completedTasks = 0;

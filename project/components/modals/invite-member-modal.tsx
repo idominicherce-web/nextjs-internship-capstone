@@ -3,7 +3,6 @@
 import { AlertCircle, CheckCircle2, Loader2, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { inviteWorkspaceMember } from "@/actions/invitations";
-import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface InviteMemberModalProps {
 	projectId?: string;
@@ -23,10 +22,6 @@ export function InviteMemberModal({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSuccess, setIsSuccess] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-
-	const addNotification = useNotificationStore(
-		(state) => state.addNotification,
-	);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -56,14 +51,6 @@ export function InviteMemberModal({
 
 			if (res.success) {
 				setIsSuccess(true);
-				addNotification({
-					title: isProjectContext
-						? "Project Invite Sent"
-						: "Workspace Invitation Dispatched",
-					description: `Invitation dispatched to ${email.trim()} with ${role} permissions.`,
-					type: "team",
-				});
-
 				setTimeout(() => {
 					setEmail("");
 					setIsSuccess(false);

@@ -1,4 +1,3 @@
-// app\(dashboard)\analytics\page.tsx
 import { desc, eq, inArray, or } from "drizzle-orm";
 import { Shield } from "lucide-react";
 import { ActivityArchive } from "@/components/analytics/activity-archive";
@@ -60,9 +59,21 @@ export default async function AnalyticsPage() {
 		},
 	});
 
-	// 3. Fetch recent activity logs for live dispatch log
+	const allUserProjectIds = Array.from(
+		new Set([...userProjects.map((p) => p.id), ...assignedProjectIds]),
+	);
+
+	// 3. Fetch recent activity logs across all accessible projects (or logged by user)
+	const activityCondition =
+		allUserProjectIds.length > 0
+			? or(
+					inArray(activityLogs.projectId, allUserProjectIds),
+					eq(activityLogs.userId, dbUser.id),
+				)
+			: eq(activityLogs.userId, dbUser.id);
+
 	const recentActivities = await db.query.activityLogs.findMany({
-		where: eq(activityLogs.userId, dbUser.id),
+		where: activityCondition,
 		orderBy: [desc(activityLogs.createdAt)],
 		limit: 6,
 	});
@@ -134,7 +145,7 @@ export default async function AnalyticsPage() {
 			</div>
 
 			<div className="space-y-6 sm:space-y-8 mt-6 min-w-0">
-				{/* 1. WHAT IS HAPPENING? Executive KPI Cards */}
+				{/* KPI Cards */}
 				<IntelligenceStats
 					overallEfficiency={overallCompletionRate}
 					completedTasks={completedTasks}
@@ -143,7 +154,7 @@ export default async function AnalyticsPage() {
 					overdueTasks={overdueTasks}
 				/>
 
-				{/* 2. HOW HEALTHY IS THE WORKSPACE? Workspace Health Panel */}
+				{/* Health Panel */}
 				<WorkspaceHealthScore
 					totalProjects={userProjects.length}
 					overallEfficiency={overallCompletionRate}
@@ -152,14 +163,14 @@ export default async function AnalyticsPage() {
 					overdueTasks={overdueTasks}
 				/>
 
-				{/* Subtle Heraldic Divider */}
+				{/* Divider */}
 				<div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
 					<div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
 					<span>⚔ ──── ⚜ ──── ⚔</span>
 					<div className="h-px w-24 sm:w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
 				</div>
 
-				{/* 3 & 4. WHERE ARE TASKS CURRENTLY? & HOW ARE PROJECTS PROGRESSING? */}
+				{/* Charts */}
 				<VisualPerformanceCharts
 					projects={projectAnalytics}
 					totalTasks={totalTasks}
@@ -168,7 +179,7 @@ export default async function AnalyticsPage() {
 					overdueTasks={overdueTasks}
 				/>
 
-				{/* 5. WHAT RECENTLY HAPPENED? Quest Logs */}
+				{/* Quest Logs */}
 				<ActivityArchive activities={recentActivities} />
 			</div>
 		</DashboardLayoutContainer>

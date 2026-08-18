@@ -27,12 +27,11 @@ export async function getOrCreateDbUser() {
 	});
 
 	if (existingUser) {
-		// Update existing user, but preserve the database `name` so user edits persist
+		// Update existing user, preserving existing DB name if set
 		const [updatedUser] = await db
 			.update(users)
 			.set({
 				email: primaryEmail,
-				// Preserve existing DB name if set, otherwise fallback to Clerk name
 				name: existingUser.name ?? fullName,
 				imageUrl: clerkUser.imageUrl,
 				updatedAt: new Date(),

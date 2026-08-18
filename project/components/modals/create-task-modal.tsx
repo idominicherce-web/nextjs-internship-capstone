@@ -3,7 +3,6 @@
 import { AlertCircle, CheckCircle2, Loader2, Scroll, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createTask } from "@/actions/tasks";
-import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface ProjectOption {
 	id: string;
@@ -48,11 +47,6 @@ export function CreateTaskModal({
 	const [isSuccess, setIsSuccess] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const addNotification = useNotificationStore(
-		(state) => state.addNotification,
-	);
-
-	// Format initial due date string (YYYY-MM-DD) using local date components
 	useEffect(() => {
 		if (initialDueDate) {
 			const d = new Date(initialDueDate);
@@ -65,7 +59,6 @@ export function CreateTaskModal({
 		}
 	}, [initialDueDate]);
 
-	// Set initial selected project if provided via props
 	useEffect(() => {
 		if (initialProjectId) {
 			setSelectedProjectId(initialProjectId);
@@ -76,7 +69,6 @@ export function CreateTaskModal({
 		}
 	}, [initialProjectId, initialLists, projects, selectedProjectId]);
 
-	// Update available columns when project changes
 	const handleProjectChange = (projId: string) => {
 		setSelectedProjectId(projId);
 		const foundProj = projects.find((p) => p.id === projId);
@@ -89,14 +81,12 @@ export function CreateTaskModal({
 		}
 	};
 
-	// Ensure listId default selection
 	useEffect(() => {
 		if (availableLists.length > 0 && !listId) {
 			setListId(availableLists[0].id);
 		}
 	}, [availableLists, listId]);
 
-	// Lock body scroll when active & escape listener
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -139,12 +129,6 @@ export function CreateTaskModal({
 
 			if (res.success) {
 				setIsSuccess(true);
-				addNotification({
-					title: "Task Created",
-					description: `'${title.trim()}' has been added to the project.`,
-					type: "task",
-				});
-
 				setTimeout(() => {
 					setTitle("");
 					setDescription("");
@@ -172,7 +156,6 @@ export function CreateTaskModal({
 			}}
 		>
 			<div className="w-full max-w-lg rounded-xs border-2 border-[#8F6236] bg-[#1A120C] shadow-2xl relative my-auto overflow-hidden">
-				{/* Modal Header */}
 				<div className="flex items-center justify-between border-b border-[#4A2C1D] p-3.5 sm:p-4 bg-[#15100C] shrink-0">
 					<div className="flex items-center gap-2">
 						<Scroll className="text-[#D7B05C]" size={20} />
@@ -189,9 +172,7 @@ export function CreateTaskModal({
 					</button>
 				</div>
 
-				{/* Modal Form */}
 				<form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3">
-					{/* Project Selection */}
 					{!initialProjectId && projects.length > 0 && (
 						<div className="space-y-1">
 							<label
@@ -219,7 +200,6 @@ export function CreateTaskModal({
 						</div>
 					)}
 
-					{/* Task Title */}
 					<div className="space-y-1">
 						<label
 							htmlFor="task-title-input"
@@ -238,7 +218,6 @@ export function CreateTaskModal({
 						/>
 					</div>
 
-					{/* Column / Stage Selection */}
 					<div className="space-y-1">
 						<label
 							htmlFor="task-stage-select"
@@ -264,7 +243,6 @@ export function CreateTaskModal({
 						</select>
 					</div>
 
-					{/* Description */}
 					<div className="space-y-1">
 						<label
 							htmlFor="task-description-textarea"
@@ -282,7 +260,6 @@ export function CreateTaskModal({
 						/>
 					</div>
 
-					{/* Assignee */}
 					<div className="space-y-1">
 						<label
 							htmlFor="task-assignee-select"
@@ -305,7 +282,6 @@ export function CreateTaskModal({
 						</select>
 					</div>
 
-					{/* Priority & Due Date */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<div className="space-y-1">
 							<label
@@ -349,7 +325,6 @@ export function CreateTaskModal({
 						</div>
 					</div>
 
-					{/* Feedback Alerts */}
 					{isSuccess && (
 						<div className="p-2.5 rounded-xs bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs flex items-center gap-2 font-sans">
 							<CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
@@ -364,7 +339,6 @@ export function CreateTaskModal({
 						</div>
 					)}
 
-					{/* Buttons */}
 					<div className="flex items-center justify-end gap-3 pt-2.5 border-t border-[#4A2C1D]">
 						<button
 							type="button"

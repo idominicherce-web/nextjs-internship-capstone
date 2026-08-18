@@ -33,7 +33,6 @@ import { FloatingActionButton } from "@/components/kanban/fab/floating-action-bu
 import type { TaskCardData } from "@/components/kanban/task/task-card";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useKanbanStore } from "@/stores/use-kanban-store";
-import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface KanbanBoardProps {
 	projectId: string;
@@ -59,10 +58,6 @@ export function KanbanBoard({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
 	const [, startTransition] = useTransition();
-
-	const addNotification = useNotificationStore(
-		(state) => state.addNotification,
-	);
 
 	const {
 		searchQuery,
@@ -169,13 +164,6 @@ export function KanbanBoard({
 
 		setIsLoading(true);
 		await createList(projectId, newListName);
-
-		addNotification({
-			title: "New Quest Stage Created",
-			description: `Column '${newListName.trim()}' has been forged.`,
-			type: "project",
-		});
-
 		setNewListName("");
 		setIsLoading(false);
 	};
@@ -218,7 +206,6 @@ export function KanbanBoard({
 		if (taskData) setActiveTask(taskData);
 	}, []);
 
-	// No continuous state setting on move to prevent infinite measure loops
 	const handleDragOver = useCallback((_event: DragOverEvent) => {}, []);
 
 	const handleDragEnd = useCallback(
@@ -232,7 +219,6 @@ export function KanbanBoard({
 
 			if (activeTaskId.startsWith("temp-")) return;
 
-			// Locate source and destination columns
 			const sourceList = listsState.find((l) =>
 				l.tasks.some((t) => t.id === activeTaskId),
 			);
@@ -247,10 +233,9 @@ export function KanbanBoard({
 
 			if (!movedTask) return;
 
-			// Construct new state locally
+			// Update state locally first so UI updates immediately with smooth animation
 			const updatedLists = listsState
 				.map((list) => {
-					// Remove task from source column
 					if (list.id === sourceList.id) {
 						return {
 							...list,
@@ -260,7 +245,6 @@ export function KanbanBoard({
 					return list;
 				})
 				.map((list) => {
-					// Insert task into target column at new position
 					if (list.id === targetList.id) {
 						const overTaskIndex = list.tasks.findIndex((t) => t.id === overId);
 						const insertIndex =
@@ -278,10 +262,9 @@ export function KanbanBoard({
 					return list;
 				});
 
-			// 1. Permanently commit new position state to React local state (No reload needed!)
 			setListsState(updatedLists);
 
-			// 2. Persist stage shift in DB and record activity log
+			// Persist stage shift in background without full route revalidation
 			if (isCrossColumn) {
 				const targetTasks =
 					updatedLists.find((l) => l.id === targetList.id)?.tasks || [];
@@ -295,7 +278,6 @@ export function KanbanBoard({
 				);
 			}
 
-			// 3. Batch sync positions in DB
 			const targetTasks =
 				updatedLists.find((l) => l.id === targetList.id)?.tasks || [];
 			const updatedTaskPositions = targetTasks
@@ -309,16 +291,8 @@ export function KanbanBoard({
 			if (updatedTaskPositions.length > 0) {
 				await reorderTasks(updatedTaskPositions, projectId);
 			}
-
-			if (activeTask && isCrossColumn) {
-				addNotification({
-					title: "Objective Relocated",
-					description: `'${activeTask.title}' was moved to stage '${targetList.name}'.`,
-					type: "task",
-				});
-			}
 		},
-		[listsState, projectId, activeTask, addNotification],
+		[listsState, projectId],
 	);
 
 	if (!isMounted) return null;

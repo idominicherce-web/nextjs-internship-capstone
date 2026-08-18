@@ -18,7 +18,8 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type React from "react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { getNotifications } from "@/actions/notifications";
 import { Footer } from "@/components/layout/footer";
 import { NotificationDrawer } from "@/components/layout/notification-drawer";
 import { useKanbanStore } from "@/stores/use-kanban-store";
@@ -84,8 +85,41 @@ export default function DashboardLayout({
 
 	const pathname = usePathname();
 
-	const { openDrawer, notifications } = useNotificationStore();
+	const { openDrawer, notifications, setNotifications } =
+		useNotificationStore();
+
 	const unreadCount = notifications.filter((n) => !n.read).length;
+
+	const fetchNotifications = useCallback(() => {
+		getNotifications().then((res) => {
+			if (res.success && res.data) {
+				const formatted = res.data.map((n) => ({
+					id: n.id,
+					title: n.title,
+					description: n.description || "",
+					type: (n.type as any) || "system",
+					read: n.read,
+					timestamp: new Date(n.createdAt).toLocaleTimeString([], {
+						hour: "2-digit",
+						minute: "2-digit",
+					}),
+				}));
+				setNotifications(formatted);
+			}
+		});
+	}, [setNotifications]);
+
+	// Fetch notifications immediately on mount and on route transitions
+	useEffect(() => {
+		fetchNotifications();
+	}, [fetchNotifications]);
+
+	// Refetch unread badge on pathname change
+	useEffect(() => {
+		if (pathname) {
+			fetchNotifications();
+		}
+	}, [pathname, fetchNotifications]);
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -272,8 +306,12 @@ export default function DashboardLayout({
 							title="Notifications"
 						>
 							<Bell size={18} />
+
+							{/* Unread Counter Badge */}
 							{unreadCount > 0 && (
-								<span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+								<span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#D7B05C] border-2 border-[#1A120C] text-[10px] font-sans font-black text-[#1A120C] shadow-md animate-pulse">
+									{unreadCount > 9 ? "9+" : unreadCount}
+								</span>
 							)}
 						</button>
 

@@ -3,6 +3,7 @@
 import { eq, max } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { notifyProjectMembers } from "@/actions/notifications";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { lists, tasks } from "@/lib/db/schema";
@@ -98,11 +99,19 @@ export async function createTask(
 			.returning();
 
 		await logActivity({
+			projectId,
 			userId: dbUser.id,
 			action: "Created Objective",
 			entityType: "task",
 			entityName: newTask.title,
 			details: `[TASK:${newTask.id}] Created new objective: "${newTask.title}"`,
+		});
+
+		await notifyProjectMembers({
+			projectId,
+			title: "New Quest Forged",
+			description: `"${newTask.title}" created by ${dbUser.name || "a member"}.`,
+			type: "task",
 		});
 
 		revalidatePath(`/projects/${projectId}`);
@@ -169,11 +178,19 @@ export async function updateTask(
 
 		if (changes.length > 0) {
 			await logActivity({
+				projectId,
 				userId: dbUser.id,
 				action: "Updated Objective",
 				entityType: "task",
 				entityName: updatedTask.title,
 				details: `[TASK:${taskId}] ${changes.join(", ")}`,
+			});
+
+			await notifyProjectMembers({
+				projectId,
+				title: "Quest Objective Updated",
+				description: `"${updatedTask.title}": ${changes.join(", ")}`,
+				type: "task",
 			});
 		}
 
@@ -215,14 +232,23 @@ export async function updateTaskPosition(
 
 		if (targetList && currentTask && currentTask.listId !== newListId) {
 			await logActivity({
+				projectId,
 				userId: dbUser.id,
 				action: "Stage Shifted",
 				entityType: "task",
 				entityName: currentTask.title,
 				details: `[TASK:${taskId}] Moved stage to ${targetList.name}`,
 			});
+
+			await notifyProjectMembers({
+				projectId,
+				title: "Objective Relocated",
+				description: `"${currentTask.title}" shifted to column "${targetList.name}".`,
+				type: "task",
+			});
 		}
 
+		// NO revalidatePath here: Prevents full-page server re-render on drag & drop!
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to update task position:", error);
@@ -253,7 +279,7 @@ export async function reorderTasks(
 			),
 		);
 
-		// NO revalidatePath here to prevent page flickering during dnd
+		// NO revalidatePath here: Prevents full-page server re-render on drag & drop!
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to reorder tasks:", error);
@@ -278,11 +304,19 @@ export async function deleteTask(
 
 		if (deletedTask) {
 			await logActivity({
+				projectId,
 				userId: dbUser.id,
 				action: "Deleted Objective",
 				entityType: "task",
 				entityName: deletedTask.title,
 				details: `[TASK:${taskId}] Removed objective: "${deletedTask.title}"`,
+			});
+
+			await notifyProjectMembers({
+				projectId,
+				title: "Quest Objective Removed",
+				description: `"${deletedTask.title}" was deleted.`,
+				type: "task",
 			});
 		}
 

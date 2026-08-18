@@ -3,8 +3,9 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { notifyProjectMembers } from "@/actions/notifications";
 import { db } from "@/lib/db";
-import { taskComments, users } from "@/lib/db/schema";
+import { taskComments, tasks, users } from "@/lib/db/schema";
 import { logActivity } from "@/lib/logger";
 
 export interface TaskCommentWithAuthor {
@@ -22,9 +23,6 @@ export interface TaskCommentWithAuthor {
 	} | null;
 }
 
-/**
- * Fetch all comments for a specific task ordered by newest first
- */
 export async function getTaskComments(taskId: string): Promise<{
 	success: boolean;
 	data?: TaskCommentWithAuthor[];
@@ -66,9 +64,6 @@ export async function getTaskComments(taskId: string): Promise<{
 	}
 }
 
-/**
- * Create a new comment on a task
- */
 export async function createTaskComment(
 	taskId: string,
 	projectId: string,
@@ -80,7 +75,6 @@ export async function createTaskComment(
 			return { success: false, error: "Unauthorized access." };
 		}
 
-		// Sync user from DB
 		const dbUser = await db.query.users.findFirst({
 			where: eq(users.clerkId, user.id),
 		});
@@ -94,7 +88,10 @@ export async function createTaskComment(
 			return { success: false, error: "Comment content cannot be blank." };
 		}
 
-		// Insert comment
+		const task = await db.query.tasks.findFirst({
+			where: eq(tasks.id, taskId),
+		});
+
 		const [newComment] = await db
 			.insert(taskComments)
 			.values({
@@ -104,13 +101,20 @@ export async function createTaskComment(
 			})
 			.returning();
 
-		// Audit Log
 		await logActivity({
+			projectId,
 			userId: dbUser.id,
 			action: "COMMENTED",
 			entityType: "task",
-			entityName: cleanContent.slice(0, 30),
-			details: `Posted dispatch comment on task ${taskId}`,
+			entityName: task?.title || cleanContent.slice(0, 30),
+			details: `Posted dispatch comment on task: "${task?.title || taskId}"`,
+		});
+
+		await notifyProjectMembers({
+			projectId,
+			title: "Dispatch Comment Posted",
+			description: `${dbUser.name || "A team member"} commented on "${task?.title || "a task"}"`,
+			type: "task",
 		});
 
 		revalidatePath(`/projects/${projectId}`);
@@ -141,9 +145,6 @@ export async function createTaskComment(
 	}
 }
 
-/**
- * Delete a comment by ID
- */
 export async function deleteTaskComment(
 	commentId: string,
 	projectId: string,

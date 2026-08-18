@@ -30,7 +30,6 @@ export async function removeMemberAction(targetUserId: string) {
 
 		const client = await clerkClient();
 
-		// Resolve target display name or email from Neon DB first
 		const targetDbUser = await db.query.users.findFirst({
 			where: (u, { eq, or }) =>
 				or(eq(u.clerkId, targetUserId), eq(u.id, targetUserId)),
@@ -39,7 +38,6 @@ export async function removeMemberAction(targetUserId: string) {
 		const displayName =
 			targetDbUser?.name || targetDbUser?.email || "Workspace Member";
 
-		// 1. Revoke Clerk Org Membership
 		try {
 			await client.organizations.deleteOrganizationMembership({
 				organizationId: orgId,
@@ -49,14 +47,12 @@ export async function removeMemberAction(targetUserId: string) {
 			console.warn("Could not delete Clerk org membership:", err);
 		}
 
-		// 2. Delete global user from Clerk Backend
 		try {
 			await client.users.deleteUser(targetUserId);
 		} catch (err) {
 			console.warn("Could not delete global Clerk user:", err);
 		}
 
-		// 3. Clean up Neon DB user
 		if (targetDbUser) {
 			try {
 				await db
@@ -68,7 +64,6 @@ export async function removeMemberAction(targetUserId: string) {
 			}
 		}
 
-		// Write clean human-readable log entry to Neon activity_logs
 		await logActivity({
 			userId: dbUser.id,
 			action: "Discharged Member",
@@ -116,7 +111,6 @@ export async function updateMemberRoleAction(
 
 		const client = await clerkClient();
 
-		// Resolve target display name or email from Neon DB first
 		const targetDbUser = await db.query.users.findFirst({
 			where: (u, { eq, or }) =>
 				or(eq(u.clerkId, targetUserId), eq(u.id, targetUserId)),
@@ -130,14 +124,12 @@ export async function updateMemberRoleAction(
 				? "org:admin"
 				: "org:member";
 
-		// 1. Update Clerk Organization Membership
 		await client.organizations.updateOrganizationMembership({
 			organizationId: orgId,
 			userId: targetUserId,
 			role: clerkRole,
 		});
 
-		// 2. Persist updated role in Neon DB
 		if (targetDbUser) {
 			await db
 				.update(users)
@@ -148,7 +140,6 @@ export async function updateMemberRoleAction(
 				.where(eq(users.id, targetDbUser.id));
 		}
 
-		// Write clean human-readable log entry to Neon activity_logs
 		await logActivity({
 			userId: dbUser.id,
 			action: "Updated Member Role",

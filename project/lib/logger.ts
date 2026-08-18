@@ -2,12 +2,14 @@ import { db } from "@/lib/db";
 import { activityLogs } from "@/lib/db/schema";
 
 export async function logActivity({
+	projectId,
 	userId,
 	action,
 	entityType,
 	entityName,
 	details,
 }: {
+	projectId?: string;
 	userId: string;
 	action: string;
 	entityType: "project" | "task" | "list";
@@ -16,6 +18,7 @@ export async function logActivity({
 }) {
 	try {
 		await db.insert(activityLogs).values({
+			projectId: projectId || null,
 			userId,
 			action,
 			entityType,
