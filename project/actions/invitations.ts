@@ -3,6 +3,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { notifyProjectMembers } from "@/actions/notifications";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { logActivity } from "@/lib/logger";
 
@@ -20,9 +21,6 @@ const inviteWorkspaceSchema = z.object({
 	}),
 });
 
-/**
- * Creates a workspace invitation using Clerk Organization Invitations API.
- */
 export async function inviteWorkspaceMember(
 	projectId: string,
 	email: string,
@@ -105,12 +103,22 @@ export async function inviteWorkspaceMember(
 		const friendlyRole = clerkRole === "org:admin" ? "Admin" : "Member";
 
 		await logActivity({
+			projectId: projectId !== "global" ? projectId : undefined,
 			userId: dbUser.id,
 			action: "Invited Workspace Member",
 			entityType: "project",
 			entityName: email,
 			details: `Dispatched workspace invitation (${friendlyRole}) to ${email}`,
 		});
+
+		if (projectId !== "global") {
+			await notifyProjectMembers({
+				projectId,
+				title: "Invitation Dispatched",
+				description: `Invitation sent to ${email} as ${friendlyRole}.`,
+				type: "team",
+			});
+		}
 
 		revalidatePath("/team");
 		revalidatePath("/dashboard");
@@ -133,9 +141,6 @@ export async function inviteWorkspaceMember(
 	}
 }
 
-/**
- * Fetches real pending invitations directly from Clerk Organizations.
- */
 export async function getWorkspaceInvitations() {
 	try {
 		const { orgId } = await auth();
@@ -161,12 +166,9 @@ export async function getWorkspaceInvitations() {
 	}
 }
 
-/**
- * Revokes a pending Clerk Organization Invitation.
- */
 export async function revokeInvitation(
 	invitationId: string,
-	_projectId = "global",
+	projectId = "global",
 ): Promise<ActionResponse> {
 	try {
 		const { userId, orgId, orgRole } = await auth();
@@ -185,7 +187,6 @@ export async function revokeInvitation(
 
 		const client = await clerkClient();
 
-		// Fetch target invitation email address before revoking
 		let targetEmail = "Workspace Member";
 		try {
 			const pendingInvites =
@@ -209,8 +210,8 @@ export async function revokeInvitation(
 			requestingUserId: userId,
 		});
 
-		// Log human-readable target email instead of invitation ID
 		await logActivity({
+			projectId: projectId !== "global" ? projectId : undefined,
 			userId: dbUser.id,
 			action: "Revoked Workspace Invitation",
 			entityType: "project",

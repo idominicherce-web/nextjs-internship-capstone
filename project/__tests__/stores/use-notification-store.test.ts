@@ -5,6 +5,24 @@ describe("Notification Store (Zustand)", () => {
 		useNotificationStore.getState().clearNotifications();
 	});
 
+	it("sets bulk notifications fetched from server", () => {
+		useNotificationStore.getState().setNotifications([
+			{
+				id: "server-1",
+				title: "Server Notification",
+				description: "Dispatched from backend",
+				timestamp: "10m ago",
+				type: "task",
+				read: false,
+			},
+		]);
+
+		const notifications = useNotificationStore.getState().notifications;
+		expect(notifications).toHaveLength(1);
+		expect(notifications[0].id).toBe("server-1");
+		expect(notifications[0].title).toBe("Server Notification");
+	});
+
 	it("adds a new notification", () => {
 		useNotificationStore.getState().addNotification({
 			title: "New Quest Forged",

@@ -131,7 +131,12 @@ export const taskComments = pgTable("task_comments", {
 // ACTIVITY LOGS TABLE
 export const activityLogs = pgTable("activity_logs", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	userId: text("user_id").notNull(),
+	projectId: text("project_id").references(() => projects.id, {
+		onDelete: "cascade",
+	}),
+	userId: text("user_id")
+		.notNull()
+		.references(() => users.id, { onDelete: "cascade" }),
 	action: text("action").notNull(),
 	entityType: text("entity_type").notNull(),
 	entityName: text("entity_name").notNull(),
@@ -152,6 +157,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 	tasks: many(tasks),
 	projectMemberships: many(projectMembers),
 	notifications: many(notifications),
+	activityLogs: many(activityLogs),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
@@ -168,6 +174,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
 	}),
 	lists: many(lists),
 	members: many(projectMembers),
+	activityLogs: many(activityLogs),
 }));
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
@@ -208,6 +215,17 @@ export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
 	}),
 	user: one(users, {
 		fields: [taskComments.userId],
+		references: [users.id],
+	}),
+}));
+
+export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
+	project: one(projects, {
+		fields: [activityLogs.projectId],
+		references: [projects.id],
+	}),
+	user: one(users, {
+		fields: [activityLogs.userId],
 		references: [users.id],
 	}),
 }));

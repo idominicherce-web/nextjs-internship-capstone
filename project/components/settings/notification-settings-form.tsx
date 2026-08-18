@@ -15,23 +15,11 @@ export function NotificationSettingsForm({
 	const [taskAssignedInApp, setTaskAssignedInApp] = useState(
 		initialSettings?.taskAssignedInApp ?? true,
 	);
-	const [taskAssignedEmail, setTaskAssignedEmail] = useState(
-		initialSettings?.taskAssignedEmail ?? true,
-	);
 	const [dueDatesInApp, setDueDatesInApp] = useState(
 		initialSettings?.dueDatesInApp ?? true,
 	);
-	const [dueDatesEmail, setDueDatesEmail] = useState(
-		initialSettings?.dueDatesEmail ?? true,
-	);
 	const [mentionsInApp, setMentionsInApp] = useState(
 		initialSettings?.mentionsInApp ?? true,
-	);
-	const [mentionsEmail, setMentionsEmail] = useState(
-		initialSettings?.mentionsEmail ?? false,
-	);
-	const [emailDigest, setEmailDigest] = useState(
-		initialSettings?.emailDigest ?? "daily",
 	);
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -47,12 +35,8 @@ export function NotificationSettingsForm({
 
 		const res = await updateUserSettings({
 			taskAssignedInApp,
-			taskAssignedEmail,
 			dueDatesInApp,
-			dueDatesEmail,
 			mentionsInApp,
-			mentionsEmail,
-			emailDigest,
 		});
 
 		setIsLoading(false);
@@ -81,7 +65,8 @@ export function NotificationSettingsForm({
 						</h3>
 					</div>
 					<p className="text-xs font-sans text-[#D7B05C]/80 mt-1 italic">
-						Configure in-app alerts and email summary digest frequencies.
+						Configure which real-time alerts appear on your notifications
+						drawer.
 					</p>
 				</div>
 
@@ -92,7 +77,7 @@ export function NotificationSettingsForm({
 
 			<form onSubmit={handleSave} className="space-y-5 max-w-2xl">
 				{/* Task Assignment */}
-				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-[#15100C] border border-[#4A2C1D] rounded-xs">
+				<div className="flex items-center justify-between gap-4 p-4 bg-[#15100C] border border-[#4A2C1D] rounded-xs shadow-inner">
 					<div>
 						<h4 className="font-sans font-extrabold text-xs text-[#F8EEDB] uppercase tracking-wider">
 							Task Assignment Alerts
@@ -101,30 +86,31 @@ export function NotificationSettingsForm({
 							Receive dispatches when you are deployed to an objective.
 						</p>
 					</div>
-					<div className="flex items-center gap-4 text-xs font-sans">
-						<label className="flex items-center gap-1.5 text-[#D7B05C] cursor-pointer">
-							<input
-								type="checkbox"
-								checked={taskAssignedInApp}
-								onChange={(e) => setTaskAssignedInApp(e.target.checked)}
-								className="accent-[#D7B05C] h-4 w-4 rounded-xs"
-							/>
-							<span>In-App</span>
-						</label>
-						<label className="flex items-center gap-1.5 text-[#D7B05C] cursor-pointer">
-							<input
-								type="checkbox"
-								checked={taskAssignedEmail}
-								onChange={(e) => setTaskAssignedEmail(e.target.checked)}
-								className="accent-[#D7B05C] h-4 w-4 rounded-xs"
-							/>
-							<span>Email</span>
-						</label>
-					</div>
+
+					{/* Smooth Sliding Toggle Switch */}
+					<button
+						type="button"
+						role="switch"
+						aria-checked={taskAssignedInApp}
+						onClick={() => setTaskAssignedInApp(!taskAssignedInApp)}
+						className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 p-0.5 transition-colors duration-200 ease-in-out cursor-pointer focus:outline-none ${
+							taskAssignedInApp
+								? "bg-[#D7B05C] border-[#F8EEDB]"
+								: "bg-[#2D1B10] border-[#8F6236]/60"
+						}`}
+					>
+						<span
+							className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out ${
+								taskAssignedInApp
+									? "translate-x-5 bg-[#1A120C]"
+									: "translate-x-0 bg-[#8F6236]/80"
+							}`}
+						/>
+					</button>
 				</div>
 
 				{/* Deadline Reminders */}
-				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-[#15100C] border border-[#4A2C1D] rounded-xs">
+				<div className="flex items-center justify-between gap-4 p-4 bg-[#15100C] border border-[#4A2C1D] rounded-xs shadow-inner">
 					<div>
 						<h4 className="font-sans font-extrabold text-xs text-[#F8EEDB] uppercase tracking-wider">
 							Deadline Reminders
@@ -133,30 +119,31 @@ export function NotificationSettingsForm({
 							Get notified when assigned tasks are nearing due dates.
 						</p>
 					</div>
-					<div className="flex items-center gap-4 text-xs font-sans">
-						<label className="flex items-center gap-1.5 text-[#D7B05C] cursor-pointer">
-							<input
-								type="checkbox"
-								checked={dueDatesInApp}
-								onChange={(e) => setDueDatesInApp(e.target.checked)}
-								className="accent-[#D7B05C] h-4 w-4 rounded-xs"
-							/>
-							<span>In-App</span>
-						</label>
-						<label className="flex items-center gap-1.5 text-[#D7B05C] cursor-pointer">
-							<input
-								type="checkbox"
-								checked={dueDatesEmail}
-								onChange={(e) => setDueDatesEmail(e.target.checked)}
-								className="accent-[#D7B05C] h-4 w-4 rounded-xs"
-							/>
-							<span>Email</span>
-						</label>
-					</div>
+
+					{/* Smooth Sliding Toggle Switch */}
+					<button
+						type="button"
+						role="switch"
+						aria-checked={dueDatesInApp}
+						onClick={() => setDueDatesInApp(!dueDatesInApp)}
+						className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 p-0.5 transition-colors duration-200 ease-in-out cursor-pointer focus:outline-none ${
+							dueDatesInApp
+								? "bg-[#D7B05C] border-[#F8EEDB]"
+								: "bg-[#2D1B10] border-[#8F6236]/60"
+						}`}
+					>
+						<span
+							className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out ${
+								dueDatesInApp
+									? "translate-x-5 bg-[#1A120C]"
+									: "translate-x-0 bg-[#8F6236]/80"
+							}`}
+						/>
+					</button>
 				</div>
 
 				{/* Council Comments */}
-				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-[#15100C] border border-[#4A2C1D] rounded-xs">
+				<div className="flex items-center justify-between gap-4 p-4 bg-[#15100C] border border-[#4A2C1D] rounded-xs shadow-inner">
 					<div>
 						<h4 className="font-sans font-extrabold text-xs text-[#F8EEDB] uppercase tracking-wider">
 							Council Comment Dispatches
@@ -165,47 +152,27 @@ export function NotificationSettingsForm({
 							Alerts when officers post updates on your assigned tasks.
 						</p>
 					</div>
-					<div className="flex items-center gap-4 text-xs font-sans">
-						<label className="flex items-center gap-1.5 text-[#D7B05C] cursor-pointer">
-							<input
-								type="checkbox"
-								checked={mentionsInApp}
-								onChange={(e) => setMentionsInApp(e.target.checked)}
-								className="accent-[#D7B05C] h-4 w-4 rounded-xs"
-							/>
-							<span>In-App</span>
-						</label>
-						<label className="flex items-center gap-1.5 text-[#D7B05C] cursor-pointer">
-							<input
-								type="checkbox"
-								checked={mentionsEmail}
-								onChange={(e) => setMentionsEmail(e.target.checked)}
-								className="accent-[#D7B05C] h-4 w-4 rounded-xs"
-							/>
-							<span>Email</span>
-						</label>
-					</div>
-				</div>
 
-				{/* Email Digest Cadence */}
-				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-[#15100C] border border-[#4A2C1D] rounded-xs">
-					<div>
-						<h4 className="font-sans font-extrabold text-xs text-[#F8EEDB] uppercase tracking-wider">
-							Digest Frequency
-						</h4>
-						<p className="text-[11px] font-sans text-[#D7B05C]/70 italic mt-0.5">
-							Summary reports delivered directly to your inbox.
-						</p>
-					</div>
-					<select
-						value={emailDigest}
-						onChange={(e) => setEmailDigest(e.target.value)}
-						className="px-3.5 py-2 bg-[#2D1B10] border border-[#8F6236] text-[#D7B05C] font-sans text-xs font-bold uppercase rounded-xs focus:outline-none focus:border-[#D7B05C] cursor-pointer shadow-md"
+					{/* Smooth Sliding Toggle Switch */}
+					<button
+						type="button"
+						role="switch"
+						aria-checked={mentionsInApp}
+						onClick={() => setMentionsInApp(!mentionsInApp)}
+						className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 p-0.5 transition-colors duration-200 ease-in-out cursor-pointer focus:outline-none ${
+							mentionsInApp
+								? "bg-[#D7B05C] border-[#F8EEDB]"
+								: "bg-[#2D1B10] border-[#8F6236]/60"
+						}`}
 					>
-						<option value="daily">Daily Briefing</option>
-						<option value="weekly">Weekly Report</option>
-						<option value="never">Never Send</option>
-					</select>
+						<span
+							className={`pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md transition duration-200 ease-in-out ${
+								mentionsInApp
+									? "translate-x-5 bg-[#1A120C]"
+									: "translate-x-0 bg-[#8F6236]/80"
+							}`}
+						/>
+					</button>
 				</div>
 
 				{/* Form Actions Footer Bar */}
@@ -216,7 +183,7 @@ export function NotificationSettingsForm({
 						</span>
 					) : (
 						<span className="text-[11px] font-serif italic text-[#D7B05C]/60">
-							Select rules to govern real-time dispatches.
+							Toggle switches to govern real-time dispatches.
 						</span>
 					)}
 

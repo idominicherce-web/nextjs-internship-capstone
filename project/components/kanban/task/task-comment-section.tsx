@@ -19,7 +19,6 @@ import {
 	getTaskComments,
 	type TaskCommentWithAuthor,
 } from "@/actions/comments";
-import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface TaskCommentSectionProps {
 	taskId: string;
@@ -41,10 +40,6 @@ export function TaskCommentSection({
 	const [isFetching, setIsFetching] = useState(true);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
-
-	const addNotification = useNotificationStore(
-		(state) => state.addNotification,
-	);
 
 	const fetchData = useCallback(async () => {
 		setIsFetching(true);
@@ -80,12 +75,6 @@ export function TaskCommentSection({
 		if (result.success && result.data) {
 			setComments((prev) => [result.data!, ...prev]);
 			setNewComment("");
-
-			addNotification({
-				title: "Dispatch Comment Posted",
-				description: "New commentary added to task objective.",
-				type: "task",
-			});
 		}
 	};
 
@@ -99,7 +88,6 @@ export function TaskCommentSection({
 		}
 	};
 
-	// Combine and sort dispatches and activity logs chronologically
 	const combinedFeed = [
 		...comments.map((c) => ({ ...c, feedType: "comment" as const })),
 		...activities.map((a) => ({ ...a, feedType: "activity" as const })),
@@ -115,14 +103,12 @@ export function TaskCommentSection({
 
 	return (
 		<div className="flex flex-col h-full min-h-0 space-y-2.5 font-serif">
-			{/* Panel Filter Header */}
 			<div className="flex items-center justify-between pb-2 border-b-2 border-[#4A2C1D] flex-none">
 				<div className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 					<MessageSquare size={15} className="text-[#D7B05C]" />
 					<span>Council Comments</span>
 				</div>
 
-				{/* Feed Filter Buttons */}
 				<div className="flex items-center gap-1 p-0.5 bg-[#1A120C] border border-[#8F6236] rounded-xs">
 					<button
 						type="button"
@@ -160,7 +146,6 @@ export function TaskCommentSection({
 				</div>
 			</div>
 
-			{/* Chronicle Feed Window */}
 			<div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 pr-1 scrollbar-thin scrollbar-thumb-[#8F6236]">
 				{isFetching ? (
 					<div className="flex items-center justify-center py-12 text-xs font-sans text-[#D7B05C]/70 gap-2">
@@ -270,7 +255,6 @@ export function TaskCommentSection({
 				)}
 			</div>
 
-			{/* Fixed Composer Form */}
 			<form
 				onSubmit={handlePostComment}
 				className="pt-2 border-t-2 border-[#4A2C1D] flex gap-2 flex-none"

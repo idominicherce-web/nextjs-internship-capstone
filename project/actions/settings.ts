@@ -21,12 +21,8 @@ export async function getUserSettings() {
 				.values({
 					userId: dbUser.id,
 					taskAssignedInApp: true,
-					taskAssignedEmail: true,
 					dueDatesInApp: true,
-					dueDatesEmail: true,
 					mentionsInApp: true,
-					mentionsEmail: false,
-					emailDigest: "daily",
 				})
 				.returning();
 
@@ -42,12 +38,8 @@ export async function getUserSettings() {
 
 export async function updateUserSettings(payload: {
 	taskAssignedInApp?: boolean;
-	taskAssignedEmail?: boolean;
 	dueDatesInApp?: boolean;
-	dueDatesEmail?: boolean;
 	mentionsInApp?: boolean;
-	mentionsEmail?: boolean;
-	emailDigest?: string;
 }) {
 	try {
 		const dbUser = await getOrCreateDbUser();

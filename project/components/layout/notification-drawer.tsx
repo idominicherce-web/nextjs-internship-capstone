@@ -1,9 +1,11 @@
 "use client";
 
-import { Bell, Check, Trash2, X } from "lucide-react";
+import { Bell, Check, Loader2, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
 	deleteAllNotifications,
 	deleteNotification,
+	getNotifications,
 	markAllNotificationsAsRead,
 	markNotificationAsRead,
 } from "@/actions/notifications";
@@ -13,11 +15,39 @@ export function NotificationDrawer() {
 	const isOpen = useNotificationStore((state) => state.isOpen);
 	const closeDrawer = useNotificationStore((state) => state.closeDrawer);
 	const notifications = useNotificationStore((state) => state.notifications);
+	const setNotifications = useNotificationStore(
+		(state) => state.setNotifications,
+	);
 	const markAsRead = useNotificationStore((state) => state.markAsRead);
 	const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
 	const clearNotifications = useNotificationStore(
 		(state) => state.clearNotifications,
 	);
+
+	const [isLoading, setIsLoading] = useState(false);
+
+	useEffect(() => {
+		if (isOpen) {
+			setIsLoading(true);
+			getNotifications().then((res) => {
+				if (res.success && res.data) {
+					const formatted = res.data.map((n) => ({
+						id: n.id,
+						title: n.title,
+						description: n.description || "",
+						type: (n.type as any) || "system",
+						read: n.read,
+						timestamp: new Date(n.createdAt).toLocaleTimeString([], {
+							hour: "2-digit",
+							minute: "2-digit",
+						}),
+					}));
+					setNotifications(formatted);
+				}
+				setIsLoading(false);
+			});
+		}
+	}, [isOpen, setNotifications]);
 
 	if (!isOpen) return null;
 
@@ -32,7 +62,7 @@ export function NotificationDrawer() {
 	};
 
 	const handleDelete = async (id: string) => {
-		clearNotifications();
+		setNotifications(notifications.filter((n) => n.id !== id));
 		await deleteNotification(id);
 	};
 
@@ -43,16 +73,13 @@ export function NotificationDrawer() {
 
 	return (
 		<div className="fixed inset-0 z-[120] font-serif">
-			{/* Backdrop */}
 			<div
 				className="fixed inset-0 bg-black/80 backdrop-blur-xs transition-opacity"
 				onClick={closeDrawer}
 			/>
 
-			{/* Drawer Panel */}
 			<aside className="fixed inset-y-0 right-0 z-[130] w-full max-w-sm border-l-2 border-[#4A2C1D] bg-[#1A120C] p-5 shadow-2xl flex flex-col justify-between overflow-y-auto text-[#F8EEDB] animate-in slide-in-from-right duration-200">
 				<div className="space-y-4">
-					{/* Header */}
 					<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-3">
 						<div className="flex items-center gap-2">
 							<Bell size={18} className="text-[#D7B05C]" />
@@ -70,7 +97,6 @@ export function NotificationDrawer() {
 						</button>
 					</div>
 
-					{/* Global Actions */}
 					<div className="flex items-center justify-between font-sans text-xs pt-1">
 						<button
 							type="button"
@@ -90,8 +116,12 @@ export function NotificationDrawer() {
 						</button>
 					</div>
 
-					{/* Notification Items */}
-					{notifications.length === 0 ? (
+					{isLoading ? (
+						<div className="flex items-center justify-center py-12 gap-2 text-xs font-sans text-[#D7B05C]">
+							<Loader2 size={16} className="animate-spin text-[#D7B05C]" />
+							<span>Fetching dispatches...</span>
+						</div>
+					) : notifications.length === 0 ? (
 						<p className="text-center text-xs font-serif italic text-[#E3C279] py-8">
 							No unread dispatches at this time.
 						</p>
