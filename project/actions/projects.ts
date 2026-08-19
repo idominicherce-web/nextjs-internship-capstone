@@ -1,12 +1,16 @@
-// actions/projects.ts
-
 "use server";
 
 import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { activityLogs, lists, projectMembers, projects } from "@/lib/db/schema";
+import {
+	activityLogs,
+	lists,
+	projectMembers,
+	projects,
+	users,
+} from "@/lib/db/schema";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validations";
 
 export type ActionResponse<T = unknown> = {
@@ -14,6 +18,12 @@ export type ActionResponse<T = unknown> = {
 	data?: T;
 	error?: string;
 	fieldErrors?: Record<string, string[]>;
+};
+
+export type ProjectOptionItem = {
+	id: string;
+	name: string;
+	slug: string | null;
 };
 
 /**
@@ -138,7 +148,6 @@ export async function getProjects() {
 			return [];
 		}
 
-		// Find project IDs where the user is an assigned member
 		const memberRecords = await db
 			.select({ projectId: projectMembers.projectId })
 			.from(projectMembers)
@@ -146,7 +155,6 @@ export async function getProjects() {
 
 		const assignedProjectIds = memberRecords.map((m) => m.projectId);
 
-		// Query projects owned OR assigned
 		const condition =
 			assignedProjectIds.length > 0
 				? or(
@@ -168,6 +176,61 @@ export async function getProjects() {
 		});
 	} catch (error) {
 		console.error("Failed to fetch projects:", error);
+		return [];
+	}
+}
+
+/**
+ * EXPORTED ACTION: Fetches workspace projects where a specific target user is NOT yet assigned or owner.
+ * Supports both Neon DB User ID and Clerk User ID.
+ */
+export async function getProjectsWhereUserNotMember(
+	targetUserIdInput: string,
+): Promise<ProjectOptionItem[]> {
+	try {
+		const dbUser = await getOrCreateDbUser();
+		if (!dbUser || !targetUserIdInput) return [];
+
+		// 1. Resolve the target user in the Neon DB using either id OR clerkId
+		const targetUser = await db.query.users.findFirst({
+			where: or(
+				eq(users.id, targetUserIdInput),
+				eq(users.clerkId, targetUserIdInput),
+			),
+		});
+
+		if (!targetUser) return [];
+
+		const neonUserId = targetUser.id;
+
+		// 2. Fetch project IDs where the target user is already an assigned member
+		const memberRecords = await db
+			.select({ projectId: projectMembers.projectId })
+			.from(projectMembers)
+			.where(eq(projectMembers.userId, neonUserId));
+
+		const assignedProjectIds = memberRecords.map((m) => m.projectId);
+
+		// 3. Fetch all projects in the workspace
+		const allProjects = await db.query.projects.findMany({
+			orderBy: [desc(projects.updatedAt)],
+		});
+
+		// 4. Exclude projects owned by target user OR where target user is already assigned
+		return allProjects
+			.filter(
+				(p) =>
+					p.userId !== neonUserId &&
+					p.userId !== targetUser.clerkId &&
+					!assignedProjectIds.includes(p.id),
+			)
+			.map((p) => ({
+				id: p.id,
+				name: p.name,
+				slug: p.slug,
+			}));
+	} catch (error) {
+		console.error("Failed to fetch unassigned user projects:", error);
 		return [];
 	}
 }

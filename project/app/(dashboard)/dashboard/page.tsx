@@ -69,7 +69,28 @@ export default async function DashboardPage() {
 		new Set([...userProjects.map((p) => p.id), ...assignedProjectIds]),
 	);
 
-	// 3. Fetch live recent activity logs across all accessible projects
+	// 3. Compute unique total members across all accessible projects
+	const projectMemberRows =
+		allUserProjectIds.length > 0
+			? await db
+					.select({ userId: projectMembers.userId })
+					.from(projectMembers)
+					.where(inArray(projectMembers.projectId, allUserProjectIds))
+			: [];
+
+	const uniqueMemberIds = new Set<string>();
+
+	// ✅ FIX: Use block statements to prevent returning Set.add() values
+	for (const p of userProjects) {
+		uniqueMemberIds.add(p.userId);
+	}
+	for (const m of projectMemberRows) {
+		uniqueMemberIds.add(m.userId);
+	}
+
+	const uniqueMemberCount = uniqueMemberIds.size || 1;
+
+	// 4. Fetch live recent activity logs across all accessible projects
 	const activityCondition =
 		allUserProjectIds.length > 0
 			? or(
@@ -84,7 +105,7 @@ export default async function DashboardPage() {
 		limit: 5,
 	});
 
-	// 4. Compute live metrics
+	// 5. Compute live metrics
 	const totalProjects = userProjects.length;
 	let totalTasks = 0;
 	let completedTasks = 0;
@@ -95,12 +116,13 @@ export default async function DashboardPage() {
 		let projTotalTasks = 0;
 		let projCompletedTasks = 0;
 
-		proj.lists.forEach((list) => {
+		// ✅ FIX: Use standard for...of loops instead of nested .forEach()
+		for (const list of proj.lists) {
 			const isDoneList =
 				list.name.toLowerCase().includes("done") ||
 				list.name.toLowerCase().includes("complete");
 
-			list.tasks.forEach((task) => {
+			for (const task of list.tasks) {
 				projTotalTasks++;
 				totalTasks++;
 				if (isDoneList) {
@@ -109,8 +131,8 @@ export default async function DashboardPage() {
 				} else if (task.dueDate && new Date(task.dueDate) < today) {
 					overdueTasks++;
 				}
-			});
-		});
+			}
+		}
 
 		return {
 			id: proj.id,
@@ -131,7 +153,6 @@ export default async function DashboardPage() {
 
 	return (
 		<DashboardLayoutContainer>
-			{/* HTML5 Main Landmark */}
 			<main className="space-y-6 sm:space-y-8 pb-12 sm:pb-16 min-w-0">
 				{/* Header Bar */}
 				<header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-[#4A2C1D] pb-6 relative">
@@ -164,12 +185,10 @@ export default async function DashboardPage() {
 					</div>
 				</header>
 
-				{/* Onboarding State or Main Dashboard Grid */}
 				{totalProjects === 0 ? (
 					<OnboardingDashboard />
 				) : (
 					<>
-						{/* Command Urgency Alerts */}
 						<section aria-label="Command Urgency Alerts">
 							<CommandAlerts
 								overdueCount={overdueTasks}
@@ -178,24 +197,21 @@ export default async function DashboardPage() {
 							/>
 						</section>
 
-						{/* Kingdom Overview Report Plaques */}
 						<section aria-label="Kingdom Overview Statistics">
 							<KingdomOverviewStats
 								activeProjects={totalProjects}
-								totalMembers={1}
+								totalMembers={uniqueMemberCount}
 								completedTasks={completedTasks}
 								pendingTasks={pendingTasks}
 							/>
 						</section>
 
-						{/* Decorative Divider */}
 						<div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
 							<div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
 							<span>⚔ ──── ⚜ ──── ⚔</span>
 							<div className="h-px w-24 sm:w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
 						</div>
 
-						{/* Main Grid: Responsive stacking for mobile screens */}
 						<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
 							<div className="lg:col-span-2 space-y-6 min-w-0">
 								<section aria-label="Recent Campaigns">

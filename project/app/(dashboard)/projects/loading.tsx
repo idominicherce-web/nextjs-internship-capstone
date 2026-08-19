@@ -59,7 +59,7 @@ export default function ProjectsLoading() {
 					<div className="w-full sm:w-48 h-11 bg-[#2D1B10] border-2 border-[#8F6236]/40 rounded-xs" />
 				</div>
 
-				{/* SKELETON LEATHER PROJECT CARDS GRID */}
+				{/* SKELETON PROJECT CARDS GRID */}
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
 					{cardSkeletons.map((key) => (
 						<div
