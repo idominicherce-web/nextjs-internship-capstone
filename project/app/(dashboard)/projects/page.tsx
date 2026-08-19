@@ -1,6 +1,6 @@
 // app/(dashboard)/projects/page.tsx
 import { getProjects } from "@/actions/projects";
-import { ProjectsClient } from "./projects-client";
+import { ProjectsClient } from "@/components/projects/projects-client";
 
 export const dynamic = "force-dynamic";
 

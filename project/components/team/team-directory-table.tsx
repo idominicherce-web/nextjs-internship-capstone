@@ -35,7 +35,7 @@ export function TeamDirectoryTable({
 	return (
 		<div className="relative w-full min-w-0">
 			{/* DESKTOP TABLE */}
-			<div className="hidden md:block w-full min-w-0 overflow-x-auto rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl">
+			<div className="hidden md:block w-full min-w-0 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl overflow-x-auto">
 				<table className="w-full text-left font-serif border-collapse">
 					<thead>
 						<tr className="border-b-2 border-[#4A2C1D] bg-[#2D1B10]/80 text-[10px] font-sans font-black uppercase tracking-[0.18em] text-[#E3C279] whitespace-nowrap">
@@ -67,7 +67,7 @@ export function TeamDirectoryTable({
 												<span className="block font-serif font-bold text-[#F8EEDB] whitespace-nowrap">
 													{m.name}
 												</span>
-												<span className="block text-[10px] text-[#E3C279] truncate max-w-[180px] lg:max-w-[220px]">
+												<span className="block text-[10px] text-[#E3C279] truncate">
 													{m.email}
 												</span>
 											</div>

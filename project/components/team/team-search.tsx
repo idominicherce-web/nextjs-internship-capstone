@@ -27,7 +27,7 @@ export function TeamSearch({
 
 	return (
 		<div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center w-full min-w-0">
-			{/* Search Input */}
+			{/* Search Bar */}
 			<div className="relative flex-1 w-full min-w-0">
 				<Search
 					size={16}
@@ -43,10 +43,10 @@ export function TeamSearch({
 				/>
 			</div>
 
-			{/* Filter Controls Row on Mobile */}
-			<div className="flex items-center gap-2 w-full sm:w-auto">
-				{/* Role Filter */}
-				<div className="relative flex-1 sm:w-44 min-w-0">
+			{/* Filter Controls Row */}
+			<div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+				{/* Role Filter Dropdown */}
+				<div className="relative flex-1 sm:w-44 min-w-[130px]">
 					<select
 						value={selectedRole}
 						onChange={(e) => onRoleChange(e.target.value)}
@@ -67,8 +67,8 @@ export function TeamSearch({
 					/>
 				</div>
 
-				{/* Status Filter */}
-				<div className="relative flex-1 sm:w-36 min-w-0">
+				{/* Status Filter Dropdown */}
+				<div className="relative flex-1 sm:w-36 min-w-[120px]">
 					<select
 						value={selectedStatus}
 						onChange={(e) => onStatusChange(e.target.value)}

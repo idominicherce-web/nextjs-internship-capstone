@@ -4,7 +4,7 @@ import { TeamClient } from "@/components/team/team-client";
 import type { Member } from "@/components/team/team-directory-table";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { activityLogs, projects, users } from "@/lib/db/schema";
+import { activityLogs, projectMembers, projects, users } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +103,7 @@ export default async function TeamPage() {
 						: [];
 
 				const allProjects = await db.select().from(projects);
+				const allProjectMemberships = await db.select().from(projectMembers);
 
 				mappedMembers = clerkMemberships.data.map((mem, idx: number) => {
 					const memberUserId = mem.publicUserData?.userId || "";
@@ -110,11 +111,29 @@ export default async function TeamPage() {
 						(u) => u.clerkId === memberUserId || u.id === memberUserId,
 					);
 
-					const userProjectsCount = allProjects.filter(
-						(p) =>
-							p.userId === memberUserId ||
-							(matchingDbUser && p.userId === matchingDbUser.id),
-					).length;
+					// Combine all known DB/Clerk identifiers for this user
+					const validUserIds = new Set(
+						[memberUserId, matchingDbUser?.id, matchingDbUser?.clerkId].filter(
+							Boolean,
+						),
+					);
+
+					// Calculate unique project IDs where the user is an OWNER or an ASSIGNED MEMBER
+					const assignedProjectIds = new Set<string>();
+
+					// Add projects owned by user
+					allProjects.forEach((p) => {
+						if (validUserIds.has(p.userId)) {
+							assignedProjectIds.add(p.id);
+						}
+					});
+
+					// Add projects assigned via projectMembers junction table
+					allProjectMemberships.forEach((pm) => {
+						if (validUserIds.has(pm.userId)) {
+							assignedProjectIds.add(pm.projectId);
+						}
+					});
 
 					const firstName = mem.publicUserData?.firstName || "";
 					const lastName = mem.publicUserData?.lastName || "";
@@ -144,7 +163,7 @@ export default async function TeamPage() {
 						role: roleTitle,
 						email: email,
 						avatar: initials || "U",
-						projectCount: userProjectsCount,
+						projectCount: assignedProjectIds.size, // ✅ Counts both owned AND assigned projects
 						status: idx === 0 ? "Online" : idx % 2 === 0 ? "Away" : "Offline",
 						lastActive: idx === 0 ? "Today" : "Yesterday",
 					};
@@ -159,9 +178,24 @@ export default async function TeamPage() {
 	if (mappedMembers.length === 0) {
 		const dbUsersList = await db.select().from(users);
 		const allProjects = await db.select().from(projects);
+		const allProjectMemberships = await db.select().from(projectMembers);
 
 		mappedMembers = dbUsersList.map((u, idx: number) => {
-			const userProjects = allProjects.filter((p) => p.userId === u.id).length;
+			const validUserIds = new Set([u.id, u.clerkId].filter(Boolean));
+			const assignedProjectIds = new Set<string>();
+
+			allProjects.forEach((p) => {
+				if (validUserIds.has(p.userId)) {
+					assignedProjectIds.add(p.id);
+				}
+			});
+
+			allProjectMemberships.forEach((pm) => {
+				if (validUserIds.has(pm.userId)) {
+					assignedProjectIds.add(pm.projectId);
+				}
+			});
+
 			const displayName = u.name || u.email.split("@")[0];
 			const initials = displayName
 				.split(" ")
@@ -178,14 +212,14 @@ export default async function TeamPage() {
 					(u.id === dbUser?.id ? "Workspace Owner" : "Project Manager"),
 				email: u.email,
 				avatar: initials || "U",
-				projectCount: userProjects,
+				projectCount: assignedProjectIds.size, // ✅ Counts both owned AND assigned projects
 				status: idx === 0 ? "Online" : idx % 2 === 0 ? "Away" : "Offline",
 				lastActive: idx === 0 ? "Today" : "Yesterday",
 			};
 		});
 	}
 
-	// Fetch Team-related Activity Logs, joining users on either users.id or users.clerkId
+	// Fetch Team-related Activity Logs
 	const dbLogs = await db
 		.select({
 			id: activityLogs.id,
@@ -221,14 +255,12 @@ export default async function TeamPage() {
 		const actorName =
 			log.userName || log.userEmail?.split("@")[0] || "Council Officer";
 
-		// Clean up raw detail strings
 		let rawDetails = log.details || `${log.action} ${log.entityName}`;
 
 		rawDetails = rawDetails
 			.replace(/\borg:admin\b/g, "Admin")
 			.replace(/\borg:member\b/g, "Member");
 
-		// Correct relative time calculation
 		const diffMinutes = Math.floor(
 			(Date.now() - new Date(log.createdAt).getTime()) / (1000 * 60),
 		);
@@ -241,7 +273,6 @@ export default async function TeamPage() {
 			timeAgo = `${diffMinutes}m ago`;
 		}
 
-		// Icon mapping
 		const lowerAction = log.action.toLowerCase();
 		let type: "invite" | "accept" | "revoke" | "assign" | "general" = "general";
 		if (lowerAction.includes("invited")) type = "invite";

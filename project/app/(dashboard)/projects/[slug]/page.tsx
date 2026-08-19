@@ -1,5 +1,6 @@
 import { and, asc, eq, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { getProjectAssignedMembers } from "@/actions/project-members";
 import { KanbanBoard } from "@/components/kanban/board/kanban-board";
 import { ProjectHeaderActions } from "@/components/kanban/board/project-header-actions";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
@@ -58,6 +59,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 		},
 	});
 
+	// 3. Fetch assigned officers for this project
+	const assignedMembersRes = await getProjectAssignedMembers(project.id);
+	const initialMembers = assignedMembersRes.success
+		? assignedMembersRes.data
+		: [];
+
 	return (
 		<DashboardLayoutContainer>
 			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-[#4A2C1D] pb-6 relative font-serif text-[#F8EEDB]">
@@ -76,11 +83,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 					</p>
 				</div>
 
-				<div className="shrink-0">
-					{/* Bound Project Action Triggers */}
+				<div className="shrink-0 flex items-center gap-3">
 					<ProjectHeaderActions
 						projectId={project.id}
 						projectName={project.name}
+						initialMembers={initialMembers as any}
 					/>
 				</div>
 			</div>

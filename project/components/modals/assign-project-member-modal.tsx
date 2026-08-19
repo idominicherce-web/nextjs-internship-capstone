@@ -1,3 +1,4 @@
+// components/modals/assign-project-member-modal.tsx
 "use client";
 
 import {
@@ -75,7 +76,6 @@ export function AssignProjectMemberModal({
 		setMounted(true);
 	}, []);
 
-	// Background scroll locking & Escape key listener
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -83,16 +83,13 @@ export function AssignProjectMemberModal({
 			if (e.key === "Escape") onClose();
 		};
 
-		document.body.style.overflow = "hidden";
 		window.addEventListener("keydown", handleKeyDown);
 
 		return () => {
-			document.body.style.overflow = "";
 			window.removeEventListener("keydown", handleKeyDown);
 		};
 	}, [isOpen, onClose]);
 
-	// Fetch dynamic data depending on context
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -101,7 +98,6 @@ export function AssignProjectMemberModal({
 		setError(null);
 
 		if (isMemberContext && targetMemberId) {
-			// FLOW A (Team Page): Query projects where the selected officer is NOT assigned
 			getProjectsWhereUserNotMember(targetMemberId)
 				.then((projectsData: ProjectOptionItem[]) => {
 					if (isMounted) {
@@ -117,7 +113,6 @@ export function AssignProjectMemberModal({
 					if (isMounted) setIsFetching(false);
 				});
 		} else if (isProjectContext && projectId) {
-			// FLOW B (Project Page): Query workspace officers NOT in this project
 			getAssignableWorkspaceMembers(projectId)
 				.then((res) => {
 					if (isMounted && res.success && res.data) {
@@ -128,7 +123,6 @@ export function AssignProjectMemberModal({
 					if (isMounted) setIsFetching(false);
 				});
 		} else {
-			// Fallback: Fetch general projects
 			getProjects()
 				.then((projectsData) => {
 					if (isMounted && projectsData) {

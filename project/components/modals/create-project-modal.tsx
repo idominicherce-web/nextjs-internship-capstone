@@ -1,8 +1,8 @@
 "use client";
 
 import { Compass, Loader2, Scroll, X } from "lucide-react";
-import { useActionState, useEffect } from "react";
-import { useFormStatus } from "react-dom";
+import { useActionState, useEffect, useState } from "react";
+import { createPortal, useFormStatus } from "react-dom";
 import { type ActionResponse, createProject } from "@/actions/projects";
 
 interface CreateProjectModalProps {
@@ -34,11 +34,34 @@ export function CreateProjectModal({
 	isOpen,
 	onClose,
 }: CreateProjectModalProps) {
+	const [mounted, setMounted] = useState(false);
+
 	// React 19 useActionState hook for Server Action wiring
 	const [state, formAction] = useActionState<ActionResponse, FormData>(
 		createProject,
 		{ success: false },
 	);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	// Lock body scroll & listen for Escape key
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose();
+		};
+
+		document.body.style.overflow = "hidden";
+		window.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			document.body.style.overflow = "";
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isOpen, onClose]);
 
 	// Automatically close modal when project creation succeeds
 	useEffect(() => {
@@ -47,11 +70,19 @@ export function CreateProjectModal({
 		}
 	}, [state.success, onClose]);
 
-	if (!isOpen) return null;
+	if (!isOpen || !mounted) return null;
 
-	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs">
-			<div className="relative w-full max-w-lg rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden text-[#F8EEDB] font-serif">
+	return createPortal(
+		<div
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="create-project-title"
+			className="fixed inset-0 min-h-[100dvh] w-screen z-[99999] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150 font-serif"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) onClose();
+			}}
+		>
+			<div className="relative w-full max-w-lg rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden text-[#F8EEDB] font-serif my-auto">
 				{/* Forged Brass Corner Brackets */}
 				<div className="absolute left-1 top-1 w-4 h-4 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
 				<div className="absolute right-1 top-1 w-4 h-4 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
@@ -71,7 +102,10 @@ export function CreateProjectModal({
 									Commission quest
 								</span>
 							</div>
-							<h2 className="text-xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider">
+							<h2
+								id="create-project-title"
+								className="text-xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-wider"
+							>
 								Create Project
 							</h2>
 						</div>
@@ -80,6 +114,7 @@ export function CreateProjectModal({
 					<button
 						type="button"
 						onClick={onClose}
+						aria-label="Close modal"
 						className="p-1.5 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
 					>
 						<X size={20} />
@@ -143,6 +178,7 @@ export function CreateProjectModal({
 					</div>
 				</form>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }
