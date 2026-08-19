@@ -94,7 +94,7 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
 				<div>
 					<div className="flex items-center gap-2 text-[#D7B05C] text-xs font-sans uppercase font-extrabold tracking-[0.25em] mb-1.5">
 						<span>⚔</span>
-						<span>The Questboard</span>
+						<span>The Quest Board</span>
 						<span>⚔</span>
 					</div>
 					<h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-[#FFF5D6] via-[#D7B05C] to-[#B78B3E] bg-clip-text text-transparent uppercase tracking-[0.1em] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">

@@ -1,15 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { revokeInvitation } from "@/actions/invitations";
 import { removeMemberAction } from "@/actions/team";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
-import { AssignProjectMemberModal } from "@/components/modals/assign-project-member-modal";
-import { ChangeRoleModal } from "@/components/modals/change-role-modal";
 import { InviteMemberModal } from "@/components/modals/invite-member-modal";
-import { MemberActionsModal } from "@/components/team/modals/member-actions-modal";
-import { MemberDetailsModal } from "@/components/team/modals/member-details-modal";
-import { RemoveMemberModal } from "@/components/team/modals/remove-member-modal";
+import {
+	MemberActionSheet,
+	type MemberView,
+} from "@/components/team/sheet/member-action-sheet";
 import {
 	type ActivityItem,
 	TeamActivityChronicle,
@@ -41,14 +40,16 @@ export function TeamClient({
 	const [members, setMembers] = useState<Member[]>(rawMembers);
 	const [activityList, setActivityList] =
 		useState<ActivityItem[]>(initialActivities);
+
 	const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-	const [activeModal, setActiveModal] = useState<
-		"actions" | "view" | "assign" | "role" | "invite" | "remove" | null
-	>(null);
+	const [sheetOpen, setSheetOpen] = useState(false);
+	const [sheetView, setSheetView] = useState<MemberView>("actions");
+	const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
 	const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>(
 		initialPendingInvitations,
 	);
+
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedRole, setSelectedRole] = useState("all");
 	const [selectedStatus, setSelectedStatus] = useState("all");
@@ -57,7 +58,35 @@ export function TeamClient({
 		(state) => state.addNotification,
 	);
 
-	// Helper to dynamically record activity feed items on client
+	useEffect(() => {
+		if (sheetOpen || inviteModalOpen) {
+			document.body.style.overflow = "hidden";
+			document.body.style.touchAction = "none";
+		} else {
+			document.body.style.overflow = "";
+			document.body.style.touchAction = "";
+		}
+
+		return () => {
+			document.body.style.overflow = "";
+			document.body.style.touchAction = "";
+		};
+	}, [sheetOpen, inviteModalOpen]);
+
+	const handleOpenMemberSheet = (
+		member: Member,
+		initialView: MemberView = "actions",
+	) => {
+		setSelectedMember(member);
+		setSheetView(initialView);
+		setSheetOpen(true);
+	};
+
+	const handleCloseMemberSheet = () => {
+		setSheetOpen(false);
+		setSelectedMember(null);
+	};
+
 	const appendActivity = (
 		user: string,
 		action: string,
@@ -100,11 +129,11 @@ export function TeamClient({
 
 	const handleConfirmRemoveMember = async (member: Member) => {
 		const res = await removeMemberAction(member.id);
+
 		if (res.success) {
 			setMembers((prev) => prev.filter((m) => m.id !== member.id));
 			appendActivity(member.name, "was discharged from workspace", "revoke");
-			setActiveModal(null);
-			setSelectedMember(null);
+			handleCloseMemberSheet();
 			addNotification({
 				title: "Officer Discharged",
 				description: "Member removed from workspace.",
@@ -154,7 +183,7 @@ export function TeamClient({
 		<DashboardLayoutContainer>
 			<div className="space-y-6 sm:space-y-8 min-w-0">
 				{/* Header */}
-				<TeamHeader onInviteClick={() => setActiveModal("invite")} />
+				<TeamHeader onInviteClick={() => setInviteModalOpen(true)} />
 
 				{/* Summary Stats Row */}
 				<TeamStats
@@ -167,109 +196,42 @@ export function TeamClient({
 					pendingInvitationsCount={pendingInvites.length}
 				/>
 
-				{/* Main Grid Layout */}
-				<div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)] gap-6 min-w-0">
-					{/* Member Directory */}
-					<div className="space-y-4 min-w-0">
-						<TeamSearch
-							searchQuery={searchQuery}
-							onSearchChange={setSearchQuery}
-							selectedRole={selectedRole}
-							onRoleChange={setSelectedRole}
-							selectedStatus={selectedStatus}
-							onStatusChange={setSelectedStatus}
-							onReset={handleResetFilters}
-						/>
+				{/* Full-Width Member Directory Table */}
+				<div className="space-y-4 min-w-0 w-full">
+					<TeamSearch
+						searchQuery={searchQuery}
+						onSearchChange={setSearchQuery}
+						selectedRole={selectedRole}
+						onRoleChange={setSelectedRole}
+						selectedStatus={selectedStatus}
+						onStatusChange={setSelectedStatus}
+						onReset={handleResetFilters}
+					/>
 
-						<TeamDirectoryTable
-							members={filteredMembers}
-							onOpenActions={(m) => {
-								setSelectedMember(m);
-								setActiveModal("actions");
-							}}
-						/>
-					</div>
+					<TeamDirectoryTable
+						members={filteredMembers}
+						onOpenActions={(m) => handleOpenMemberSheet(m, "actions")}
+					/>
+				</div>
 
-					{/* Sidebar: Pending Invitations & Activity Chronicle */}
-					<div className="space-y-6 min-w-0">
-						<TeamPendingInvitations
-							invitations={pendingInvites}
-							onResend={handleResendInvite}
-							onCancel={handleCancelInvite}
-						/>
-						<TeamActivityChronicle activities={activityList} />
-					</div>
+				{/* Bottom Grid for Pending Invites & Activity Chronicle */}
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0 pt-2 border-t border-[#4A2C1D]/60">
+					<TeamPendingInvitations
+						invitations={pendingInvites}
+						onResend={handleResendInvite}
+						onCancel={handleCancelInvite}
+					/>
+					<TeamActivityChronicle activities={activityList} />
 				</div>
 			</div>
 
-			{/* Central Member Actions Hub Modal */}
-			<MemberActionsModal
+			{/* Persistent Member Action Container Sheet */}
+			<MemberActionSheet
 				member={selectedMember}
-				isOpen={activeModal === "actions"}
-				onClose={() => {
-					setActiveModal(null);
-					setSelectedMember(null);
-				}}
-				onViewMember={() => setActiveModal("view")}
-				onAssignProject={() => setActiveModal("assign")}
-				onChangeRole={() => setActiveModal("role")}
-				onRemoveMember={() => setActiveModal("remove")}
-			/>
-
-			{/* Member Details Modal */}
-			<MemberDetailsModal
-				member={selectedMember}
-				isOpen={activeModal === "view"}
-				onClose={() => {
-					setActiveModal(null);
-					setSelectedMember(null);
-				}}
-				onRemoveMember={() => setActiveModal("remove")}
-			/>
-
-			{/* Remove Member Confirmation Modal */}
-			<RemoveMemberModal
-				member={selectedMember}
-				isOpen={activeModal === "remove"}
-				onClose={() => {
-					setActiveModal(null);
-					setSelectedMember(null);
-				}}
-				onConfirm={handleConfirmRemoveMember}
-			/>
-
-			{/* Invite Member Modal */}
-			<InviteMemberModal
-				isOpen={activeModal === "invite"}
-				onClose={() => setActiveModal(null)}
-			/>
-
-			{/* Assign Project Modal */}
-			<AssignProjectMemberModal
-				isOpen={activeModal === "assign"}
-				onClose={() => {
-					setActiveModal(null);
-					setSelectedMember(null);
-				}}
-				selectedMember={
-					selectedMember
-						? {
-								id: selectedMember.id,
-								name: selectedMember.name,
-								email: selectedMember.email,
-							}
-						: undefined
-				}
-			/>
-
-			{/* Change Member Role Modal */}
-			<ChangeRoleModal
-				member={selectedMember}
-				isOpen={activeModal === "role"}
-				onClose={() => {
-					setActiveModal(null);
-					setSelectedMember(null);
-				}}
+				isOpen={sheetOpen}
+				initialView={sheetView}
+				onClose={handleCloseMemberSheet}
+				onConfirmRemove={handleConfirmRemoveMember}
 				onRoleUpdated={(userId, newRole) => {
 					setMembers((prev) =>
 						prev.map((m) => (m.id === userId ? { ...m, role: newRole } : m)),
@@ -282,6 +244,12 @@ export function TeamClient({
 						);
 					}
 				}}
+			/>
+
+			{/* Invite Member Modal */}
+			<InviteMemberModal
+				isOpen={inviteModalOpen}
+				onClose={() => setInviteModalOpen(false)}
 			/>
 		</DashboardLayoutContainer>
 	);

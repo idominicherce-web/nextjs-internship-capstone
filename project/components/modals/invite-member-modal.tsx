@@ -2,6 +2,7 @@
 
 import { AlertCircle, CheckCircle2, Loader2, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { inviteWorkspaceMember } from "@/actions/invitations";
 
 interface InviteMemberModalProps {
@@ -22,20 +23,29 @@ export function InviteMemberModal({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSuccess, setIsSuccess] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
-		if (isOpen) {
-			document.body.style.overflow = "hidden";
-		} else {
-			document.body.style.overflow = "";
-		}
+		setMounted(true);
+	}, []);
+
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose();
+		};
+
+		document.body.style.overflow = "hidden";
+		window.addEventListener("keydown", handleKeyDown);
 
 		return () => {
 			document.body.style.overflow = "";
+			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [isOpen]);
+	}, [isOpen, onClose]);
 
-	if (!isOpen) return null;
+	if (!isOpen || !mounted) return null;
 
 	const isProjectContext = projectId !== "global";
 
@@ -67,11 +77,12 @@ export function InviteMemberModal({
 		}
 	};
 
-	return (
+	return createPortal(
 		<div
 			role="dialog"
 			aria-modal="true"
-			className="fixed inset-0 z-[100] h-screen w-screen bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150 font-serif"
+			aria-labelledby="invite-modal-title"
+			className="fixed inset-0 z-[99999] h-screen w-screen bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto font-serif animate-in fade-in duration-150"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
@@ -80,7 +91,10 @@ export function InviteMemberModal({
 				<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-3">
 					<div className="flex items-center gap-2">
 						<UserPlus size={20} className="text-[#D7B05C]" />
-						<h2 className="font-serif font-black text-lg text-[#F8EEDB] uppercase tracking-wider">
+						<h2
+							id="invite-modal-title"
+							className="font-serif font-black text-lg text-[#F8EEDB] uppercase tracking-wider"
+						>
 							{isProjectContext ? "Invite to Project" : "Invite Member"}
 						</h2>
 					</div>
@@ -171,6 +185,7 @@ export function InviteMemberModal({
 					</div>
 				</form>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }

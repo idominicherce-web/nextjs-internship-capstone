@@ -2,6 +2,7 @@
 
 import { AlertCircle, CheckCircle2, Loader2, Scroll, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { createTask } from "@/actions/tasks";
 
 interface ProjectOption {
@@ -29,6 +30,7 @@ export function CreateTaskModal({
 	isOpen,
 	onClose,
 }: CreateTaskModalProps) {
+	const [mounted, setMounted] = useState(false);
 	const [selectedProjectId, setSelectedProjectId] = useState(
 		initialProjectId || "",
 	);
@@ -46,6 +48,10 @@ export function CreateTaskModal({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSuccess, setIsSuccess] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	useEffect(() => {
 		if (initialDueDate) {
@@ -87,6 +93,7 @@ export function CreateTaskModal({
 		}
 	}, [availableLists, listId]);
 
+	// Lock body scroll & listen for Escape key
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -103,7 +110,7 @@ export function CreateTaskModal({
 		};
 	}, [isOpen, onClose]);
 
-	if (!isOpen) return null;
+	if (!isOpen || !mounted) return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -148,9 +155,12 @@ export function CreateTaskModal({
 		}
 	};
 
-	return (
+	return createPortal(
 		<div
-			className="fixed inset-0 z-[100] h-screen w-screen bg-black/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200 font-serif"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="create-task-title"
+			className="fixed inset-0 min-h-[100dvh] w-screen z-[99999] bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150 font-serif"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
@@ -159,13 +169,17 @@ export function CreateTaskModal({
 				<div className="flex items-center justify-between border-b border-[#4A2C1D] p-3.5 sm:p-4 bg-[#15100C] shrink-0">
 					<div className="flex items-center gap-2">
 						<Scroll className="text-[#D7B05C]" size={20} />
-						<h3 className="font-serif font-black text-sm sm:text-lg text-[#F8EEDB] uppercase tracking-wider">
+						<h3
+							id="create-task-title"
+							className="font-serif font-black text-sm sm:text-lg text-[#F8EEDB] uppercase tracking-wider"
+						>
 							Create Task
 						</h3>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
+						aria-label="Close modal"
 						className="text-[#D7B05C]/60 hover:text-[#F8EEDB] transition-colors p-1 cursor-pointer"
 					>
 						<X size={18} />
@@ -363,6 +377,7 @@ export function CreateTaskModal({
 					</div>
 				</form>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }

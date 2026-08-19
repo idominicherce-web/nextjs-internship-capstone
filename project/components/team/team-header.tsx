@@ -23,7 +23,6 @@ export function TeamHeader({ onInviteClick }: TeamHeaderProps) {
 				</p>
 			</div>
 
-			{/* Full-width touch target on mobile, auto-width on desktop */}
 			<button
 				type="button"
 				onClick={onInviteClick}
