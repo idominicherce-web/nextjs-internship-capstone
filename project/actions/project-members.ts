@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, notInArray, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { notifyProjectMembers } from "@/actions/notifications";
@@ -20,6 +20,65 @@ const assignMemberSchema = z.object({
 	userId: z.string().min(1, "User identifier is required."),
 	role: z.enum(["Viewer", "Member", "Admin"]),
 });
+
+/**
+ * Fetches workspace members from Neon DB who are NOT yet assigned to the specified project.
+ */
+export async function getAssignableWorkspaceMembers(projectId: string) {
+	try {
+		const dbUser = await getOrCreateDbUser();
+		if (!dbUser) return { success: false, data: [] };
+
+		// Fetch the project to get the owner ID
+		const project = await db.query.projects.findFirst({
+			where: eq(projects.id, projectId),
+		});
+
+		if (!project) return { success: false, data: [] };
+
+		// Fetch existing members already assigned to this project
+		const existingMembers = await db
+			.select({ userId: projectMembers.userId })
+			.from(projectMembers)
+			.where(eq(projectMembers.projectId, projectId));
+
+		const excludedUserIds = new Set<string>();
+		excludedUserIds.add(project.userId); // Exclude project owner
+		for (const m of existingMembers) {
+			excludedUserIds.add(m.userId); // Exclude assigned members
+		}
+
+		const excludedArray = Array.from(excludedUserIds);
+
+		// Fetch users from Neon DB who are NOT in the excluded array
+		const eligibleUsers =
+			excludedArray.length > 0
+				? await db
+						.select({
+							id: users.id,
+							clerkId: users.clerkId,
+							name: users.name,
+							email: users.email,
+							role: users.role,
+						})
+						.from(users)
+						.where(notInArray(users.id, excludedArray))
+				: await db
+						.select({
+							id: users.id,
+							clerkId: users.clerkId,
+							name: users.name,
+							email: users.email,
+							role: users.role,
+						})
+						.from(users);
+
+		return { success: true, data: eligibleUsers };
+	} catch (error) {
+		console.error("Failed to fetch assignable workspace members:", error);
+		return { success: false, data: [] };
+	}
+}
 
 export async function assignUserToProject(
 	projectId: string,
@@ -46,17 +105,19 @@ export async function assignUserToProject(
 		}
 
 		const targetUser = await db.query.users.findFirst({
-			where: eq(users.id, userId),
+			where: or(eq(users.id, userId), eq(users.clerkId, userId)),
 		});
 
 		if (!targetUser) {
 			return { success: false, error: "Officer record not found." };
 		}
 
+		const targetNeonUserId = targetUser.id;
+
 		const existingAssignment = await db.query.projectMembers.findFirst({
 			where: and(
 				eq(projectMembers.projectId, projectId),
-				eq(projectMembers.userId, userId),
+				eq(projectMembers.userId, targetNeonUserId),
 			),
 		});
 
@@ -67,13 +128,13 @@ export async function assignUserToProject(
 				.where(
 					and(
 						eq(projectMembers.projectId, projectId),
-						eq(projectMembers.userId, userId),
+						eq(projectMembers.userId, targetNeonUserId),
 					),
 				);
 		} else {
 			await db.insert(projectMembers).values({
 				projectId,
-				userId,
+				userId: targetNeonUserId,
 				role,
 			});
 		}
@@ -115,21 +176,23 @@ export async function removeUserFromProject(
 		}
 
 		const targetUser = await db.query.users.findFirst({
-			where: eq(users.id, userId),
+			where: or(eq(users.id, userId), eq(users.clerkId, userId)),
 		});
 
 		const project = await db.query.projects.findFirst({
 			where: eq(projects.id, projectId),
 		});
 
-		await db
-			.delete(projectMembers)
-			.where(
-				and(
-					eq(projectMembers.projectId, projectId),
-					eq(projectMembers.userId, userId),
-				),
-			);
+		if (targetUser) {
+			await db
+				.delete(projectMembers)
+				.where(
+					and(
+						eq(projectMembers.projectId, projectId),
+						eq(projectMembers.userId, targetUser.id),
+					),
+				);
+		}
 
 		if (targetUser && project) {
 			await logActivity({

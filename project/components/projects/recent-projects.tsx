@@ -19,6 +19,7 @@ interface ProjectItem {
 	updatedAt: Date;
 	totalTasks: number;
 	completedTasks: number;
+	totalMembers?: number;
 }
 
 interface RecentProjectsProps {
@@ -26,6 +27,9 @@ interface RecentProjectsProps {
 }
 
 export function RecentProjects({ projects }: RecentProjectsProps) {
+	// Restrict display to at most 2 projects on the main dashboard view
+	const displayedProjects = projects.slice(0, 2);
+
 	return (
 		<DashboardSection>
 			{/* Section Header */}
@@ -40,7 +44,7 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
 					href="/projects"
 					className="text-xs font-sans font-bold text-[#D7B05C] hover:text-[#FFF5D6] transition-colors flex items-center gap-1 group"
 				>
-					View Archives{" "}
+					View All Projects{" "}
 					<ArrowRight
 						size={14}
 						className="group-hover:translate-x-0.5 transition-transform"
@@ -48,13 +52,13 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
 				</Link>
 			</div>
 
-			{projects.length === 0 ? (
+			{displayedProjects.length === 0 ? (
 				<div className="p-8 text-center text-[#D7B05C]/70 font-serif italic border border-dashed border-[#8F6236]/40 rounded-xs">
 					No active projects recorded in the ledger.
 				</div>
 			) : (
 				<div className="grid grid-cols-1 gap-3">
-					{projects.map((project) => {
+					{displayedProjects.map((project) => {
 						const progress =
 							project.totalTasks > 0
 								? Math.round(
@@ -62,6 +66,9 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
 									)
 								: 0;
 
+						const memberCount = project.totalMembers ?? 1;
+
+						// Truthful Lifecycle Status Mapping
 						const statusBadge =
 							progress === 100
 								? {
@@ -69,41 +76,36 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
 										color:
 											"bg-emerald-950/90 text-emerald-300 border-emerald-700/80",
 									}
-								: progress > 50
+								: progress > 0
 									? {
-											label: "In Testing",
-											color: "bg-sky-950/90 text-sky-300 border-sky-700/80",
+											label: "In Progress",
+											color:
+												"bg-amber-950/90 text-amber-300 border-amber-700/80",
 										}
-									: progress > 0
-										? {
-												label: "In Development",
-												color:
-													"bg-amber-950/90 text-amber-300 border-amber-700/80",
-											}
-										: {
-												label: "Planning",
-												color: "bg-[#2D1B10] text-[#D7B05C] border-[#8F6236]",
-											};
+									: {
+											label: "Planning",
+											color: "bg-[#2D1B10] text-[#D7B05C] border-[#8F6236]",
+										};
 
 						const projectHref = `/projects/${project.slug || project.id}`;
 
 						return (
 							<DashboardCard key={project.id}>
-								{/* 3-Column Modern Grid Layout */}
+								{/* 3-Column Layout */}
 								<div className="grid grid-cols-1 md:grid-cols-12 items-center gap-4 py-1">
-									{/* REGION 1: Left - Primary Information (Columns 1 to 6) */}
+									{/* REGION 1: Left - Primary Information */}
 									<div className="md:col-span-6 space-y-1.5 min-w-0">
-										{/* Header Row: Title + Status Pill */}
-										<div className="flex flex-wrap items-center gap-2">
+										{/* Header Row: Title on Left, Status Badge Aligned Right */}
+										<div className="flex items-start justify-between gap-3">
 											<Link
 												href={projectHref}
-												className="font-serif font-black text-[#1A120C] hover:text-[#5B3922] transition-colors text-base sm:text-lg leading-snug truncate"
+												className="font-serif font-black text-[#1A120C] hover:text-[#5B3922] transition-colors text-base sm:text-lg leading-snug break-words min-w-0"
 											>
 												{project.name}
 											</Link>
 
 											<span
-												className={`inline-flex items-center px-2 py-0.5 text-[9px] font-sans font-black uppercase tracking-wider rounded-xs border shadow-xs ${statusBadge.color}`}
+												className={`inline-flex items-center px-2 py-0.5 text-[9px] font-sans font-black uppercase tracking-wider rounded-xs border shadow-xs shrink-0 ${statusBadge.color}`}
 											>
 												{statusBadge.label}
 											</span>
@@ -115,10 +117,12 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
 												"No official quest brief recorded."}
 										</p>
 
-										{/* Metadata Row */}
-										<div className="flex flex-wrap items-center gap-3 text-[10px] font-sans font-semibold text-[#5B3922] pt-0.5">
+										{/* Dynamic Metadata Row */}
+										<div className="flex flex-wrap items-center gap-2.5 text-[10px] font-sans font-semibold text-[#5B3922] pt-0.5">
 											<span className="inline-flex items-center gap-1">
-												<Users size={12} className="text-[#8F6236]" /> 1 Officer
+												<Users size={12} className="text-[#8F6236]" />{" "}
+												{memberCount}{" "}
+												{memberCount === 1 ? "Officer" : "Officers"}
 											</span>
 											<span className="text-[#8F6236]/40">•</span>
 											<span className="inline-flex items-center gap-1">
@@ -133,21 +137,38 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
 										</div>
 									</div>
 
-									{/* REGION 2: Middle - Progress Tracker (Columns 7 to 9) */}
+									{/* REGION 2: Middle - Segmented Progress Meter */}
 									<div className="md:col-span-3 space-y-1.5 px-0 md:px-2 border-t md:border-t-0 md:border-l border-[#8F6236]/20 pt-3 md:pt-0">
 										<div className="flex justify-between items-center text-[10px] font-sans font-black tracking-wider text-[#2D1B10]">
 											<span className="uppercase text-[#5B3922]">PROGRESS</span>
 											<span className="font-mono text-xs">{progress}%</span>
 										</div>
-										<div className="h-2.5 w-full bg-[#100A07] rounded-xs overflow-hidden border border-[#8F6236] p-0.5 shadow-inner">
-											<div
-												className="h-full bg-gradient-to-r from-[#8F6236] via-[#B78B3E] to-[#FFF5D6] rounded-2xs transition-all duration-300"
-												style={{ width: `${progress}%` }}
-											/>
+
+										{/* Granular Task Segment Grid */}
+										<div className="flex gap-1 h-3.5 w-full bg-[#B99A62]/20 p-1 rounded-xs border border-[#7A5328]">
+											{project.totalTasks > 0 ? (
+												Array.from({ length: project.totalTasks }).map(
+													(_, idx) => {
+														const isCompleted = idx < project.completedTasks;
+														return (
+															<div
+																key={idx}
+																className={`h-full flex-1 rounded-[1px] transition-all duration-300 ${
+																	isCompleted
+																		? "bg-gradient-to-r from-[#8B5A2B] via-[#C49A45] to-[#E3C368] shadow-[0_0_3px_rgba(196,154,69,0.5)] border border-[#6D4722]"
+																		: "bg-[#7A5328]/15 border border-[#7A5328]/20"
+																}`}
+															/>
+														);
+													},
+												)
+											) : (
+												<div className="h-full w-full bg-[#7A5328]/10 rounded-[1px]" />
+											)}
 										</div>
 									</div>
 
-									{/* REGION 3: Right - Balanced CTA (Columns 10 to 12) */}
+									{/* REGION 3: Right - Action Button */}
 									<div className="md:col-span-3 flex justify-start md:justify-end items-center pt-2 md:pt-0">
 										<Link
 											href={projectHref}

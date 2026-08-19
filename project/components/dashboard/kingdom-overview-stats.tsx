@@ -27,7 +27,7 @@ export function KingdomOverviewStats({
 		},
 		{
 			label: "Team Members",
-			value: `${totalMembers} ${totalMembers === 1 ? "Member" : "Members"}`,
+			value: `${totalMembers} ${totalMembers === 1 ? "Officer" : "Officers"}`,
 			subtext: "High officers assembled at the roundtable",
 			icon: Users,
 			color: "text-sky-400",
