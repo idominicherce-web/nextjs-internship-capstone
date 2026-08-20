@@ -25,14 +25,14 @@ describe("Notification Store (Zustand)", () => {
 
 	it("adds a new notification", () => {
 		useNotificationStore.getState().addNotification({
-			title: "New Quest Forged",
+			title: "New Task Appointed",
 			description: "Task 1 created by High Commander",
 			type: "task",
 		});
 
 		const notifications = useNotificationStore.getState().notifications;
 		expect(notifications).toHaveLength(1);
-		expect(notifications[0].title).toBe("New Quest Forged");
+		expect(notifications[0].title).toBe("New Task Appointed");
 		expect(notifications[0].description).toBe("Task 1 created by High Commander");
 	});
 
