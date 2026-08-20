@@ -33,13 +33,13 @@ export function ArchiveOrderDropdown({
 				}`}
 			>
 				<Filter size={16} className="mr-2" />
-				Archive Order
+				Sort Quests
 			</button>
 
 			{isOpen && (
 				<div className="absolute right-0 mt-2 w-64 bg-[#FAF0D7] border-2 border-[#8F6236] rounded-xs p-4 shadow-2xl z-30 space-y-3 text-[#1A120C]">
 					<div className="flex items-center gap-1.5 text-xs font-sans font-black uppercase tracking-wider text-[#5B3922] border-b border-[#8F6236]/30 pb-2">
-						<ArrowUpDown size={14} /> Sort Archive
+						<ArrowUpDown size={14} /> Sort Quests
 					</div>
 
 					<div className="space-y-1">

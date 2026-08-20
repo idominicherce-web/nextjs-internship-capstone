@@ -116,8 +116,6 @@ export async function createTask(
 
 		revalidatePath(`/projects/${projectId}`);
 		revalidatePath("/dashboard");
-		revalidatePath("/analytics");
-		revalidatePath("/calendar");
 
 		return { success: true, data: newTask };
 	} catch (error) {
@@ -246,9 +244,48 @@ export async function updateTaskPosition(
 				description: `"${currentTask.title}" shifted to column "${targetList.name}".`,
 				type: "task",
 			});
+
+			// Check if moving this task completes 100% of project objectives
+			const isDoneColumn =
+				targetList.name.toLowerCase().includes("done") ||
+				targetList.name.toLowerCase().includes("complete");
+
+			if (isDoneColumn) {
+				const projectLists = await db.query.lists.findMany({
+					where: eq(lists.projectId, projectId),
+					with: { tasks: true },
+				});
+
+				let totalTasksCount = 0;
+				let completedTasksCount = 0;
+
+				for (const col of projectLists) {
+					const isColDone =
+						col.name.toLowerCase().includes("done") ||
+						col.name.toLowerCase().includes("complete");
+
+					for (const t of col.tasks) {
+						totalTasksCount++;
+						if (isColDone || t.id === taskId) {
+							completedTasksCount++;
+						}
+					}
+				}
+
+				if (totalTasksCount > 0 && totalTasksCount === completedTasksCount) {
+					await notifyProjectMembers({
+						projectId,
+						title: "🏆 Quest Completed!",
+						description:
+							"All campaign objectives for this board have been fulfilled!",
+						type: "project",
+						excludeSender: false,
+					});
+				}
+			}
 		}
 
-		// NO revalidatePath here: Prevents full-page server re-render on drag & drop!
+		// NO revalidatePath here: Ensures zero page reloads/flicker on drag & drop!
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to update task position:", error);
@@ -279,7 +316,7 @@ export async function reorderTasks(
 			),
 		);
 
-		// NO revalidatePath here: Prevents full-page server re-render on drag & drop!
+		// NO revalidatePath here: Ensures zero page reloads/flicker on drag & drop!
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to reorder tasks:", error);

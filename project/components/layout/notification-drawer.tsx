@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Check, Loader2, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
 	deleteAllNotifications,
@@ -137,7 +138,13 @@ export function NotificationDrawer() {
 									}`}
 								>
 									<div className="flex items-start justify-between gap-2">
-										<h3 className="font-bold text-xs pr-4">{n.title}</h3>
+										<Link
+											href="/projects"
+											onClick={closeDrawer}
+											className="font-bold text-xs pr-4 hover:text-[#D7B05C] transition-colors"
+										>
+											{n.title}
+										</Link>
 										<div className="flex items-center gap-1 shrink-0">
 											{!n.read && (
 												<button

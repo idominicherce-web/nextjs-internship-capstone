@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Scroll } from "lucide-react";
+import { CheckCircle2, Clock, Plus, Scroll } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { CreateProjectModal } from "@/components/modals/create-project-modal";
@@ -20,14 +20,35 @@ interface ProjectsClientProps {
 	initialProjects: ProjectData[];
 }
 
+// Pure helper function defined outside the component scope
+function isProjectCompleted(p: ProjectData): boolean {
+	if (!p.lists || p.lists.length === 0) return false;
+
+	let projectTotal = 0;
+	let projectCompleted = 0;
+
+	p.lists.forEach((list) => {
+		const isDoneList =
+			list.name.toLowerCase().includes("done") ||
+			list.name.toLowerCase().includes("complete");
+
+		list.tasks.forEach(() => {
+			projectTotal++;
+			if (isDoneList) projectCompleted++;
+		});
+	});
+
+	return projectTotal > 0 && projectTotal === projectCompleted;
+}
+
 export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sortBy, setSortBy] = useState<SortOption>("newest");
 	const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-	// Combined search & filter memoization
-	const filteredProjects = useMemo(() => {
+	// Combined search, sort, and completion separation memoization
+	const { activeProjects, completedProjects } = useMemo(() => {
 		let result = [...initialProjects];
 
 		if (searchQuery.trim()) {
@@ -56,7 +77,18 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
 			return 0;
 		});
 
-		return result;
+		const active: ProjectData[] = [];
+		const completed: ProjectData[] = [];
+
+		result.forEach((p) => {
+			if (isProjectCompleted(p)) {
+				completed.push(p);
+			} else {
+				active.push(p);
+			}
+		});
+
+		return { activeProjects: active, completedProjects: completed };
 	}, [initialProjects, searchQuery, sortBy]);
 
 	const handleResetFilters = () => {
@@ -64,28 +96,12 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
 		setSortBy("newest");
 	};
 
-	// Calculate totals based on nested list and task completion states
+	// Summary statistics counts
 	const totalCount = initialProjects.length;
-	const completedCount = initialProjects.filter((p) => {
-		if (!p.lists || p.lists.length === 0) return false;
-
-		let projectTotal = 0;
-		let projectCompleted = 0;
-
-		p.lists.forEach((list) => {
-			const isDoneList =
-				list.name.toLowerCase().includes("done") ||
-				list.name.toLowerCase().includes("complete");
-
-			list.tasks.forEach(() => {
-				projectTotal++;
-				if (isDoneList) projectCompleted++;
-			});
-		});
-
-		return projectTotal > 0 && projectTotal === projectCompleted;
-	}).length;
+	const completedCount = initialProjects.filter(isProjectCompleted).length;
 	const activeCount = totalCount - completedCount;
+
+	const hasProjects = activeProjects.length > 0 || completedProjects.length > 0;
 
 	return (
 		<DashboardLayoutContainer>
@@ -136,7 +152,7 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
 			</div>
 
 			{/* Projects Grid or Empty Parchment Notice */}
-			{filteredProjects.length === 0 ? (
+			{!hasProjects ? (
 				<div className="text-center py-16 rounded-xs border-2 border-dashed border-[#8F6236]/50 bg-[#15100C] p-8 space-y-3">
 					<Scroll className="mx-auto h-12 w-12 text-[#D7B05C]/50" />
 					<h3 className="text-xl font-serif font-black text-[#F8EEDB]">
@@ -156,10 +172,42 @@ export function ProjectsClient({ initialProjects }: ProjectsClientProps) {
 					</button>
 				</div>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{filteredProjects.map((project) => (
-						<ProjectCard key={project.id} project={project} />
-					))}
+				<div className="space-y-8 font-serif">
+					{/* SECTION 1: ACTIVE QUESTS (<100% Complete) */}
+					{activeProjects.length > 0 && (
+						<div className="space-y-4">
+							<div className="flex items-center gap-2 border-b border-[#4A2C1D] pb-2 text-[#D7B05C]">
+								<Clock size={18} className="text-amber-400" />
+								<h2 className="font-serif font-black uppercase text-sm sm:text-base tracking-widest text-[#F8EEDB]">
+									Active Quests ({activeProjects.length})
+								</h2>
+							</div>
+
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+								{activeProjects.map((project) => (
+									<ProjectCard key={project.id} project={project} />
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* SECTION 2: COMPLETED QUESTS (100% Complete) */}
+					{completedProjects.length > 0 && (
+						<div className="space-y-4 pt-4">
+							<div className="flex items-center gap-2 border-b border-[#4A2C1D] pb-2 text-[#D7B05C]">
+								<CheckCircle2 size={18} className="text-emerald-400" />
+								<h2 className="font-serif font-black uppercase text-sm sm:text-base tracking-widest text-[#F8EEDB]">
+									Completed Quests ({completedProjects.length})
+								</h2>
+							</div>
+
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+								{completedProjects.map((project) => (
+									<ProjectCard key={project.id} project={project} />
+								))}
+							</div>
+						</div>
+					)}
 				</div>
 			)}
 

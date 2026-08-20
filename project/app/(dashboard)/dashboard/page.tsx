@@ -346,11 +346,11 @@ export default async function DashboardPage() {
 						{/* 5. Main Responsive Grid */}
 						<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
 							<div className="lg:col-span-2 space-y-6 min-w-0">
-								{/* Active Projects Anchor Target */}
+								{/* Recent Projects Anchor Target */}
 								<section
 									id="active-projects"
 									className="scroll-mt-6"
-									aria-label="Active Projects"
+									aria-label="Recent Projects"
 								>
 									<RecentProjects projects={recentProjectsData} />
 								</section>

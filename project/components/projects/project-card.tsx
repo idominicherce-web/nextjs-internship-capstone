@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Calendar, ScrollText, User } from "lucide-react";
+import { ArrowRight, Calendar, User } from "lucide-react";
 import Link from "next/link";
 
 export interface ProjectData {
@@ -43,10 +43,28 @@ export function ProjectCard({ project }: ProjectCardProps) {
 	const progress =
 		totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
+	const isCompleted = progress === 100;
 	const projectHref = `/projects/${project.slug || project.id}`;
 
+	// Dynamic status badge styling
+	const statusBadge = isCompleted
+		? {
+				label: "QUEST COMPLETE!",
+				color:
+					"bg-emerald-950 text-emerald-300 border-emerald-600 font-black shadow-[0_0_8px_rgba(16,185,129,0.3)]",
+			}
+		: progress > 0
+			? {
+					label: "In Progress",
+					color: "bg-amber-950 text-amber-300 border-amber-700",
+				}
+			: {
+					label: "Planning",
+					color: "bg-[#2D1B10] text-[#D7B05C] border-[#8F6236]",
+				};
+
 	return (
-		<div className="group relative flex flex-col justify-between p-6 rounded-sm border-2 border-[#7A5328] bg-gradient-to-br from-[#F5E6C4] via-[#EBD2A0] to-[#D9B87B] text-[#2A160A] shadow-[0_8px_20px_rgba(0,0,0,0.45),_inset_0_0_20px_rgba(100,60,30,0.15)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] overflow-hidden select-none">
+		<div className="group relative flex flex-col justify-between p-6 rounded-sm border-2 border-[#7A5328] bg-[#EBD2A0] text-[#2A160A] shadow-[0_8px_20px_rgba(0,0,0,0.45),_inset_0_0_20px_rgba(100,60,30,0.15)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.6)] overflow-hidden select-none">
 			{/* Double Inset Border Frame */}
 			<div className="pointer-events-none absolute inset-1.5 border border-[#7A5328]/40 rounded-xs" />
 
@@ -63,8 +81,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
 			/>
 
 			{/* Metallic Board Pins */}
-			<div className="absolute left-4 top-3 h-3.5 w-3.5 rounded-full border border-[#3A1F10] bg-gradient-to-br from-[#FFF5D6] via-[#B99A62] to-[#5C3B1E] shadow-[0_2px_4px_rgba(0,0,0,0.5)] z-20" />
-			<div className="absolute right-4 top-3 h-3.5 w-3.5 rounded-full border border-[#3A1F10] bg-gradient-to-br from-[#FFF5D6] via-[#B99A62] to-[#5C3B1E] shadow-[0_2px_4px_rgba(0,0,0,0.5)] z-20" />
+			<div className="absolute left-4 top-3 h-3.5 w-3.5 rounded-full border border-[#3A1F10] bg-[#D7B05C] shadow-[0_2px_4px_rgba(0,0,0,0.5)] z-20" />
+			<div className="absolute right-4 top-3 h-3.5 w-3.5 rounded-full border border-[#3A1F10] bg-[#D7B05C] shadow-[0_2px_4px_rgba(0,0,0,0.5)] z-20" />
 
 			<div className="space-y-4 relative z-10 pt-2">
 				{/* Header */}
@@ -73,10 +91,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
 						href={projectHref}
 						className="flex items-center space-x-3 group/title min-w-0"
 					>
-						{/* Scroll Icon */}
-						<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-[#7A5328] bg-[#D8B677] text-[#3A1F10] shadow-[inset_0_2px_4px_rgba(0,0,0,0.25)] group-hover/title:border-[#3A1F10] transition-colors">
-							<ScrollText size={20} />
-						</div>
 						<div className="min-w-0">
 							<h3 className="font-serif font-black text-lg text-[#2A160A] group-hover/title:text-[#633A18] transition-colors line-clamp-2 leading-tight tracking-wide">
 								{project.name}
@@ -90,12 +104,12 @@ export function ProjectCard({ project }: ProjectCardProps) {
 						</div>
 					</Link>
 
-					{/* Exact Crimson Wax Seal from Reference Image */}
-					<div className="relative shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-[#A81C1C] border border-[#6B0F0F] shadow-[0_2px_5px_rgba(0,0,0,0.4),_inset_0_1px_2px_rgba(255,255,255,0.2)] transition-transform hover:scale-105">
-						<span className="italic font-sans text-[10px] text-white tracking-tight text-center leading-none">
-							Active
-						</span>
-					</div>
+					{/* Dynamic Status Badge */}
+					<span
+						className={`inline-flex items-center px-2.5 py-1 text-[9px] font-sans uppercase tracking-wider rounded-xs border shrink-0 ${statusBadge.color}`}
+					>
+						{statusBadge.label}
+					</span>
 				</div>
 
 				{/* Description */}
@@ -113,23 +127,23 @@ export function ProjectCard({ project }: ProjectCardProps) {
 					</div>
 
 					{/* Discrete Task Bar Grid */}
-					<div className="flex gap-1.5 h-3.5 w-full bg-[#B99A62]/20 p-1 rounded-xs border border-[#7A5328]">
+					<div className="flex gap-1.5 h-3.5 w-full bg-[#3B2415]/40 p-1 rounded-xs border border-[#7A5328] shadow-inner">
 						{totalTasks > 0 ? (
 							Array.from({ length: totalTasks }).map((_, idx) => {
-								const isCompleted = idx < completedTasks;
+								const isSegmentDone = idx < completedTasks;
 								return (
 									<div
 										key={idx}
 										className={`h-full flex-1 rounded-[1px] transition-all duration-300 ${
-											isCompleted
-												? "bg-gradient-to-r from-[#8B5A2B] via-[#C49A45] to-[#E3C368] shadow-[0_0_3px_rgba(196,154,69,0.5)] border border-[#6D4722]"
-												: "bg-[#7A5328]/15 border border-[#7A5328]/20"
+											isSegmentDone
+												? "bg-[#D7B05C] border border-[#FFF5D6] shadow-[0_0_6px_rgba(215,176,92,0.9)]"
+												: "bg-[#2A160A] border border-[#5C3A1A]/40"
 										}`}
 									/>
 								);
 							})
 						) : (
-							<div className="h-full w-full bg-[#7A5328]/10 rounded-[1px]" />
+							<div className="h-full w-full bg-[#2A160A] rounded-[1px]" />
 						)}
 					</div>
 				</div>
@@ -147,11 +161,11 @@ export function ProjectCard({ project }: ProjectCardProps) {
 				</div>
 			</div>
 
-			{/* Action Button: Crimson Command Button */}
+			{/* Action Button */}
 			<div className="mt-5 pt-3 border-t border-[#7A5328]/30 relative z-10">
 				<Link
 					href={projectHref}
-					className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-[#5A1A1A] bg-gradient-to-b from-[#6E2222] to-[#4A1414] text-[#FDE8BF] rounded-xs shadow-[0_2px_6px_rgba(0,0,0,0.35),_inset_0_1px_0_rgba(255,255,255,0.2)] hover:from-[#812828] hover:to-[#5A1A1A] hover:border-[#C49A45] transition-all cursor-pointer group/btn"
+					className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-[#5A1A1A] bg-[#6E2222] text-[#FDE8BF] rounded-xs shadow-[0_2px_6px_rgba(0,0,0,0.35)] hover:bg-[#812828] hover:border-[#C49A45] transition-all cursor-pointer group/btn"
 				>
 					<div className="text-center">
 						<span className="block text-xs font-sans font-black uppercase tracking-[0.18em] leading-tight text-[#FDE8BF]">
