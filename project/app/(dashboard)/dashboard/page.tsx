@@ -4,8 +4,13 @@ import { ActivityArchive } from "@/components/analytics/activity-archive";
 import { CommandAlerts } from "@/components/dashboard/command-alerts";
 import { KingdomHealthWidget } from "@/components/dashboard/kingdom-health-widget";
 import { KingdomOverviewStats } from "@/components/dashboard/kingdom-overview-stats";
+import { MyWork } from "@/components/dashboard/my-work";
 import { OnboardingDashboard } from "@/components/dashboard/onboarding-dashboard";
 import { QuickActionsPanel } from "@/components/dashboard/quick-actions-panel";
+import {
+	type AttentionTask,
+	TasksRequiringAttention,
+} from "@/components/dashboard/tasks-requiring-attention";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { CreateProjectButton } from "@/components/projects/create-project-button";
 import { RecentProjects } from "@/components/projects/recent-projects";
@@ -14,6 +19,13 @@ import { db } from "@/lib/db";
 import { activityLogs, projectMembers, projects } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
+
+const PRIORITY_ORDER: Record<string, number> = {
+	Urgent: 1,
+	High: 2,
+	Medium: 3,
+	Low: 4,
+};
 
 export default async function DashboardPage() {
 	const dbUser = await getOrCreateDbUser();
@@ -64,7 +76,6 @@ export default async function DashboardPage() {
 		},
 	});
 
-	// Collect all accessible project IDs (owned + assigned)
 	const allUserProjectIds = Array.from(
 		new Set([...userProjects.map((p) => p.id), ...assignedProjectIds]),
 	);
@@ -79,8 +90,6 @@ export default async function DashboardPage() {
 			: [];
 
 	const uniqueMemberIds = new Set<string>();
-
-	// ✅ FIX: Use block statements to prevent returning Set.add() values
 	for (const p of userProjects) {
 		uniqueMemberIds.add(p.userId);
 	}
@@ -90,7 +99,7 @@ export default async function DashboardPage() {
 
 	const uniqueMemberCount = uniqueMemberIds.size || 1;
 
-	// 4. Fetch live recent activity logs across all accessible projects
+	// 4. Fetch live recent activity logs
 	const activityCondition =
 		allUserProjectIds.length > 0
 			? or(
@@ -105,31 +114,113 @@ export default async function DashboardPage() {
 		limit: 5,
 	});
 
-	// 5. Compute live metrics
+	// 5. Tasks Data Pipeline & Strict Personal Filtering
 	const totalProjects = userProjects.length;
 	let totalTasks = 0;
 	let completedTasks = 0;
 	let overdueTasks = 0;
-	const today = new Date(new Date().setHours(0, 0, 0, 0));
+
+	let myTodayTasks = 0;
+	let myOverdueTasks = 0;
+	let myUpcomingTasks = 0;
+	let myReviewTasks = 0;
+
+	const rawAttentionTasks: (AttentionTask & { rawDueDate: Date })[] = [];
+
+	const todayStart = new Date();
+	todayStart.setHours(0, 0, 0, 0);
+
+	const tomorrowStart = new Date(todayStart);
+	tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+	const myDisplayName = dbUser.name || dbUser.email || "Officer";
 
 	const recentProjectsData = userProjects.slice(0, 4).map((proj) => {
 		let projTotalTasks = 0;
 		let projCompletedTasks = 0;
 
-		// ✅ FIX: Use standard for...of loops instead of nested .forEach()
 		for (const list of proj.lists) {
+			const listName = list.name.toLowerCase();
 			const isDoneList =
-				list.name.toLowerCase().includes("done") ||
-				list.name.toLowerCase().includes("complete");
+				listName.includes("done") || listName.includes("complete");
+			const isReviewList = listName.includes("review");
 
 			for (const task of list.tasks) {
 				projTotalTasks++;
 				totalTasks++;
+
+				// Strict check if task is assigned to the authenticated user
+				const isAssignedToMe =
+					task.userId === dbUser.id || task.userId === dbUser.clerkId;
+
 				if (isDoneList) {
 					projCompletedTasks++;
 					completedTasks++;
-				} else if (task.dueDate && new Date(task.dueDate) < today) {
-					overdueTasks++;
+				} else {
+					if (task.dueDate) {
+						const taskDueDate = new Date(task.dueDate);
+						const taskDateStart = new Date(taskDueDate);
+						taskDateStart.setHours(0, 0, 0, 0);
+
+						const isOverdue = taskDateStart < todayStart;
+						const isToday = taskDateStart.getTime() === todayStart.getTime();
+						const isTomorrow =
+							taskDateStart.getTime() === tomorrowStart.getTime();
+
+						if (isOverdue) {
+							overdueTasks++;
+							if (isAssignedToMe) myOverdueTasks++;
+						} else if (isToday) {
+							if (isAssignedToMe) myTodayTasks++;
+						} else {
+							if (isAssignedToMe) myUpcomingTasks++;
+						}
+
+						if (isReviewList && isAssignedToMe) {
+							myReviewTasks++;
+						}
+
+						// ONLY add to "Tasks Requiring Attention" if assigned to the CURRENT user
+						if (isAssignedToMe) {
+							let groupLabel: "OVERDUE" | "TODAY" | "TOMORROW" | "UPCOMING" =
+								"UPCOMING";
+							let semanticDate = taskDueDate.toLocaleDateString("en-US", {
+								month: "short",
+								day: "numeric",
+							});
+
+							if (isOverdue) {
+								groupLabel = "OVERDUE";
+								const diffDays = Math.max(
+									1,
+									Math.floor(
+										(todayStart.getTime() - taskDateStart.getTime()) /
+											(1000 * 60 * 60 * 24),
+									),
+								);
+								semanticDate = `${diffDays} ${diffDays === 1 ? "day" : "days"} overdue`;
+							} else if (isToday) {
+								groupLabel = "TODAY";
+								semanticDate = "Today";
+							} else if (isTomorrow) {
+								groupLabel = "TOMORROW";
+								semanticDate = "Tomorrow";
+							}
+
+							rawAttentionTasks.push({
+								id: task.id,
+								title: task.title,
+								dueDate: task.dueDate,
+								rawDueDate: taskDueDate,
+								priority: task.priority || "Medium",
+								projectName: proj.name,
+								projectSlug: proj.slug,
+								assignedTo: myDisplayName,
+								groupLabel,
+								semanticDate,
+							});
+						}
+					}
 				}
 			}
 		}
@@ -145,15 +236,32 @@ export default async function DashboardPage() {
 		};
 	});
 
+	// Strict Algorithm:
+	// 1. Due Date Ascending (Overdue -> Today -> Tomorrow -> Upcoming)
+	// 2. Priority Descending (Urgent -> High -> Medium -> Low)
+	// 3. Stable Sort
+	rawAttentionTasks.sort((a, b) => {
+		const timeDiff = a.rawDueDate.getTime() - b.rawDueDate.getTime();
+		if (timeDiff !== 0) return timeDiff;
+
+		const pA = PRIORITY_ORDER[a.priority] || 3;
+		const pB = PRIORITY_ORDER[b.priority] || 3;
+		if (pA !== pB) return pA - pB;
+
+		return a.id.localeCompare(b.id);
+	});
+
 	const pendingTasks = totalTasks - completedTasks;
 	const completionRate =
 		totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 	const overdueRate =
 		totalTasks > 0 ? Math.round((overdueTasks / totalTasks) * 100) : 0;
 
+	const firstSlug = userProjects[0]?.slug;
+
 	return (
 		<DashboardLayoutContainer>
-			<main className="space-y-6 sm:space-y-8 pb-12 sm:pb-16 min-w-0">
+			<main className="space-y-6 sm:space-y-8 pb-12 sm:pb-16 min-w-0 font-serif text-[#F8EEDB]">
 				{/* Header Bar */}
 				<header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-[#4A2C1D] pb-6 relative">
 					<div>
@@ -189,14 +297,17 @@ export default async function DashboardPage() {
 					<OnboardingDashboard />
 				) : (
 					<>
+						{/* 1. Command Urgency Alerts */}
 						<section aria-label="Command Urgency Alerts">
 							<CommandAlerts
 								overdueCount={overdueTasks}
 								totalTasks={totalTasks}
 								pendingTasks={pendingTasks}
+								firstActiveProjectSlug={firstSlug}
 							/>
 						</section>
 
+						{/* 2. Workspace Overview Statistics Strip */}
 						<section aria-label="Kingdom Overview Statistics">
 							<KingdomOverviewStats
 								activeProjects={totalProjects}
@@ -206,18 +317,45 @@ export default async function DashboardPage() {
 							/>
 						</section>
 
+						{/* 3. Compact My Work Metric Strip */}
+						<section aria-label="Personal Work Summary">
+							<MyWork
+								todayCount={myTodayTasks}
+								overdueCount={myOverdueTasks}
+								upcomingCount={myUpcomingTasks}
+								reviewCount={myReviewTasks}
+								firstActiveProjectSlug={firstSlug}
+							/>
+						</section>
+
+						{/* 4. Tasks Requiring Attention (Personalized + Date-First) */}
+						<section
+							id="tasks-requiring-attention"
+							className="scroll-mt-6"
+							aria-label="Tasks Requiring Attention"
+						>
+							<TasksRequiringAttention tasks={rawAttentionTasks.slice(0, 8)} />
+						</section>
+
 						<div className="flex items-center justify-center gap-4 text-[#B78B3E] text-xs py-1">
 							<div className="h-px w-24 sm:w-36 bg-gradient-to-r from-transparent to-[#4A2C1D]" />
 							<span>⚔ ──── ⚜ ──── ⚔</span>
 							<div className="h-px w-24 sm:w-36 bg-gradient-to-l from-transparent to-[#4A2C1D]" />
 						</div>
 
+						{/* 5. Main Responsive Grid */}
 						<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
 							<div className="lg:col-span-2 space-y-6 min-w-0">
-								<section aria-label="Recent Campaigns">
+								{/* Active Projects Anchor Target */}
+								<section
+									id="active-projects"
+									className="scroll-mt-6"
+									aria-label="Active Projects"
+								>
 									<RecentProjects projects={recentProjectsData} />
 								</section>
-								<section aria-label="Council Activity Archive">
+
+								<section aria-label="Quest Logs">
 									<ActivityArchive activities={recentActivities} />
 								</section>
 							</div>
@@ -226,7 +364,8 @@ export default async function DashboardPage() {
 								<section aria-label="Quick Actions">
 									<QuickActionsPanel />
 								</section>
-								<section aria-label="Kingdom Health & Metrics">
+
+								<section aria-label="Workspace Health Summary">
 									<KingdomHealthWidget
 										completionRate={completionRate}
 										overdueRate={overdueRate}

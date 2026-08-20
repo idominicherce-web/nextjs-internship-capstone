@@ -12,7 +12,7 @@ export function CreateProjectButton() {
 			<button
 				type="button"
 				onClick={() => setIsOpen(true)}
-				className="group relative inline-flex items-center px-6 py-3 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] rounded-xs shadow-[0_10px_25px_rgba(0,0,0,0.85)] transition-all duration-200 hover:text-white hover:border-[#FFF5D6] hover:shadow-[0_0_30px_rgba(215,176,92,0.5)] active:translate-y-0.5 hover:-translate-y-0.5 cursor-pointer overflow-hidden"
+				className="group relative w-full sm:w-auto min-h-11 sm:min-h-0 flex items-center justify-center px-6 py-2.5 sm:py-3 border-2 border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] text-[#FFF5D6] rounded-xs shadow-[0_10px_25px_rgba(0,0,0,0.85)] transition-all duration-200 hover:text-white hover:border-[#FFF5D6] hover:shadow-[0_0_30px_rgba(215,176,92,0.5)] active:translate-y-0.5 hover:-translate-y-0.5 cursor-pointer overflow-hidden shrink-0"
 			>
 				<Plus
 					size={18}

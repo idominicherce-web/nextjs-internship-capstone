@@ -109,7 +109,7 @@ export async function createTask(
 
 		await notifyProjectMembers({
 			projectId,
-			title: "New Quest Forged",
+			title: "New Task Appointed",
 			description: `"${newTask.title}" created by ${dbUser.name || "a member"}.`,
 			type: "task",
 		});
