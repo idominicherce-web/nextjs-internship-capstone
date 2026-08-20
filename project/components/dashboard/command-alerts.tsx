@@ -6,14 +6,22 @@ import {
 	ChevronDown,
 	ChevronUp,
 	ShieldCheck,
+	Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+
+export interface CompletedProjectItem {
+	id: string;
+	slug?: string | null;
+	name: string;
+}
 
 interface CommandAlertsProps {
 	overdueCount: number;
 	totalTasks: number;
 	pendingTasks: number;
+	completedProjectsList?: CompletedProjectItem[];
 	firstActiveProjectSlug?: string;
 }
 
@@ -21,6 +29,7 @@ export function CommandAlerts({
 	overdueCount,
 	totalTasks,
 	pendingTasks,
+	completedProjectsList = [],
 	firstActiveProjectSlug,
 }: CommandAlertsProps) {
 	const [isExpanded, setIsExpanded] = useState(true);
@@ -68,6 +77,29 @@ export function CommandAlerts({
 			{/* Expanded Alerts Panel */}
 			{isExpanded && (
 				<div className="grid grid-cols-1 gap-2.5 sm:gap-3 pt-2.5 border-t border-[#4A2C1D]/60 animate-in fade-in duration-200 min-w-0">
+					{/* COMPLETED QUEST ALERT */}
+					{completedProjectsList.length > 0 && (
+						<div className="p-3 sm:p-3.5 rounded-xs border border-emerald-700 bg-emerald-950/80 text-emerald-200 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 min-w-0">
+							<div className="flex items-start gap-2.5 min-w-0">
+								<Trophy className="size-5 text-emerald-400 shrink-0 mt-0.5" />
+								<div className="min-w-0 flex-1">
+									<h3 className="font-sans font-black text-xs sm:text-sm uppercase tracking-wider text-emerald-300">
+										Quest Complete: {completedProjectsList[0].name}
+									</h3>
+									<p className="text-[11px] sm:text-xs font-sans text-emerald-200/90 mt-0.5 leading-relaxed">
+										100% of campaign objectives have been fulfilled!
+									</p>
+								</div>
+							</div>
+							<Link
+								href={`/projects/${completedProjectsList[0].slug || completedProjectsList[0].id}`}
+								className="w-full sm:w-auto text-center px-3 py-1.5 border border-emerald-600 bg-emerald-900 text-emerald-200 hover:bg-emerald-800 text-[10px] font-sans font-black uppercase rounded-xs shrink-0 cursor-pointer"
+							>
+								View Board
+							</Link>
+						</div>
+					)}
+
 					{/* OVERDUE STATUS ALERT */}
 					{overdueCount > 0 ? (
 						<div className="p-3 sm:p-3.5 rounded-xs border border-rose-800/80 bg-gradient-to-r from-rose-950/90 via-[#2A1010] to-[#1A0A0A] text-rose-200 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 min-w-0">

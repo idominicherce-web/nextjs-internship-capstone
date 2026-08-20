@@ -18,7 +18,7 @@ export function KingdomOverviewStats({
 }: KingdomOverviewStatsProps) {
 	const stats = [
 		{
-			label: "Active Projects",
+			label: "Recent Projects",
 			value: `${activeProjects} Active`,
 			subtext: "Jump to active campaign boards below",
 			icon: FolderKanban,

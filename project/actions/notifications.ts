@@ -1,7 +1,6 @@
 "use server";
 
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
@@ -69,7 +68,6 @@ export async function createNotification(payload: {
 			})
 			.returning();
 
-		revalidatePath("/dashboard");
 		return { success: true, data: newNotification };
 	} catch (error) {
 		console.error("Failed to create notification:", error);
@@ -108,6 +106,7 @@ export async function notifyProjectMembers(payload: {
 			allUserIds.add(m.userId);
 		}
 
+		// Only remove current user if excludeSender is NOT explicitly false
 		if (payload.excludeSender !== false) {
 			allUserIds.delete(dbUser.id);
 		}
@@ -131,7 +130,7 @@ export async function notifyProjectMembers(payload: {
 		// Filter users based on their in-app preferences
 		const eligibleUserIds = targetUserIds.filter((uId) => {
 			const pref = settingsMap.get(uId);
-			if (!pref) return true; // Default to true if no preference row exists
+			if (!pref) return true;
 			if (notifType === "task" && !pref.taskAssignedInApp) return false;
 			return true;
 		});
@@ -150,7 +149,6 @@ export async function notifyProjectMembers(payload: {
 
 		await db.insert(notifications).values(newNotifications);
 
-		revalidatePath("/dashboard");
 		return { success: true, count: newNotifications.length };
 	} catch (error) {
 		console.error("Failed to notify project members:", error);
@@ -176,7 +174,6 @@ export async function markNotificationAsRead(notificationId: string) {
 				),
 			);
 
-		revalidatePath("/dashboard");
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to mark notification read:", error);
@@ -197,7 +194,6 @@ export async function markAllNotificationsAsRead() {
 			.set({ read: true })
 			.where(eq(notifications.userId, dbUser.id));
 
-		revalidatePath("/dashboard");
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to mark all notifications read:", error);
@@ -222,7 +218,6 @@ export async function deleteNotification(notificationId: string) {
 				),
 			);
 
-		revalidatePath("/dashboard");
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to delete notification:", error);
@@ -240,7 +235,6 @@ export async function deleteAllNotifications() {
 
 		await db.delete(notifications).where(eq(notifications.userId, dbUser.id));
 
-		revalidatePath("/dashboard");
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to delete all notifications:", error);

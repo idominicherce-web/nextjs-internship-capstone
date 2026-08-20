@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Clock, FolderKanban } from "lucide-react";
+import { FolderKanban } from "lucide-react";
 import Link from "next/link";
 
 interface MyWorkProps {
