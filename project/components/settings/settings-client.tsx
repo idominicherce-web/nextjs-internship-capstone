@@ -1,12 +1,10 @@
-// components/settings/settings-client.tsx
-
 "use client";
 
-import { Palette, Shield } from "lucide-react";
 import { useState } from "react";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { NotificationSettingsForm } from "@/components/settings/notification-settings-form";
 import { ProfileSettingsForm } from "@/components/settings/profile-settings-form";
+import { SecuritySection } from "@/components/settings/security-section";
 import {
 	SettingsNavigation,
 	type SettingsTab,
@@ -65,35 +63,9 @@ export function SettingsClient({ user, initialSettings }: SettingsClientProps) {
 				{/* Active Settings Panel (9 Columns) */}
 				<div className="lg:col-span-9">
 					{activeTab === "profile" && <ProfileSettingsForm user={user} />}
-
-					{activeTab === "security" && (
-						<div className="p-8 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl text-center space-y-3 font-serif">
-							<Shield className="mx-auto h-10 w-10 text-[#D7B05C]/70" />
-							<h3 className="font-serif font-black text-lg text-[#F8EEDB]">
-								Castle Defenses & Security
-							</h3>
-							<p className="text-xs font-sans text-[#D7B05C]/70 max-w-md mx-auto">
-								Authentication policies, password changes, and multi-factor
-								credentials are securely managed via Clerk Auth protocol.
-							</p>
-						</div>
-					)}
-
+					{activeTab === "security" && <SecuritySection />}
 					{activeTab === "notifications" && (
 						<NotificationSettingsForm initialSettings={initialSettings} />
-					)}
-
-					{activeTab === "appearance" && (
-						<div className="p-8 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl text-center space-y-3 font-serif">
-							<Palette className="mx-auto h-10 w-10 text-[#D7B05C]/70" />
-							<h3 className="font-serif font-black text-lg text-[#F8EEDB]">
-								Realm Theme & Interface
-							</h3>
-							<p className="text-xs font-sans text-[#D7B05C]/70 max-w-md mx-auto">
-								Current interface operating under High Command Royal Parchment &
-								Dark Oak theme.
-							</p>
-						</div>
 					)}
 				</div>
 			</div>

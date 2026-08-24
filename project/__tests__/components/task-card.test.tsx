@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { TaskCard, TaskCardData } from "@/components/kanban/task/task-card";
 
 describe("TaskCard Component", () => {
@@ -15,6 +15,7 @@ describe("TaskCard Component", () => {
 			name: "Dominic Herce",
 			email: "dominic@stratpoint.com",
 		},
+		comments: [{ id: "comment-1", content: "Great progress on this!" }],
 	};
 
 	const mockOnTaskClick = jest.fn();
@@ -24,7 +25,7 @@ describe("TaskCard Component", () => {
 		jest.clearAllMocks();
 	});
 
-	it("renders task title, description, priority, and assignee name", () => {
+	it("renders task title, description, priority, assignee name, and comment badge", () => {
 		render(
 			<TaskCard
 				task={mockTask}
@@ -41,6 +42,9 @@ describe("TaskCard Component", () => {
 			screen.getByText("Ensure high availability and clean CSS rendering."),
 		).toBeInTheDocument();
 		expect(screen.getByText("Dominic Herce")).toBeInTheDocument();
+
+		// Verify comment badge count renders
+		expect(screen.getByText("1")).toBeInTheDocument();
 	});
 
 	it("triggers onTaskClick when card body is clicked", () => {

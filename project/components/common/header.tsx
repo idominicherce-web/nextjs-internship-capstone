@@ -1,80 +1,54 @@
 "use client";
 
-import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
-import { Moon, Shield, Sun } from "lucide-react";
+import { UserButton, useAuth } from "@clerk/nextjs";
+import { Shield } from "lucide-react";
 import Link from "next/link";
 
-import { useTheme } from "../theme-provider";
-
 export function Header() {
-	const { theme, setTheme } = useTheme();
 	const { isSignedIn } = useAuth();
 
 	return (
-		<header className="relative z-30 w-full border-b-2 border-amber-950/60 bg-gradient-to-b from-[#211610] via-[#1a120d] to-[#120a05] text-amber-100 shadow-[0_10px_30px_rgba(0,0,0,0.8)] font-serif antialiased">
-			{/* Top Gold Accent Line */}
-			<div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
-
-			<div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-				<div className="flex h-16 items-center justify-between gap-2">
-					{/* Branding Logo & Title */}
-					<Link
-						href="/"
-						aria-label="The Roundtable Home"
-						className="flex items-center space-x-2 sm:space-x-3 shrink-0 active:scale-95 transition-transform"
-					>
-						<div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-amber-600/60 bg-gradient-to-br from-amber-900 to-amber-950 shadow-md">
-							<Shield className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400" />
-						</div>
-						<span className="hidden sm:inline-block bg-gradient-to-b from-amber-100 via-amber-200 to-amber-500 bg-clip-text text-sm sm:text-lg lg:text-xl font-black tracking-[0.15em] sm:tracking-[0.2em] text-transparent drop-shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-							THE ROUNDTABLE
-						</span>
-					</Link>
-
-					{/* Controls & Navigation */}
-					<div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
-						<button
-							type="button"
-							onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-							className="rounded-xs border border-amber-950/60 bg-[#0d0704] p-1.5 sm:p-2 text-amber-400 hover:text-amber-200 hover:border-amber-500/50 transition-colors shadow-inner cursor-pointer"
-							aria-label="Toggle theme"
-						>
-							{theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
-						</button>
-
-						{!isSignedIn ? (
-							<>
-								<SignInButton mode="modal">
-									<button
-										type="button"
-										className="px-2 py-1.5 sm:px-3 sm:py-2 font-sans text-[10px] sm:text-xs font-bold uppercase tracking-[0.1em] sm:tracking-[0.15em] text-amber-300 hover:text-amber-100 transition-colors cursor-pointer"
-									>
-										Enter Gate
-									</button>
-								</SignInButton>
-
-								<SignUpButton mode="modal">
-									<button
-										type="button"
-										className="rounded-xs border border-amber-500/40 bg-gradient-to-b from-[#4e2a14] via-[#2d180b] to-[#1a0e06] px-2.5 py-1.5 sm:px-4 sm:py-2 font-sans text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.12em] sm:tracking-[0.2em] text-amber-400 hover:text-amber-200 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all cursor-pointer shadow-md"
-									>
-										Join Guild
-									</button>
-								</SignUpButton>
-							</>
-						) : (
-							<>
-								<Link
-									href="/dashboard"
-									className="rounded-xs border border-amber-500/40 bg-gradient-to-b from-[#4e2a14] via-[#2d180b] to-[#1a0e06] px-2.5 py-1.5 sm:px-4 sm:py-2 font-sans text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.12em] sm:tracking-[0.2em] text-amber-400 hover:text-amber-200 hover:border-amber-400 hover:shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all shadow-md"
-								>
-									Dashboard
-								</Link>
-
-								<UserButton userProfileMode="modal" />
-							</>
-						)}
+		<header className="sticky top-0 z-50 w-full border-b border-[#3B2415] bg-[#1A120C]/90 backdrop-blur-md px-4 py-3 font-serif shadow-xl">
+			<div className="container mx-auto flex items-center justify-between">
+				{/* Brand Logo */}
+				<Link href="/" className="flex items-center gap-2.5 group">
+					<div className="flex h-8 w-8 items-center justify-center rounded-xs border border-[#D7B05C] bg-[#2D1B10] shadow-md group-hover:border-[#FFF5D6] transition-colors">
+						<Shield
+							size={18}
+							className="text-[#D7B05C] group-hover:text-[#FFF5D6] transition-colors"
+						/>
 					</div>
+					<span className="font-serif font-black uppercase text-sm tracking-widest text-[#F8EEDB] group-hover:text-[#D7B05C] transition-colors">
+						The Roundtable
+					</span>
+				</Link>
+
+				{/* Header Actions */}
+				<div className="flex items-center gap-3">
+					{isSignedIn ? (
+						<div className="flex items-center gap-3 font-sans text-xs">
+							<Link
+								href="/dashboard"
+								className="rounded-xs border border-[#8F6236] bg-[#2D1B10] px-3 py-1.5 font-bold uppercase tracking-wider text-[#D7B05C] hover:bg-[#3B2415] hover:text-[#FFF5D6] transition-colors"
+							>
+								Dashboard
+							</Link>
+							<UserButton
+								appearance={{
+									elements: {
+										avatarBox: "w-8 h-8 border border-[#D7B05C]",
+									},
+								}}
+							/>
+						</div>
+					) : (
+						<Link
+							href="/sign-in"
+							className="rounded-xs border border-[#D7B05C] bg-gradient-to-b from-[#5B3922] via-[#3B2415] to-[#1A120C] px-4 py-1.5 font-sans text-xs font-black uppercase tracking-wider text-[#F8EEDB] hover:border-[#FFF5D6] transition-colors"
+						>
+							Enter Realm
+						</Link>
+					)}
 				</div>
 			</div>
 		</header>

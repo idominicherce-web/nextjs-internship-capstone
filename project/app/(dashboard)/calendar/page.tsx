@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray, or } from "drizzle-orm";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { CalendarLegend } from "@/components/calendar/calendar-legend";
 import { CalendarStats } from "@/components/calendar/calendar-stats";
@@ -6,7 +6,7 @@ import type { CalendarTask, TaskType } from "@/components/calendar/types";
 import { Upcomingquests } from "@/components/calendar/upcoming-quests";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { projects, users } from "@/lib/db/schema";
+import { projectMembers, projects, users } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +28,25 @@ export default async function CalendarPage() {
 		);
 	}
 
-	// 1. Fetch user projects with lists & tasks from database
+	// 1. Fetch project IDs where user is an assigned member
+	const memberRecords = await db
+		.select({ projectId: projectMembers.projectId })
+		.from(projectMembers)
+		.where(eq(projectMembers.userId, dbUser.id));
+
+	const assignedProjectIds = memberRecords.map((m) => m.projectId);
+
+	// 2. Fetch projects owned OR assigned via projectMembers
+	const projectCondition =
+		assignedProjectIds.length > 0
+			? or(
+					eq(projects.userId, dbUser.id),
+					inArray(projects.id, assignedProjectIds),
+				)
+			: eq(projects.userId, dbUser.id);
+
 	const userProjects = await db.query.projects.findMany({
-		where: eq(projects.userId, dbUser.id),
+		where: projectCondition,
 		with: {
 			lists: {
 				with: {
@@ -44,17 +60,17 @@ export default async function CalendarPage() {
 		},
 	});
 
-	// 2. Fetch workspace users for assignee selection
+	// 3. Fetch workspace users for assignee selection
 	const workspaceUsers = await db.select().from(users);
 
-	// 3. Format project options for CreateTaskModal
+	// 4. Format project options for CreateTaskModal
 	const formattedProjects = userProjects.map((p) => ({
 		id: p.id,
 		name: p.name,
 		lists: p.lists.map((l) => ({ id: l.id, name: l.name })),
 	}));
 
-	// 4. Transform DB tasks into CalendarTask view models
+	// 5. Transform DB tasks into CalendarTask view models
 	const realTasks: CalendarTask[] = userProjects.flatMap((project) =>
 		project.lists.flatMap((list) => {
 			const isDone =
@@ -144,7 +160,7 @@ export default async function CalendarPage() {
 					<Upcomingquests tasks={realTasks.slice(0, 5)} />
 				</section>
 
-				{/* 4. LEGEND & 5. CALENDAR STATISTICS (BELOW CALENDAR CONTENT) */}
+				{/* 4. LEGEND & 5. CALENDAR STATISTICS */}
 				<section className="space-y-4 pt-2 border-t border-[#8F6236]/30">
 					<CalendarLegend />
 					<CalendarStats

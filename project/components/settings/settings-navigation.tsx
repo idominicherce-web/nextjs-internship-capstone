@@ -1,12 +1,8 @@
 "use client";
 
-import { Bell, Palette, Shield, User } from "lucide-react";
+import { Bell, Shield, User } from "lucide-react";
 
-export type SettingsTab =
-	| "profile"
-	| "security"
-	| "notifications"
-	| "appearance";
+export type SettingsTab = "profile" | "security" | "notifications";
 
 interface SettingsNavigationProps {
 	activeTab: SettingsTab;
@@ -39,16 +35,10 @@ export function SettingsNavigation({
 			subtext: "Royal Dispatches",
 			icon: Bell,
 		},
-		{
-			id: "appearance" as SettingsTab,
-			label: "Appearance",
-			subtext: "Realm Theme",
-			icon: Palette,
-		},
 	];
 
 	return (
-		<div className="p-4 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-5 select-none">
+		<div className="p-4 rounded-xs border-2 border-[#3B2415] bg-[#1A120C] shadow-2xl space-y-5 select-none font-serif">
 			{/* Account Section */}
 			<div className="space-y-1.5">
 				<h2 className="text-[10px] font-sans font-black uppercase tracking-[0.2em] text-[#E3C279] px-2">

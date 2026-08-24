@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, Trash2, User } from "lucide-react";
+import { Calendar, MessageSquare, Trash2, User } from "lucide-react";
 import { TaskPriorityBadge } from "@/components/kanban/task/task-priority-badge";
 
 export interface TaskCardData {
@@ -19,6 +19,7 @@ export interface TaskCardData {
 		name: string | null;
 		email: string;
 	} | null;
+	comments?: any[];
 	createdAt?: Date | string | null;
 	updatedAt?: Date | string | null;
 }
@@ -48,14 +49,12 @@ export function TaskCard({
 		data: { type: "Task", task },
 	});
 
-	// Optimize transforms to use GPU compositing and eliminate repaint flicker
 	const style = {
 		transform: CSS.Translate.toString(transform),
 		transition: isDragging ? undefined : transition,
 		willChange: "transform",
 	};
 
-	// Due Date Status Calculation
 	const getDueStatus = () => {
 		if (!task.dueDate) return null;
 		const due = new Date(task.dueDate);
@@ -87,6 +86,7 @@ export function TaskCard({
 	};
 
 	const dueStatus = getDueStatus();
+	const commentCount = task.comments?.length || 0;
 
 	return (
 		<div
@@ -101,7 +101,6 @@ export function TaskCard({
 					: "transition-transform duration-150"
 			}`}
 		>
-			{/* Paper Texture Overlay */}
 			<div
 				className="pointer-events-none absolute inset-0 opacity-40 mix-blend-multiply"
 				style={{
@@ -117,23 +116,19 @@ export function TaskCard({
 				}}
 			/>
 
-			{/* Top Brass Fitting */}
 			<div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#8F6236] border border-[#1A120C] shadow-xs" />
 
 			<div className="space-y-2 relative z-10 pr-3">
-				{/* Title */}
 				<h4 className="font-serif font-black text-xs sm:text-sm text-[#1A120C] group-hover:text-[#5B3922] transition-colors leading-snug">
 					{task.title}
 				</h4>
 
-				{/* Description Snippet */}
 				{task.description && (
 					<p className="hidden sm:block text-[10px] font-sans text-[#3B2415]/80 line-clamp-2 italic leading-tight">
 						{task.description}
 					</p>
 				)}
 
-				{/* Task Metadata Strip */}
 				<div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[#8F6236]/20">
 					{dueStatus && (
 						<span
@@ -147,7 +142,17 @@ export function TaskCard({
 
 					<TaskPriorityBadge priority={task.priority} />
 
-					{/* Assignee Badge */}
+					{/* Comment Count Badge */}
+					{commentCount > 0 && (
+						<span
+							className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-[#1A120C] text-[#D7B05C] border border-[#8F6236] text-[9px] font-mono font-bold shadow-xs"
+							title={`${commentCount} comment(s)`}
+						>
+							<MessageSquare size={10} />
+							{commentCount}
+						</span>
+					)}
+
 					{task.assignee && (
 						<span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-[#1A120C] text-[#D7B05C] border border-[#4A2C1D] text-[9px] font-sans font-bold shadow-xs">
 							<User size={10} />
@@ -157,7 +162,6 @@ export function TaskCard({
 				</div>
 			</div>
 
-			{/* Delete Action Button */}
 			<button
 				type="button"
 				onPointerDown={(e) => e.stopPropagation()}

@@ -7,7 +7,34 @@ interface UpcomingQuestsProps {
 	tasks: CalendarTask[];
 }
 
+const PRIORITY_RANK: Record<string, number> = {
+	Urgent: 4,
+	High: 3,
+	Medium: 2,
+	Low: 1,
+};
+
 export function Upcomingquests({ tasks = [] }: UpcomingQuestsProps) {
+	// Sort Tasks: Active first -> Chronological Due Date -> Priority Rank
+	const sortedTasks = [...tasks].sort((a, b) => {
+		// 1. Active tasks before completed tasks
+		if (a.isCompleted !== b.isCompleted) {
+			return a.isCompleted ? 1 : -1;
+		}
+
+		// 2. Chronological Due Date (Earliest First)
+		const dateA = new Date(a.dueDate).getTime();
+		const dateB = new Date(b.dueDate).getTime();
+		if (dateA !== dateB) {
+			return dateA - dateB;
+		}
+
+		// 3. Priority Rank (Highest First) as tiebreaker
+		const rankA = PRIORITY_RANK[a.priority || "Medium"] || 2;
+		const rankB = PRIORITY_RANK[b.priority || "Medium"] || 2;
+		return rankB - rankA;
+	});
+
 	return (
 		<div className="rounded-xs border-2 border-[#8F6236] bg-[#1A120C] p-4 shadow-xl space-y-3 font-serif">
 			<div className="flex items-center justify-between border-b border-[#4A2C1D] pb-2">
@@ -23,12 +50,12 @@ export function Upcomingquests({ tasks = [] }: UpcomingQuestsProps) {
 			</div>
 
 			<div className="space-y-2">
-				{tasks.length === 0 ? (
+				{sortedTasks.length === 0 ? (
 					<div className="py-4 text-center text-xs italic text-[#D7B05C]/50">
 						No upcoming tasks scheduled.
 					</div>
 				) : (
-					tasks.map((task) => (
+					sortedTasks.map((task) => (
 						<div
 							key={task.id}
 							className="rounded-xs border border-[#8F6236]/60 bg-[#0F0B08] p-2.5 text-xs transition-colors hover:border-[#D7B05C]"
