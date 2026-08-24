@@ -16,7 +16,7 @@ import { CreateProjectButton } from "@/components/projects/create-project-button
 import { RecentProjects } from "@/components/projects/recent-projects";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { activityLogs, projectMembers, projects } from "@/lib/db/schema";
+import { activityLogs, projectMembers, projects, users } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -99,7 +99,7 @@ export default async function DashboardPage() {
 
 	const uniqueMemberCount = uniqueMemberIds.size || 1;
 
-	// 4. Fetch live recent activity logs
+	// 4. Fetch live recent activity logs + joined project slug for direct links
 	const activityCondition =
 		allUserProjectIds.length > 0
 			? or(
@@ -108,11 +108,33 @@ export default async function DashboardPage() {
 				)
 			: eq(activityLogs.userId, dbUser.id);
 
-	const recentActivities = await db.query.activityLogs.findMany({
-		where: activityCondition,
-		orderBy: [desc(activityLogs.createdAt)],
-		limit: 5,
-	});
+	const recentActivitiesRaw = await db
+		.select({
+			id: activityLogs.id,
+			action: activityLogs.action,
+			entityType: activityLogs.entityType,
+			entityName: activityLogs.entityName,
+			details: activityLogs.details,
+			createdAt: activityLogs.createdAt,
+			projectId: activityLogs.projectId,
+			projectSlug: projects.slug,
+			user: {
+				name: users.name,
+				email: users.email,
+				imageUrl: users.imageUrl,
+			},
+		})
+		.from(activityLogs)
+		.leftJoin(users, eq(activityLogs.userId, users.id))
+		.leftJoin(projects, eq(activityLogs.projectId, projects.id))
+		.where(activityCondition)
+		.orderBy(desc(activityLogs.createdAt))
+		.limit(5);
+
+	const recentActivities = recentActivitiesRaw.map((act) => ({
+		...act,
+		projectSlug: act.projectSlug || act.projectId,
+	}));
 
 	// 5. Tasks Data Pipeline & Strict Personal Filtering
 	const totalProjects = userProjects.length;
@@ -135,6 +157,12 @@ export default async function DashboardPage() {
 
 	const myDisplayName = dbUser.name || dbUser.email || "Officer";
 
+	const completedProjectsList: {
+		id: string;
+		slug: string | null;
+		name: string;
+	}[] = [];
+
 	const recentProjectsData = userProjects.slice(0, 4).map((proj) => {
 		let projTotalTasks = 0;
 		let projCompletedTasks = 0;
@@ -149,7 +177,6 @@ export default async function DashboardPage() {
 				projTotalTasks++;
 				totalTasks++;
 
-				// Strict check if task is assigned to the authenticated user
 				const isAssignedToMe =
 					task.userId === dbUser.id || task.userId === dbUser.clerkId;
 
@@ -180,7 +207,6 @@ export default async function DashboardPage() {
 							myReviewTasks++;
 						}
 
-						// ONLY add to "Tasks Requiring Attention" if assigned to the CURRENT user
 						if (isAssignedToMe) {
 							let groupLabel: "OVERDUE" | "TODAY" | "TOMORROW" | "UPCOMING" =
 								"UPCOMING";
@@ -225,6 +251,14 @@ export default async function DashboardPage() {
 			}
 		}
 
+		if (projTotalTasks > 0 && projTotalTasks === projCompletedTasks) {
+			completedProjectsList.push({
+				id: proj.id,
+				slug: proj.slug,
+				name: proj.name,
+			});
+		}
+
 		return {
 			id: proj.id,
 			slug: proj.slug,
@@ -236,10 +270,6 @@ export default async function DashboardPage() {
 		};
 	});
 
-	// Strict Algorithm:
-	// 1. Due Date Ascending (Overdue -> Today -> Tomorrow -> Upcoming)
-	// 2. Priority Descending (Urgent -> High -> Medium -> Low)
-	// 3. Stable Sort
 	rawAttentionTasks.sort((a, b) => {
 		const timeDiff = a.rawDueDate.getTime() - b.rawDueDate.getTime();
 		if (timeDiff !== 0) return timeDiff;
@@ -303,6 +333,7 @@ export default async function DashboardPage() {
 								overdueCount={overdueTasks}
 								totalTasks={totalTasks}
 								pendingTasks={pendingTasks}
+								completedProjectsList={completedProjectsList}
 								firstActiveProjectSlug={firstSlug}
 							/>
 						</section>
@@ -328,7 +359,7 @@ export default async function DashboardPage() {
 							/>
 						</section>
 
-						{/* 4. Tasks Requiring Attention (Personalized + Date-First) */}
+						{/* 4. Tasks Requiring Attention */}
 						<section
 							id="tasks-requiring-attention"
 							className="scroll-mt-6"
@@ -346,17 +377,17 @@ export default async function DashboardPage() {
 						{/* 5. Main Responsive Grid */}
 						<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
 							<div className="lg:col-span-2 space-y-6 min-w-0">
-								{/* Recent Projects Anchor Target */}
+								{/* Active Projects Anchor Target */}
 								<section
 									id="active-projects"
 									className="scroll-mt-6"
-									aria-label="Recent Projects"
+									aria-label="Active Projects"
 								>
 									<RecentProjects projects={recentProjectsData} />
 								</section>
 
 								<section aria-label="Quest Logs">
-									<ActivityArchive activities={recentActivities} />
+									<ActivityArchive activities={recentActivities as any} />
 								</section>
 							</div>
 

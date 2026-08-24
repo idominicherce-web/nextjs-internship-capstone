@@ -11,8 +11,23 @@ import {
 	Plus,
 	Trash2,
 } from "lucide-react";
+import Link from "next/link";
 import { DashboardSection } from "@/components/layout/dashboard-section";
-import type { ActivityLogItem } from "./types";
+
+export interface ActivityLogItem {
+	id: string;
+	action: string;
+	entityType: string;
+	entityName: string;
+	details: string | null;
+	createdAt: Date;
+	projectId?: string | null;
+	projectSlug?: string | null;
+	user?: {
+		name?: string | null;
+		email?: string;
+	} | null;
+}
 
 interface ActivityArchiveProps {
 	activities: ActivityLogItem[];
@@ -24,7 +39,7 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 		if (act.includes("create") || act.includes("add")) {
 			return {
 				icon: Plus,
-				color: "text-emerald-400 bg-emerald-950/80 border-emerald-600/60",
+				color: "text-[#D7B05C] bg-[#3B2415] border-[#8F6236]",
 			};
 		}
 		if (act.includes("update") || act.includes("edit")) {
@@ -36,7 +51,7 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 		if (act.includes("complete") || act.includes("finish")) {
 			return {
 				icon: Check,
-				color: "text-sky-300 bg-sky-950/80 border-sky-600/60",
+				color: "text-emerald-300 bg-emerald-950/80 border-emerald-600/60",
 			};
 		}
 		if (act.includes("delete") || act.includes("remove")) {
@@ -84,7 +99,6 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 					</p>
 				</div>
 			) : (
-				/* Fixed max height with custom smooth scrollbar container */
 				<div className="space-y-3 max-h-[480px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-[#8F6236] scrollbar-track-[#15100C]">
 					{activities.map((log) => {
 						const config = getActionConfig(log.action);
@@ -93,6 +107,11 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 						const displayDetails = log.details
 							? log.details.replace(/\[TASK:[^\]]+\]\s*/g, "").trim()
 							: null;
+
+						const targetSlug = log.projectSlug || log.projectId;
+						const targetHref = targetSlug
+							? `/projects/${targetSlug}`
+							: "/projects";
 
 						return (
 							<div
@@ -109,9 +128,12 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 									<div className="flex flex-wrap items-center justify-between gap-1">
 										<p className="text-xs font-sans font-black text-[#F8EEDB] group-hover:text-[#D7B05C] transition-colors break-words">
 											<span className="capitalize">{log.action}</span>{" "}
-											<span className="text-[#D7B05C] italic">
+											<Link
+												href={targetHref}
+												className="text-[#D7B05C] italic hover:underline"
+											>
 												"{log.entityName}"
-											</span>
+											</Link>
 										</p>
 
 										<span className="flex items-center gap-1 text-[9.5px] font-mono text-[#D7B05C]/60 shrink-0">
@@ -123,7 +145,6 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 										</span>
 									</div>
 
-									{/* Render full log details without truncating */}
 									{displayDetails && (
 										<p className="text-[11px] font-sans text-[#D7B05C]/70 mt-0.5 italic break-words leading-relaxed">
 											{displayDetails}
@@ -131,10 +152,13 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 									)}
 
 									<div className="flex items-center gap-2 mt-1.5 text-[9px] font-sans font-bold text-[#D7B05C]/50 uppercase tracking-wider">
-										<span className="flex items-center gap-1 bg-[#2D1B10] px-1.5 py-0.5 rounded-xs border border-[#4A2C1D]">
+										<Link
+											href={targetHref}
+											className="flex items-center gap-1 bg-[#2D1B10] px-1.5 py-0.5 rounded-xs border border-[#4A2C1D] hover:border-[#D7B05C]"
+										>
 											{getEntityIcon(log.entityType)}{" "}
 											{log.entityType || "Workspace"}
-										</span>
+										</Link>
 
 										<span>
 											• {new Date(log.createdAt).toLocaleDateString()}

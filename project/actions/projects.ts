@@ -26,9 +26,6 @@ export type ProjectOptionItem = {
 	slug: string | null;
 };
 
-/**
- * Helper to transform project names into URL-friendly slugs.
- */
 function slugify(text: string): string {
 	return text
 		.toLowerCase()
@@ -38,7 +35,6 @@ function slugify(text: string): string {
 		.replace(/^-+|-+$/g, "");
 }
 
-// Universal Default Columns for every newly initialized project
 const DEFAULT_PROJECT_COLUMNS = [
 	{ name: "Backlog", position: 0 },
 	{ name: "To Do", position: 1 },
@@ -47,9 +43,6 @@ const DEFAULT_PROJECT_COLUMNS = [
 	{ name: "Done", position: 4 },
 ];
 
-/**
- * Creates a new project along with its 5 default Kanban columns.
- */
 export async function createProject(
 	_prevState: unknown,
 	formData?: FormData | { name: string; description?: string } | string,
@@ -91,11 +84,10 @@ export async function createProject(
 			};
 		}
 
-		// Generate unique slug
 		const baseSlug = slugify(parsed.data.name) || "project";
 		const uniqueSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
 
-		// 1. Create the project
+		// 1. Create project
 		const [newProject] = await db
 			.insert(projects)
 			.values({
@@ -106,7 +98,7 @@ export async function createProject(
 			})
 			.returning();
 
-		// 2. Automatically seed the 5 default columns for the new project
+		// 2. Automatically seed 5 default columns
 		await db.insert(lists).values(
 			DEFAULT_PROJECT_COLUMNS.map((col) => ({
 				name: col.name,
@@ -115,8 +107,9 @@ export async function createProject(
 			})),
 		);
 
-		// 3. Record activity log
+		// 3. Record activity log attached with projectId
 		await db.insert(activityLogs).values({
+			projectId: newProject.id,
 			userId: dbUser.id,
 			action: "Created Project",
 			entityType: "project",
@@ -138,9 +131,6 @@ export async function createProject(
 	}
 }
 
-/**
- * Fetches all projects for the authenticated user (both owned and assigned).
- */
 export async function getProjects() {
 	try {
 		const dbUser = await getOrCreateDbUser();
@@ -180,10 +170,6 @@ export async function getProjects() {
 	}
 }
 
-/**
- * EXPORTED ACTION: Fetches workspace projects where a specific target user is NOT yet assigned or owner.
- * Supports both Neon DB User ID and Clerk User ID.
- */
 export async function getProjectsWhereUserNotMember(
 	targetUserIdInput: string,
 ): Promise<ProjectOptionItem[]> {
@@ -191,7 +177,6 @@ export async function getProjectsWhereUserNotMember(
 		const dbUser = await getOrCreateDbUser();
 		if (!dbUser || !targetUserIdInput) return [];
 
-		// 1. Resolve the target user in the Neon DB using either id OR clerkId
 		const targetUser = await db.query.users.findFirst({
 			where: or(
 				eq(users.id, targetUserIdInput),
@@ -203,7 +188,6 @@ export async function getProjectsWhereUserNotMember(
 
 		const neonUserId = targetUser.id;
 
-		// 2. Fetch project IDs where the target user is already an assigned member
 		const memberRecords = await db
 			.select({ projectId: projectMembers.projectId })
 			.from(projectMembers)
@@ -211,12 +195,10 @@ export async function getProjectsWhereUserNotMember(
 
 		const assignedProjectIds = memberRecords.map((m) => m.projectId);
 
-		// 3. Fetch all projects in the workspace
 		const allProjects = await db.query.projects.findMany({
 			orderBy: [desc(projects.updatedAt)],
 		});
 
-		// 4. Exclude projects owned by target user OR where target user is already assigned
 		return allProjects
 			.filter(
 				(p) =>
@@ -235,9 +217,6 @@ export async function getProjectsWhereUserNotMember(
 	}
 }
 
-/**
- * Updates an existing project dossier.
- */
 export async function updateProject(
 	id: string,
 	formData: FormData | { name?: string; description?: string | null },
@@ -294,6 +273,7 @@ export async function updateProject(
 		}
 
 		await db.insert(activityLogs).values({
+			projectId: updatedProject.id,
 			userId: dbUser.id,
 			action: "Updated Project",
 			entityType: "project",
@@ -312,9 +292,6 @@ export async function updateProject(
 	}
 }
 
-/**
- * Deletes a project and cascaded records.
- */
 export async function deleteProject(id: string): Promise<ActionResponse> {
 	try {
 		const dbUser = await getOrCreateDbUser();

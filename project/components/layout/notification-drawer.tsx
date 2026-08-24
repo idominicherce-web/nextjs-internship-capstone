@@ -12,6 +12,22 @@ import {
 } from "@/actions/notifications";
 import { useNotificationStore } from "@/stores/use-notification-store";
 
+/**
+ * Helper to extract [SLUG:...] tag from description text and return clean description + target slug
+ */
+function parseNotificationSlug(rawDesc?: string | null): {
+	cleanDescription: string;
+	projectSlug: string | null;
+} {
+	if (!rawDesc) return { cleanDescription: "", projectSlug: null };
+
+	const slugMatch = rawDesc.match(/\[SLUG:(.*?)\]/);
+	const projectSlug = slugMatch ? slugMatch[1] : null;
+	const cleanDescription = rawDesc.replace(/\[SLUG:.*?\]/gi, "").trim();
+
+	return { cleanDescription, projectSlug };
+}
+
 export function NotificationDrawer() {
 	const isOpen = useNotificationStore((state) => state.isOpen);
 	const closeDrawer = useNotificationStore((state) => state.closeDrawer);
@@ -32,18 +48,24 @@ export function NotificationDrawer() {
 			setIsLoading(true);
 			getNotifications().then((res) => {
 				if (res.success && res.data) {
-					const formatted = res.data.map((n) => ({
-						id: n.id,
-						title: n.title,
-						description: n.description || "",
-						type: (n.type as any) || "system",
-						read: n.read,
-						timestamp: new Date(n.createdAt).toLocaleTimeString([], {
-							hour: "2-digit",
-							minute: "2-digit",
-						}),
-					}));
-					setNotifications(formatted);
+					const formatted = res.data.map((n) => {
+						const { cleanDescription, projectSlug } = parseNotificationSlug(
+							n.description,
+						);
+						return {
+							id: n.id,
+							title: n.title,
+							description: cleanDescription,
+							projectSlug,
+							type: (n.type as any) || "system",
+							read: n.read,
+							timestamp: new Date(n.createdAt).toLocaleTimeString([], {
+								hour: "2-digit",
+								minute: "2-digit",
+							}),
+						};
+					});
+					setNotifications(formatted as any);
 				}
 				setIsLoading(false);
 			});
@@ -128,53 +150,68 @@ export function NotificationDrawer() {
 						</p>
 					) : (
 						<div className="space-y-2.5 font-sans text-xs">
-							{notifications.map((n) => (
-								<div
-									key={n.id}
-									className={`p-3 rounded-xs border transition-colors relative ${
-										n.read
-											? "border-[#4A2C1D]/60 bg-[#15100C]/60 text-[#E3C279]"
-											: "border-[#8F6236] bg-[#2D1B10] text-[#F8EEDB] shadow-md"
-									}`}
-								>
-									<div className="flex items-start justify-between gap-2">
-										<Link
-											href="/projects"
-											onClick={closeDrawer}
-											className="font-bold text-xs pr-4 hover:text-[#D7B05C] transition-colors"
-										>
-											{n.title}
-										</Link>
-										<div className="flex items-center gap-1 shrink-0">
-											{!n.read && (
+							{notifications.map((n: any) => {
+								const { cleanDescription, projectSlug } = parseNotificationSlug(
+									n.description,
+								);
+								const targetSlug = n.projectSlug || projectSlug;
+								const targetHref = targetSlug
+									? `/projects/${targetSlug}`
+									: "/projects";
+
+								return (
+									<div
+										key={n.id}
+										className={`p-3 rounded-xs border transition-colors relative ${
+											n.read
+												? "border-[#4A2C1D]/60 bg-[#15100C]/60 text-[#E3C279]"
+												: "border-[#8F6236] bg-[#2D1B10] text-[#F8EEDB] shadow-md"
+										}`}
+									>
+										<div className="flex items-start justify-between gap-2">
+											<Link
+												href={targetHref}
+												onClick={closeDrawer}
+												className="font-bold text-xs pr-4 hover:text-[#D7B05C] transition-colors leading-snug"
+											>
+												{n.title}
+											</Link>
+											<div className="flex items-center gap-1 shrink-0">
+												{!n.read && (
+													<button
+														type="button"
+														onClick={() => handleMarkRead(n.id)}
+														aria-label="Mark read"
+														title="Mark as read"
+														className="p-1 text-[#D7B05C] hover:text-white cursor-pointer"
+													>
+														<Check size={12} />
+													</button>
+												)}
 												<button
 													type="button"
-													onClick={() => handleMarkRead(n.id)}
-													aria-label="Mark read"
-													title="Mark as read"
-													className="p-1 text-[#D7B05C] hover:text-white cursor-pointer"
+													onClick={() => handleDelete(n.id)}
+													aria-label="Delete notification"
+													title="Delete notification"
+													className="p-1 text-rose-400/70 hover:text-rose-300 cursor-pointer"
 												>
-													<Check size={12} />
+													<Trash2 size={12} />
 												</button>
-											)}
-											<button
-												type="button"
-												onClick={() => handleDelete(n.id)}
-												aria-label="Delete notification"
-												title="Delete notification"
-												className="p-1 text-rose-400/70 hover:text-rose-300 cursor-pointer"
-											>
-												<Trash2 size={12} />
-											</button>
+											</div>
 										</div>
+
+										{cleanDescription && (
+											<Link
+												href={targetHref}
+												onClick={closeDrawer}
+												className="block text-[11px] text-[#E3C279] mt-1 hover:underline leading-relaxed"
+											>
+												{cleanDescription}
+											</Link>
+										)}
 									</div>
-									{n.description && (
-										<p className="text-[11px] text-[#E3C279] mt-1">
-											{n.description}
-										</p>
-									)}
-								</div>
-							))}
+								);
+							})}
 						</div>
 					)}
 				</div>

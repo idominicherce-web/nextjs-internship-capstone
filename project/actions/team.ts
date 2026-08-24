@@ -67,9 +67,9 @@ export async function removeMemberAction(targetUserId: string) {
 		await logActivity({
 			userId: dbUser.id,
 			action: "Discharged Member",
-			entityType: "project",
+			entityType: "team",
 			entityName: displayName,
-			details: `Discharged ${displayName} from workspace`,
+			details: `Discharged ${displayName} from workspace council`,
 		});
 
 		revalidatePath("/team");
@@ -143,7 +143,7 @@ export async function updateMemberRoleAction(
 		await logActivity({
 			userId: dbUser.id,
 			action: "Updated Member Role",
-			entityType: "project",
+			entityType: "team",
 			entityName: displayName,
 			details: `Updated workspace role for ${displayName} to ${newRoleInput}`,
 		});

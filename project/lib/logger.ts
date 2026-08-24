@@ -12,7 +12,7 @@ export async function logActivity({
 	projectId?: string;
 	userId: string;
 	action: string;
-	entityType: "project" | "task" | "list";
+	entityType: "project" | "task" | "list" | "team" | "system";
 	entityName: string;
 	details?: string;
 }) {

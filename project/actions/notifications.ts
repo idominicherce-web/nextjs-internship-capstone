@@ -32,7 +32,7 @@ export async function getNotifications() {
 }
 
 /**
- * Create a single notification record in DB targeting a specific user (respects recipient settings)
+ * Create a single notification record in DB targeting a specific user
  */
 export async function createNotification(payload: {
 	userId?: string;
@@ -45,7 +45,6 @@ export async function createNotification(payload: {
 		const targetUserId = payload.userId || dbUser?.id;
 		if (!targetUserId) return { success: false, error: "Target user missing." };
 
-		// Check recipient's notification preferences
 		const settings = await db.query.userSettings.findFirst({
 			where: eq(userSettings.userId, targetUserId),
 		});
@@ -76,7 +75,7 @@ export async function createNotification(payload: {
 }
 
 /**
- * Broadcast a notification to project members respecting each user's in-app preference
+ * Broadcast a notification to project members with embedded project slug reference
  */
 export async function notifyProjectMembers(payload: {
 	projectId: string;
@@ -90,10 +89,16 @@ export async function notifyProjectMembers(payload: {
 		if (!dbUser) return { success: false, error: "Unauthorized." };
 
 		const project = await db
-			.select({ ownerId: projects.userId })
+			.select({
+				ownerId: projects.userId,
+				slug: projects.slug,
+				id: projects.id,
+			})
 			.from(projects)
 			.where(eq(projects.id, payload.projectId))
 			.limit(1);
+
+		const targetSlug = project[0]?.slug || project[0]?.id || payload.projectId;
 
 		const members = await db
 			.select({ userId: projectMembers.userId })
@@ -106,7 +111,6 @@ export async function notifyProjectMembers(payload: {
 			allUserIds.add(m.userId);
 		}
 
-		// Only remove current user if excludeSender is NOT explicitly false
 		if (payload.excludeSender !== false) {
 			allUserIds.delete(dbUser.id);
 		}
@@ -117,7 +121,6 @@ export async function notifyProjectMembers(payload: {
 
 		const targetUserIds = Array.from(allUserIds);
 
-		// Fetch preferences for all target recipients
 		const settingsList = await db
 			.select()
 			.from(userSettings)
@@ -127,7 +130,6 @@ export async function notifyProjectMembers(payload: {
 
 		const notifType = payload.type || "project";
 
-		// Filter users based on their in-app preferences
 		const eligibleUserIds = targetUserIds.filter((uId) => {
 			const pref = settingsMap.get(uId);
 			if (!pref) return true;
@@ -139,10 +141,15 @@ export async function notifyProjectMembers(payload: {
 			return { success: true, count: 0 };
 		}
 
+		// Embed slug tag safely into description without altering DB schema
+		const descriptionWithSlug = payload.description
+			? `${payload.description} [SLUG:${targetSlug}]`
+			: `[SLUG:${targetSlug}]`;
+
 		const newNotifications = eligibleUserIds.map((userId) => ({
 			userId,
 			title: payload.title,
-			description: payload.description,
+			description: descriptionWithSlug,
 			type: notifType,
 			read: false,
 		}));
@@ -156,9 +163,6 @@ export async function notifyProjectMembers(payload: {
 	}
 }
 
-/**
- * Mark a single notification as read
- */
 export async function markNotificationAsRead(notificationId: string) {
 	try {
 		const dbUser = await getOrCreateDbUser();
@@ -181,9 +185,6 @@ export async function markNotificationAsRead(notificationId: string) {
 	}
 }
 
-/**
- * Mark all notifications as read for current user
- */
 export async function markAllNotificationsAsRead() {
 	try {
 		const dbUser = await getOrCreateDbUser();
@@ -201,9 +202,6 @@ export async function markAllNotificationsAsRead() {
 	}
 }
 
-/**
- * Delete a single notification
- */
 export async function deleteNotification(notificationId: string) {
 	try {
 		const dbUser = await getOrCreateDbUser();
@@ -225,9 +223,6 @@ export async function deleteNotification(notificationId: string) {
 	}
 }
 
-/**
- * Delete all notifications for current user
- */
 export async function deleteAllNotifications() {
 	try {
 		const dbUser = await getOrCreateDbUser();

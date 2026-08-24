@@ -2,7 +2,7 @@
 
 import { desc, eq, like, or } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { activityLogs, users } from "@/lib/db/schema";
+import { activityLogs, projects, users } from "@/lib/db/schema";
 
 export interface TaskActivityLog {
 	id: string;
@@ -70,6 +70,8 @@ export async function getRecentActivities(limit = 20) {
 				entityName: activityLogs.entityName,
 				details: activityLogs.details,
 				createdAt: activityLogs.createdAt,
+				projectId: activityLogs.projectId,
+				projectSlug: projects.slug,
 				user: {
 					name: users.name,
 					email: users.email,
@@ -78,6 +80,7 @@ export async function getRecentActivities(limit = 20) {
 			})
 			.from(activityLogs)
 			.leftJoin(users, eq(activityLogs.userId, users.id))
+			.leftJoin(projects, eq(activityLogs.projectId, projects.id))
 			.orderBy(desc(activityLogs.createdAt))
 			.limit(limit);
 

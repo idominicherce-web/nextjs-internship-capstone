@@ -6,7 +6,7 @@ import { z } from "zod";
 import { notifyProjectMembers } from "@/actions/notifications";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { lists, tasks } from "@/lib/db/schema";
+import { lists, projects, tasks } from "@/lib/db/schema";
 import { logActivity } from "@/lib/logger";
 
 export type ActionResponse<T = unknown> = {
@@ -273,11 +273,27 @@ export async function updateTaskPosition(
 				}
 
 				if (totalTasksCount > 0 && totalTasksCount === completedTasksCount) {
+					const projectObj = await db.query.projects.findFirst({
+						where: eq(projects.id, projectId),
+					});
+					const targetSlug = projectObj?.slug || projectId;
+					const projectName = projectObj?.name || "Quest Board";
+
+					// 1. Log Activity in Quest Logs Activity Feed
+					await logActivity({
+						projectId,
+						userId: dbUser.id,
+						action: "Quest Completed",
+						entityType: "project",
+						entityName: projectName,
+						details: `100% of campaign objectives for "${projectName}" have been fulfilled!`,
+					});
+
+					// 2. Broadcast Notification to Members (with project name in title and cleaned slug metadata)
 					await notifyProjectMembers({
 						projectId,
-						title: "🏆 Quest Completed!",
-						description:
-							"All campaign objectives for this board have been fulfilled!",
+						title: `🏆 Quest Completed: ${projectName}`,
+						description: `All campaign objectives for "${projectName}" have been fulfilled! [SLUG:${targetSlug}]`,
 						type: "project",
 						excludeSender: false,
 					});
@@ -285,7 +301,6 @@ export async function updateTaskPosition(
 			}
 		}
 
-		// NO revalidatePath here: Ensures zero page reloads/flicker on drag & drop!
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to update task position:", error);
@@ -316,7 +331,6 @@ export async function reorderTasks(
 			),
 		);
 
-		// NO revalidatePath here: Ensures zero page reloads/flicker on drag & drop!
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to reorder tasks:", error);
