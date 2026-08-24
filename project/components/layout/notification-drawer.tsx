@@ -12,20 +12,26 @@ import {
 } from "@/actions/notifications";
 import { useNotificationStore } from "@/stores/use-notification-store";
 
-/**
- * Helper to extract [SLUG:...] tag from description text and return clean description + target slug
- */
-function parseNotificationSlug(rawDesc?: string | null): {
+function parseNotificationMetadata(rawDesc?: string | null): {
 	cleanDescription: string;
 	projectSlug: string | null;
+	taskId: string | null;
 } {
-	if (!rawDesc) return { cleanDescription: "", projectSlug: null };
+	if (!rawDesc)
+		return { cleanDescription: "", projectSlug: null, taskId: null };
 
 	const slugMatch = rawDesc.match(/\[SLUG:(.*?)\]/);
-	const projectSlug = slugMatch ? slugMatch[1] : null;
-	const cleanDescription = rawDesc.replace(/\[SLUG:.*?\]/gi, "").trim();
+	const taskMatch = rawDesc.match(/\[TASK:(.*?)\]/);
 
-	return { cleanDescription, projectSlug };
+	const projectSlug = slugMatch ? slugMatch[1] : null;
+	const taskId = taskMatch ? taskMatch[1] : null;
+
+	const cleanDescription = rawDesc
+		.replace(/\[SLUG:.*?\]/gi, "")
+		.replace(/\[TASK:.*?\]/gi, "")
+		.trim();
+
+	return { cleanDescription, projectSlug, taskId };
 }
 
 export function NotificationDrawer() {
@@ -49,14 +55,14 @@ export function NotificationDrawer() {
 			getNotifications().then((res) => {
 				if (res.success && res.data) {
 					const formatted = res.data.map((n) => {
-						const { cleanDescription, projectSlug } = parseNotificationSlug(
-							n.description,
-						);
+						const { cleanDescription, projectSlug, taskId } =
+							parseNotificationMetadata(n.description);
 						return {
 							id: n.id,
 							title: n.title,
 							description: cleanDescription,
 							projectSlug,
+							taskId,
 							type: (n.type as any) || "system",
 							read: n.read,
 							timestamp: new Date(n.createdAt).toLocaleTimeString([], {
@@ -151,13 +157,17 @@ export function NotificationDrawer() {
 					) : (
 						<div className="space-y-2.5 font-sans text-xs">
 							{notifications.map((n: any) => {
-								const { cleanDescription, projectSlug } = parseNotificationSlug(
-									n.description,
-								);
+								const { cleanDescription, projectSlug, taskId } =
+									parseNotificationMetadata(n.description);
 								const targetSlug = n.projectSlug || projectSlug;
-								const targetHref = targetSlug
-									? `/projects/${targetSlug}`
-									: "/projects";
+								const targetTaskId = n.taskId || taskId;
+
+								let targetHref = "/projects";
+								if (targetSlug && targetTaskId) {
+									targetHref = `/projects/${targetSlug}?task=${targetTaskId}`;
+								} else if (targetSlug) {
+									targetHref = `/projects/${targetSlug}`;
+								}
 
 								return (
 									<div

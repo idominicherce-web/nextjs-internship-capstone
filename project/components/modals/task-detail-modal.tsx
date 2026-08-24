@@ -80,12 +80,13 @@ export function TaskDetailModal({
 				task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
 			);
 			setAssignedUserId(task.userId || "");
-			setPriority(task.priority || "Medium");
+			// Normalize Urgent to High priority
+			const rawPriority = task.priority || "Medium";
+			setPriority(rawPriority === "Urgent" ? "High" : rawPriority);
 			setSelectedListId(task.listId || "");
 		}
 	}, [task]);
 
-	// Prevent background page scrolling when modal is active
 	useEffect(() => {
 		if (isOpen && task) {
 			document.body.style.overflow = "hidden";
@@ -131,20 +132,19 @@ export function TaskDetailModal({
 	};
 
 	const copyLinkToClipboard = () => {
-		navigator.clipboard.writeText(window.location.href);
+		const url = new URL(window.location.href);
+		url.searchParams.set("task", task.id);
+		navigator.clipboard.writeText(url.toString());
 		setCopiedLink(true);
 		setTimeout(() => setCopiedLink(false), 1500);
 	};
 
 	return (
 		<div className="fixed inset-0 z-[100] bg-[#100A07] lg:bg-black/85 lg:backdrop-blur-xs flex items-stretch lg:items-start justify-center overflow-hidden font-serif text-[#F8EEDB]">
-			{/* Fluid Container Window */}
 			<div className="relative w-full h-full lg:w-[min(96vw,1600px)] lg:h-[min(92vh,1000px)] lg:my-auto flex flex-col lg:rounded-xs border-0 lg:border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] shadow-[0_20px_50px_rgba(0,0,0,0.95)] overflow-hidden">
-				{/* Forged Brass Corner Brackets */}
 				<div className="hidden lg:block absolute left-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
 				<div className="hidden lg:block absolute right-1 top-1 z-30 w-3 h-3 border border-black bg-gradient-to-br from-[#FFE5A3] via-[#D7B05C] to-[#8F6236] rounded-xs shadow-md" />
 
-				{/* 1. Header Bar */}
 				<div className="sticky top-0 z-20 flex-none flex items-center justify-between px-3 lg:px-[clamp(1rem,2vw,2rem)] py-2 lg:py-3 border-b-2 border-[#4A2C1D] bg-[#15100C] shadow-md">
 					<div className="flex items-center space-x-2 lg:space-x-3">
 						<button
@@ -187,7 +187,6 @@ export function TaskDetailModal({
 					</div>
 				</div>
 
-				{/* Mobile Tab Switcher Controls (< lg) */}
 				<div className="flex lg:hidden border-b border-[#4A2C1D] bg-[#15100C] flex-none">
 					<button
 						type="button"
@@ -213,9 +212,7 @@ export function TaskDetailModal({
 					</button>
 				</div>
 
-				{/* 2. Fluid Non-Scrolling Split Body Container */}
 				<div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] divide-y lg:divide-y-0 lg:divide-x divide-[#4A2C1D] overflow-hidden">
-					{/* Left Panel: Form Fields */}
 					<form
 						onSubmit={handleSubmit}
 						className={`p-2.5 sm:p-4 lg:p-[clamp(1rem,2vw,2rem)] flex flex-col justify-between overflow-hidden lg:overflow-y-auto space-y-2 lg:space-y-4 scrollbar-thin scrollbar-thumb-[#8F6236] ${
@@ -223,7 +220,6 @@ export function TaskDetailModal({
 						}`}
 					>
 						<div className="space-y-2 lg:space-y-4">
-							{/* Alert Banner */}
 							{successMsg && (
 								<div className="rounded-xs bg-emerald-950/80 border border-emerald-600 p-2 text-xs font-sans font-bold text-emerald-300 flex items-center gap-2 shadow-inner">
 									<CheckCircle size={14} className="text-emerald-400" />
@@ -231,7 +227,6 @@ export function TaskDetailModal({
 								</div>
 							)}
 
-							{/* Hero Objective Title */}
 							<div className="space-y-1">
 								<div className="flex items-center justify-between text-[9px] font-sans font-bold text-[#D7B05C]/60 uppercase tracking-wider">
 									<span>Objective Headline</span>
@@ -247,7 +242,6 @@ export function TaskDetailModal({
 								/>
 							</div>
 
-							{/* Section Card: Quest Details */}
 							<div className="p-2 lg:p-[clamp(0.75rem,1.5vw,1.25rem)] rounded-xs border border-[#8F6236]/50 bg-[#15100C]/70 space-y-1.5">
 								<div className="text-[9px] font-sans font-black uppercase tracking-[0.15em] text-[#D7B05C] border-b border-[#4A2C1D] pb-0.5">
 									Quest Brief
@@ -260,14 +254,12 @@ export function TaskDetailModal({
 								/>
 							</div>
 
-							{/* Section Card: Tactical Parameters */}
 							<div className="p-2 lg:p-[clamp(0.75rem,1.5vw,1.25rem)] rounded-xs border border-[#8F6236]/50 bg-[#15100C]/70 space-y-2">
 								<div className="text-[9px] font-sans font-black uppercase tracking-[0.15em] text-[#D7B05C] border-b border-[#4A2C1D] pb-0.5">
 									Tactical Parameters
 								</div>
 
 								<div className="grid gap-2 grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
-									{/* Column Stage Dropdown */}
 									{lists.length > 0 && (
 										<div className="space-y-0.5">
 											<label className="flex items-center gap-1 text-[10px] sm:text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
@@ -294,24 +286,21 @@ export function TaskDetailModal({
 										</div>
 									)}
 
-									{/* Priority Control: Dropdown on Mobile (< sm), Segmented on Desktop (≥ sm) */}
 									<div className="space-y-0.5">
 										<label className="flex items-center gap-1 text-[10px] sm:text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 											<ShieldAlert size={12} />
 											<span>Priority</span>
 										</label>
 
-										{/* Mobile Native Dropdown */}
 										<div className="relative flex items-center sm:hidden">
 											<select
 												value={priority}
 												onChange={(e) => setPriority(e.target.value)}
 												className="w-full appearance-none pl-2 pr-6 py-1 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-[11px] font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
 											>
-												<option value="Low">🟢 Low</option>
-												<option value="Medium">🟡 Medium</option>
-												<option value="High">🟠 High</option>
-												<option value="Urgent">🔴 Urgent</option>
+												<option value="Low">Low</option>
+												<option value="Medium">Medium</option>
+												<option value="High">High</option>
 											</select>
 											<ChevronDown
 												size={14}
@@ -319,13 +308,11 @@ export function TaskDetailModal({
 											/>
 										</div>
 
-										{/* Tablet/Desktop Segmented Control */}
-										<div className="hidden sm:grid grid-cols-4 gap-0.5 p-0.5 bg-[#1A120C] border border-[#8F6236] rounded-xs">
+										<div className="hidden sm:grid grid-cols-3 gap-0.5 p-0.5 bg-[#1A120C] border border-[#8F6236] rounded-xs">
 											{[
-												{ label: "Low", icon: "🟢" },
-												{ label: "Medium", icon: "🟡" },
-												{ label: "High", icon: "🟠" },
-												{ label: "Urgent", icon: "🔴" },
+												{ label: "Low", icon: "⚔" },
+												{ label: "Medium", icon: "🛡" },
+												{ label: "High", icon: "⚡" },
 											].map((p) => {
 												const active = priority === p.label;
 												return (
@@ -347,7 +334,6 @@ export function TaskDetailModal({
 										</div>
 									</div>
 
-									{/* Officer Assignee */}
 									<div className="space-y-0.5">
 										<label className="flex items-center gap-1 text-[10px] sm:text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 											<UserIcon size={12} />
@@ -373,7 +359,6 @@ export function TaskDetailModal({
 										</div>
 									</div>
 
-									{/* Deadline Picker */}
 									<div className="space-y-0.5">
 										<label className="flex items-center gap-1 text-[10px] sm:text-xs font-sans font-black uppercase tracking-wider text-[#D7B05C]">
 											<Calendar size={12} />
@@ -393,7 +378,6 @@ export function TaskDetailModal({
 						<button id="modal-submit-btn" type="submit" className="hidden" />
 					</form>
 
-					{/* Right Panel: Discussion Feed */}
 					<div
 						className={`p-3 lg:p-[clamp(1rem,2vw,2rem)] bg-[#15100C]/50 flex flex-col justify-between overflow-hidden ${
 							activeMobileTab === "details" ? "hidden lg:flex" : "flex"
@@ -407,7 +391,6 @@ export function TaskDetailModal({
 					</div>
 				</div>
 
-				{/* 3. Sticky Action Footer with Equal Button Widths */}
 				<div className="sticky bottom-0 z-20 flex-none flex items-center justify-end gap-2 sm:gap-3 px-3 lg:px-[clamp(1rem,2vw,2rem)] py-2 lg:py-3 border-t-2 border-[#4A2C1D] bg-[#15100C] shadow-2xl">
 					<button
 						type="button"

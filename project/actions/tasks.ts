@@ -98,6 +98,11 @@ export async function createTask(
 			})
 			.returning();
 
+		const targetProject = await db.query.projects.findFirst({
+			where: eq(projects.id, projectId),
+		});
+		const projectSlug = targetProject?.slug || projectId;
+
 		await logActivity({
 			projectId,
 			userId: dbUser.id,
@@ -110,11 +115,13 @@ export async function createTask(
 		await notifyProjectMembers({
 			projectId,
 			title: "New Task Appointed",
-			description: `"${newTask.title}" created by ${dbUser.name || "a member"}.`,
+			description: `"${newTask.title}" created by ${
+				dbUser.name || "a member"
+			}. [SLUG:${projectSlug}] [TASK:${newTask.id}]`,
 			type: "task",
 		});
 
-		revalidatePath(`/projects/${projectId}`);
+		revalidatePath(`/projects/${projectSlug}`);
 		revalidatePath("/dashboard");
 
 		return { success: true, data: newTask };
@@ -175,6 +182,11 @@ export async function updateTask(
 		}
 
 		if (changes.length > 0) {
+			const targetProject = await db.query.projects.findFirst({
+				where: eq(projects.id, projectId),
+			});
+			const projectSlug = targetProject?.slug || projectId;
+
 			await logActivity({
 				projectId,
 				userId: dbUser.id,
@@ -187,7 +199,9 @@ export async function updateTask(
 			await notifyProjectMembers({
 				projectId,
 				title: "Quest Objective Updated",
-				description: `"${updatedTask.title}": ${changes.join(", ")}`,
+				description: `"${updatedTask.title}": ${changes.join(
+					", ",
+				)} [SLUG:${projectSlug}] [TASK:${taskId}]`,
 				type: "task",
 			});
 		}
@@ -214,10 +228,13 @@ export async function updateTaskPosition(
 			return { success: false, error: "Unauthorized access." };
 		}
 
-		const [targetList, currentTask] = await Promise.all([
+		const [targetList, currentTask, targetProject] = await Promise.all([
 			db.query.lists.findFirst({ where: eq(lists.id, newListId) }),
 			db.query.tasks.findFirst({ where: eq(tasks.id, taskId) }),
+			db.query.projects.findFirst({ where: eq(projects.id, projectId) }),
 		]);
+
+		const projectSlug = targetProject?.slug || projectId;
 
 		await db
 			.update(tasks)
@@ -241,7 +258,7 @@ export async function updateTaskPosition(
 			await notifyProjectMembers({
 				projectId,
 				title: "Objective Relocated",
-				description: `"${currentTask.title}" shifted to column "${targetList.name}".`,
+				description: `"${currentTask.title}" shifted to column "${targetList.name}". [SLUG:${projectSlug}] [TASK:${taskId}]`,
 				type: "task",
 			});
 
@@ -273,11 +290,7 @@ export async function updateTaskPosition(
 				}
 
 				if (totalTasksCount > 0 && totalTasksCount === completedTasksCount) {
-					const projectObj = await db.query.projects.findFirst({
-						where: eq(projects.id, projectId),
-					});
-					const targetSlug = projectObj?.slug || projectId;
-					const projectName = projectObj?.name || "Quest Board";
+					const projectName = targetProject?.name || "Quest Board";
 
 					// 1. Log Activity in Quest Logs Activity Feed
 					await logActivity({
@@ -289,11 +302,11 @@ export async function updateTaskPosition(
 						details: `100% of campaign objectives for "${projectName}" have been fulfilled!`,
 					});
 
-					// 2. Broadcast Notification to Members (with project name in title and cleaned slug metadata)
+					// 2. Broadcast Notification to Members
 					await notifyProjectMembers({
 						projectId,
 						title: `🏆 Quest Completed: ${projectName}`,
-						description: `All campaign objectives for "${projectName}" have been fulfilled! [SLUG:${targetSlug}]`,
+						description: `All campaign objectives for "${projectName}" have been fulfilled! [SLUG:${projectSlug}]`,
 						type: "project",
 						excludeSender: false,
 					});
@@ -348,6 +361,11 @@ export async function deleteTask(
 			return { success: false, error: "Unauthorized access." };
 		}
 
+		const targetProject = await db.query.projects.findFirst({
+			where: eq(projects.id, projectId),
+		});
+		const projectSlug = targetProject?.slug || projectId;
+
 		const [deletedTask] = await db
 			.delete(tasks)
 			.where(eq(tasks.id, taskId))
@@ -366,7 +384,7 @@ export async function deleteTask(
 			await notifyProjectMembers({
 				projectId,
 				title: "Quest Objective Removed",
-				description: `"${deletedTask.title}" was deleted.`,
+				description: `"${deletedTask.title}" was deleted. [SLUG:${projectSlug}]`,
 				type: "task",
 			});
 		}

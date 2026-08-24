@@ -240,7 +240,7 @@ export default async function DashboardPage() {
 								rawDueDate: taskDueDate,
 								priority: task.priority || "Medium",
 								projectName: proj.name,
-								projectSlug: proj.slug,
+								projectSlug: proj.slug || proj.id,
 								assignedTo: myDisplayName,
 								groupLabel,
 								semanticDate,
@@ -287,7 +287,7 @@ export default async function DashboardPage() {
 	const overdueRate =
 		totalTasks > 0 ? Math.round((overdueTasks / totalTasks) * 100) : 0;
 
-	const firstSlug = userProjects[0]?.slug;
+	const firstSlug = userProjects[0]?.slug || userProjects[0]?.id;
 
 	return (
 		<DashboardLayoutContainer>

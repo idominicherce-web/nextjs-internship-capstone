@@ -1,5 +1,7 @@
 import { and, asc, eq, or } from "drizzle-orm";
+import { Loader2 } from "lucide-react";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getProjectAssignedMembers } from "@/actions/project-members";
 import { KanbanBoard } from "@/components/kanban/board/kanban-board";
 import { ProjectHeaderActions } from "@/components/kanban/board/project-header-actions";
@@ -93,10 +95,19 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 			</div>
 
 			<div className="mt-6 rounded-xs border-4 border-[#3B2415] bg-gradient-to-b from-[#2D1B10] via-[#1A120C] to-[#100A07] p-4 sm:p-6 shadow-2xl relative">
-				<KanbanBoard
-					projectId={project.id}
-					initialLists={projectLists as any}
-				/>
+				<Suspense
+					fallback={
+						<div className="flex items-center justify-center py-12 gap-2 text-xs font-sans text-[#D7B05C]">
+							<Loader2 size={18} className="animate-spin text-[#D7B05C]" />
+							<span>Loading Strategy Board...</span>
+						</div>
+					}
+				>
+					<KanbanBoard
+						projectId={project.id}
+						initialLists={projectLists as any}
+					/>
+				</Suspense>
 			</div>
 		</DashboardLayoutContainer>
 	);

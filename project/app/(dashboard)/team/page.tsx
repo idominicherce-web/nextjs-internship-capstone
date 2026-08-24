@@ -8,9 +8,6 @@ import { activityLogs, projectMembers, projects, users } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Helper function to resolve the target Roundtable Organization ID
- */
 async function getTargetOrgId(userId: string, sessionOrgId?: string | null) {
 	if (sessionOrgId) return sessionOrgId;
 
@@ -61,7 +58,6 @@ export default async function TeamPage() {
 			try {
 				const client = await clerkClient();
 
-				// 1. Fetch live pending invitations from Clerk
 				const clerkInvites =
 					await client.organizations.getOrganizationInvitationList({
 						organizationId: targetOrgId,
@@ -78,7 +74,6 @@ export default async function TeamPage() {
 					}),
 				}));
 
-				// 2. Fetch live organization members from Clerk
 				const clerkMemberships =
 					await client.organizations.getOrganizationMembershipList({
 						organizationId: targetOrgId,
@@ -88,7 +83,6 @@ export default async function TeamPage() {
 					.map((mem) => mem.publicUserData?.userId)
 					.filter(Boolean) as string[];
 
-				// Sync with database users matching by clerkId or internal UUID
 				const dbUsersList =
 					clerkUserIds.length > 0
 						? await db
@@ -111,24 +105,20 @@ export default async function TeamPage() {
 						(u) => u.clerkId === memberUserId || u.id === memberUserId,
 					);
 
-					// Combine all known DB/Clerk identifiers for this user
 					const validUserIds = new Set(
 						[memberUserId, matchingDbUser?.id, matchingDbUser?.clerkId].filter(
 							Boolean,
 						),
 					);
 
-					// Calculate unique project IDs where the user is an OWNER or an ASSIGNED MEMBER
 					const assignedProjectIds = new Set<string>();
 
-					// Add projects owned by user
 					allProjects.forEach((p) => {
 						if (validUserIds.has(p.userId)) {
 							assignedProjectIds.add(p.id);
 						}
 					});
 
-					// Add projects assigned via projectMembers junction table
 					allProjectMemberships.forEach((pm) => {
 						if (validUserIds.has(pm.userId)) {
 							assignedProjectIds.add(pm.projectId);
@@ -163,7 +153,7 @@ export default async function TeamPage() {
 						role: roleTitle,
 						email: email,
 						avatar: initials || "U",
-						projectCount: assignedProjectIds.size, // ✅ Counts both owned AND assigned projects
+						projectCount: assignedProjectIds.size,
 						status: idx === 0 ? "Online" : idx % 2 === 0 ? "Away" : "Offline",
 						lastActive: idx === 0 ? "Today" : "Yesterday",
 					};
@@ -174,7 +164,6 @@ export default async function TeamPage() {
 		}
 	}
 
-	// Fallback to local DB users if no Clerk organization structure is returned
 	if (mappedMembers.length === 0) {
 		const dbUsersList = await db.select().from(users);
 		const allProjects = await db.select().from(projects);
@@ -212,14 +201,13 @@ export default async function TeamPage() {
 					(u.id === dbUser?.id ? "Workspace Owner" : "Project Manager"),
 				email: u.email,
 				avatar: initials || "U",
-				projectCount: assignedProjectIds.size, // ✅ Counts both owned AND assigned projects
+				projectCount: assignedProjectIds.size,
 				status: idx === 0 ? "Online" : idx % 2 === 0 ? "Away" : "Offline",
 				lastActive: idx === 0 ? "Today" : "Yesterday",
 			};
 		});
 	}
 
-	// Fetch Team-related Activity Logs
 	const dbLogs = await db
 		.select({
 			id: activityLogs.id,
@@ -301,6 +289,7 @@ export default async function TeamPage() {
 
 	return (
 		<TeamClient
+			currentUserRole={dbUser?.role || "Member"}
 			initialMembers={mappedMembers}
 			activities={formattedActivities}
 			pendingInvitations={mappedPendingInvites}
