@@ -3,7 +3,10 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { notifyProjectMembers } from "@/actions/notifications";
+import {
+	createNotification,
+	notifyProjectMembers,
+} from "@/actions/notifications";
 import { getOrCreateDbUser } from "@/lib/auth";
 import { logActivity } from "@/lib/logger";
 
@@ -138,6 +141,42 @@ export async function inviteWorkspaceMember(
 			error?.message ||
 			"Failed to dispatch workspace invitation.";
 		return { success: false, error: message };
+	}
+}
+
+/**
+ * Dispatches targeted notifications when an invited member accepts their summons.
+ */
+export async function handleInvitationAccepted(payload: {
+	inviterUserId: string;
+	newMemberId: string;
+	newMemberName: string;
+	role: string;
+}) {
+	try {
+		// 1. Notify Inviter (User A) that their invitation was accepted
+		await createNotification({
+			userId: payload.inviterUserId,
+			title: "Summons Accepted!",
+			description: `${payload.newMemberName} accepted your invitation and joined the roundtable as ${payload.role}.`,
+			type: "team",
+		});
+
+		// 2. Notify Joining User (User B) welcoming them to the workspace
+		await createNotification({
+			userId: payload.newMemberId,
+			title: "Realm Officer Enlisted",
+			description: `Welcome to the roundtable council! You were enlisted as ${payload.role}.`,
+			type: "team",
+		});
+
+		return { success: true };
+	} catch (error) {
+		console.error(
+			"Failed to process invitation acceptance notifications:",
+			error,
+		);
+		return { success: false, error: "Failed to dispatch notifications." };
 	}
 }
 

@@ -32,7 +32,7 @@ export async function getNotifications() {
 }
 
 /**
- * Create a single notification record in DB (respects target user settings)
+ * Create a single notification record in DB targeting a specific user (respects recipient settings)
  */
 export async function createNotification(payload: {
 	userId?: string;
