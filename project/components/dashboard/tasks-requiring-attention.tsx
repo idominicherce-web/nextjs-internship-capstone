@@ -130,7 +130,7 @@ function TaskCard({
 }) {
 	return (
 		<Link
-			href={`/projects/${task.projectSlug}`}
+			href={`/projects/${task.projectSlug}?task=${task.id}`}
 			className={`block p-3 rounded-xs border transition-colors shadow-sm ${
 				isOverdue
 					? "border-rose-900/80 bg-rose-950/20 hover:border-rose-600"

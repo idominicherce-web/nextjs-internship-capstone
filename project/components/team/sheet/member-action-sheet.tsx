@@ -22,11 +22,16 @@ import {
 } from "@/actions/projects";
 import { updateMemberRoleAction } from "@/actions/team";
 import type { Member } from "@/components/team/team-directory-table";
+import {
+	canManageWorkspaceMembers,
+	canManageWorkspaceRoles,
+} from "@/lib/permissions";
 
 export type MemberView = "actions" | "details" | "assign" | "role" | "remove";
 
 interface MemberActionSheetProps {
 	member: Member | null;
+	currentUserRole?: string;
 	isOpen: boolean;
 	initialView?: MemberView;
 	onClose: () => void;
@@ -46,6 +51,7 @@ const WORKSPACE_ROLES = [
 
 export function MemberActionSheet({
 	member,
+	currentUserRole = "Member",
 	isOpen,
 	initialView = "actions",
 	onClose,
@@ -76,6 +82,9 @@ export function MemberActionSheet({
 	const [assignFetching, setAssignFetching] = useState(false);
 	const [assignSuccess, setAssignSuccess] = useState(false);
 	const [assignError, setAssignError] = useState<string | null>(null);
+
+	const canChangeRole = canManageWorkspaceRoles(currentUserRole);
+	const canDischarge = canManageWorkspaceMembers(currentUserRole);
 
 	useEffect(() => {
 		setMounted(true);
@@ -281,35 +290,39 @@ export function MemberActionSheet({
 								</div>
 							</button>
 
-							<button
-								type="button"
-								onClick={() => setView("role")}
-								className="w-full p-3 rounded-xs border border-[#8F6236] bg-[#2D1B10] text-[#D7B05C] hover:text-white transition-colors text-xs font-extrabold uppercase tracking-wider cursor-pointer text-left flex items-center gap-3"
-							>
-								<UserCheck size={16} />
-								<div>
-									<div>Change Workspace Role</div>
-									<span className="text-[10px] text-[#E3C279] font-serif italic normal-case font-normal">
-										Update council access rights
-									</span>
-								</div>
-							</button>
-
-							<div className="pt-2 border-t border-[#4A2C1D]">
+							{canChangeRole && (
 								<button
 									type="button"
-									onClick={() => setView("remove")}
-									className="w-full p-3 rounded-xs border border-rose-900 bg-rose-950/80 text-rose-200 hover:bg-rose-900 transition-colors text-xs font-extrabold uppercase tracking-wider cursor-pointer text-left flex items-center gap-3"
+									onClick={() => setView("role")}
+									className="w-full p-3 rounded-xs border border-[#8F6236] bg-[#2D1B10] text-[#D7B05C] hover:text-white transition-colors text-xs font-extrabold uppercase tracking-wider cursor-pointer text-left flex items-center gap-3"
 								>
-									<Trash2 size={16} className="text-rose-400" />
+									<UserCheck size={16} />
 									<div>
-										<div>Discharge Officer</div>
-										<span className="text-[10px] text-rose-300 font-serif italic normal-case font-normal">
-											Revoke workspace access
+										<div>Change Workspace Role</div>
+										<span className="text-[10px] text-[#E3C279] font-serif italic normal-case font-normal">
+											Update council access rights
 										</span>
 									</div>
 								</button>
-							</div>
+							)}
+
+							{canDischarge && (
+								<div className="pt-2 border-t border-[#4A2C1D]">
+									<button
+										type="button"
+										onClick={() => setView("remove")}
+										className="w-full p-3 rounded-xs border border-rose-900 bg-rose-950/80 text-rose-200 hover:bg-rose-900 transition-colors text-xs font-extrabold uppercase tracking-wider cursor-pointer text-left flex items-center gap-3"
+									>
+										<Trash2 size={16} className="text-rose-400" />
+										<div>
+											<div>Discharge Officer</div>
+											<span className="text-[10px] text-rose-300 font-serif italic normal-case font-normal">
+												Revoke workspace access
+											</span>
+										</div>
+									</button>
+								</div>
+							)}
 						</div>
 					)}
 

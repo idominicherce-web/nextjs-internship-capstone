@@ -13,6 +13,7 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
+import { useSearchParams } from "next/navigation";
 import type React from "react";
 import {
 	useCallback,
@@ -59,6 +60,9 @@ export function KanbanBoard({
 	const [isMounted, setIsMounted] = useState(false);
 	const [, startTransition] = useTransition();
 
+	const searchParams = useSearchParams();
+	const taskIdParam = searchParams.get("task");
+
 	const {
 		searchQuery,
 		selectedPriority,
@@ -73,6 +77,27 @@ export function KanbanBoard({
 	useEffect(() => {
 		setListsState(initialLists);
 	}, [initialLists]);
+
+	// Auto-open target task modal when deep-linked via URL parameter (?task=...)
+	useEffect(() => {
+		if (!taskIdParam) return;
+
+		const searchLists = listsState.length > 0 ? listsState : initialLists;
+		if (searchLists.length === 0) return;
+
+		for (const list of searchLists) {
+			const targetTask = list.tasks.find(
+				(t) =>
+					t.id === taskIdParam ||
+					t.title.toLowerCase().includes(taskIdParam.toLowerCase()),
+			);
+
+			if (targetTask) {
+				openTaskDetailModal(targetTask);
+				break;
+			}
+		}
+	}, [taskIdParam, initialLists, listsState, openTaskDetailModal]);
 
 	useKeyboardShortcuts();
 
@@ -233,7 +258,6 @@ export function KanbanBoard({
 
 			if (!movedTask) return;
 
-			// Update state locally first so UI updates immediately with smooth animation
 			const updatedLists = listsState
 				.map((list) => {
 					if (list.id === sourceList.id) {
@@ -264,7 +288,6 @@ export function KanbanBoard({
 
 			setListsState(updatedLists);
 
-			// Persist stage shift in background without full route revalidation
 			if (isCrossColumn) {
 				const targetTasks =
 					updatedLists.find((l) => l.id === targetList.id)?.tasks || [];

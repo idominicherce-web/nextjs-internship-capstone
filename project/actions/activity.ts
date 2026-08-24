@@ -1,4 +1,4 @@
-"use server";
+"server-only";
 
 import { desc, eq, like, or } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -49,7 +49,7 @@ export async function getTaskActivityLogs(taskId: string, taskTitle?: string) {
 		const sanitizedLogs = logs.map((log) => ({
 			...log,
 			details: log.details
-				? log.details.replace(/\[TASK:[^\]]+\]\s*/g, "")
+				? log.details.replace(/\[TASK:[^\]]+\]\s*/g, "").trim()
 				: null,
 		}));
 

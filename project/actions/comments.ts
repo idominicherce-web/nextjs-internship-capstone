@@ -5,7 +5,7 @@ import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { notifyProjectMembers } from "@/actions/notifications";
 import { db } from "@/lib/db";
-import { taskComments, tasks, users } from "@/lib/db/schema";
+import { projects, taskComments, tasks, users } from "@/lib/db/schema";
 import { logActivity } from "@/lib/logger";
 
 export interface TaskCommentWithAuthor {
@@ -88,9 +88,12 @@ export async function createTaskComment(
 			return { success: false, error: "Comment content cannot be blank." };
 		}
 
-		const task = await db.query.tasks.findFirst({
-			where: eq(tasks.id, taskId),
-		});
+		const [task, project] = await Promise.all([
+			db.query.tasks.findFirst({ where: eq(tasks.id, taskId) }),
+			db.query.projects.findFirst({ where: eq(projects.id, projectId) }),
+		]);
+
+		const projectSlug = project?.slug || projectId;
 
 		const [newComment] = await db
 			.insert(taskComments)
@@ -107,17 +110,21 @@ export async function createTaskComment(
 			action: "COMMENTED",
 			entityType: "task",
 			entityName: task?.title || cleanContent.slice(0, 30),
-			details: `Posted dispatch comment on task: "${task?.title || taskId}"`,
+			details: `[TASK:${taskId}] Posted dispatch comment on task: "${
+				task?.title || taskId
+			}"`,
 		});
 
 		await notifyProjectMembers({
 			projectId,
 			title: "Dispatch Comment Posted",
-			description: `${dbUser.name || "A team member"} commented on "${task?.title || "a task"}"`,
+			description: `${dbUser.name || "A team member"} commented on "${
+				task?.title || "a task"
+			}". [SLUG:${projectSlug}] [TASK:${taskId}]`,
 			type: "task",
 		});
 
-		revalidatePath(`/projects/${projectId}`);
+		revalidatePath(`/projects/${projectSlug}`);
 
 		return {
 			success: true,
@@ -153,9 +160,14 @@ export async function deleteTaskComment(
 		const user = await currentUser();
 		if (!user) return { success: false, error: "Unauthorized access." };
 
+		const project = await db.query.projects.findFirst({
+			where: eq(projects.id, projectId),
+		});
+		const projectSlug = project?.slug || projectId;
+
 		await db.delete(taskComments).where(eq(taskComments.id, commentId));
 
-		revalidatePath(`/projects/${projectId}`);
+		revalidatePath(`/projects/${projectSlug}`);
 		return { success: true };
 	} catch (error) {
 		console.error("Failed to delete comment:", error);

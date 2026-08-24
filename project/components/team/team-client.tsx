@@ -24,15 +24,18 @@ import {
 } from "@/components/team/team-pending-invitations";
 import { TeamSearch } from "@/components/team/team-search";
 import { TeamStats } from "@/components/team/team-stats";
+import { canManageWorkspaceMembers } from "@/lib/permissions";
 import { useNotificationStore } from "@/stores/use-notification-store";
 
 interface TeamClientProps {
+	currentUserRole?: string;
 	initialMembers: Member[];
 	activities: ActivityItem[];
 	pendingInvitations: PendingInvite[];
 }
 
 export function TeamClient({
+	currentUserRole = "Member",
 	initialMembers: rawMembers,
 	activities: initialActivities = [],
 	pendingInvitations: initialPendingInvitations,
@@ -53,6 +56,8 @@ export function TeamClient({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedRole, setSelectedRole] = useState("all");
 	const [selectedStatus, setSelectedStatus] = useState("all");
+
+	const canInvite = canManageWorkspaceMembers(currentUserRole);
 
 	const addNotification = useNotificationStore(
 		(state) => state.addNotification,
@@ -183,7 +188,11 @@ export function TeamClient({
 		<DashboardLayoutContainer>
 			<div className="space-y-6 sm:space-y-8 min-w-0">
 				{/* Header */}
-				<TeamHeader onInviteClick={() => setInviteModalOpen(true)} />
+				<TeamHeader
+					onInviteClick={() => {
+						if (canInvite) setInviteModalOpen(true);
+					}}
+				/>
 
 				{/* Summary Stats Row */}
 				<TeamStats
@@ -228,6 +237,7 @@ export function TeamClient({
 			{/* Persistent Member Action Container Sheet */}
 			<MemberActionSheet
 				member={selectedMember}
+				currentUserRole={currentUserRole}
 				isOpen={sheetOpen}
 				initialView={sheetView}
 				onClose={handleCloseMemberSheet}

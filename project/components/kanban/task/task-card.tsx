@@ -27,6 +27,7 @@ export interface TaskCardData {
 interface TaskCardProps {
 	task: TaskCardData;
 	projectId: string;
+	isReadOnly?: boolean;
 	onTaskClick: (task: TaskCardData) => void;
 	onDeleteTask: (taskId: string, projectId: string) => void;
 }
@@ -34,6 +35,7 @@ interface TaskCardProps {
 export function TaskCard({
 	task,
 	projectId,
+	isReadOnly = false,
 	onTaskClick,
 	onDeleteTask,
 }: TaskCardProps) {
@@ -47,6 +49,7 @@ export function TaskCard({
 	} = useSortable({
 		id: task.id,
 		data: { type: "Task", task },
+		disabled: isReadOnly,
 	});
 
 	const style = {
@@ -92,10 +95,15 @@ export function TaskCard({
 		<div
 			ref={setNodeRef}
 			style={style}
-			{...attributes}
-			{...listeners}
-			onClick={() => onTaskClick(task)}
-			className={`group relative w-full p-3.5 sm:p-4 rounded-xs border-2 border-[#8F6236] bg-[#FAF0D7] text-[#1A120C] shadow-md hover:-translate-y-0.5 hover:border-[#D7B05C] hover:shadow-[0_8px_20px_rgba(215,176,92,0.35)] cursor-grab active:cursor-grabbing select-none overflow-hidden ${
+			{...(isReadOnly ? {} : attributes)}
+			{...(isReadOnly ? {} : listeners)}
+			onClick={(e) => {
+				e.stopPropagation();
+				onTaskClick(task);
+			}}
+			className={`group relative w-full p-3.5 sm:p-4 rounded-xs border-2 border-[#8F6236] bg-[#FAF0D7] text-[#1A120C] shadow-md hover:-translate-y-0.5 hover:border-[#D7B05C] hover:shadow-[0_8px_20px_rgba(215,176,92,0.35)] select-none overflow-hidden ${
+				isReadOnly ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+			} ${
 				isDragging
 					? "opacity-30 border-dashed border-[#D7B05C]"
 					: "transition-transform duration-150"
@@ -140,9 +148,10 @@ export function TaskCard({
 						</span>
 					)}
 
-					<TaskPriorityBadge priority={task.priority} />
+					<TaskPriorityBadge
+						priority={task.priority === "Urgent" ? "High" : task.priority}
+					/>
 
-					{/* Comment Count Badge */}
 					{commentCount > 0 && (
 						<span
 							className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-[#1A120C] text-[#D7B05C] border border-[#8F6236] text-[9px] font-mono font-bold shadow-xs"
@@ -162,19 +171,21 @@ export function TaskCard({
 				</div>
 			</div>
 
-			<button
-				type="button"
-				onPointerDown={(e) => e.stopPropagation()}
-				onClick={(e) => {
-					e.stopPropagation();
-					e.preventDefault();
-					onDeleteTask(task.id, projectId);
-				}}
-				className="absolute top-2 right-6 opacity-0 group-hover:opacity-100 p-1 text-[#8F6236] hover:text-rose-700 transition-all cursor-pointer z-20 pointer-events-auto"
-				title="Delete Task"
-			>
-				<Trash2 size={13} />
-			</button>
+			{!isReadOnly && (
+				<button
+					type="button"
+					onPointerDown={(e) => e.stopPropagation()}
+					onClick={(e) => {
+						e.stopPropagation();
+						e.preventDefault();
+						onDeleteTask(task.id, projectId);
+					}}
+					className="absolute top-2 right-6 opacity-0 group-hover:opacity-100 p-1 text-[#8F6236] hover:text-rose-700 transition-all cursor-pointer z-20 pointer-events-auto"
+					title="Delete Task"
+				>
+					<Trash2 size={13} />
+				</button>
+			)}
 		</div>
 	);
 }

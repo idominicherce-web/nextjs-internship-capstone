@@ -33,6 +33,20 @@ interface ActivityArchiveProps {
 	activities: ActivityLogItem[];
 }
 
+function parseLogDetails(detailsRaw: string | null): {
+	cleanDetails: string | null;
+	taskId: string | null;
+} {
+	if (!detailsRaw) return { cleanDetails: null, taskId: null };
+
+	const taskMatch = detailsRaw.match(/\[TASK:(.*?)\]/);
+	const taskId = taskMatch ? taskMatch[1] : null;
+
+	const cleanDetails = detailsRaw.replace(/\[TASK:.*?\]/gi, "").trim();
+
+	return { cleanDetails: cleanDetails || null, taskId };
+}
+
 export function ActivityArchive({ activities }: ActivityArchiveProps) {
 	const getActionConfig = (action: string) => {
 		const act = action.toLowerCase();
@@ -104,14 +118,16 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 						const config = getActionConfig(log.action);
 						const ActionIcon = config.icon;
 
-						const displayDetails = log.details
-							? log.details.replace(/\[TASK:[^\]]+\]\s*/g, "").trim()
-							: null;
+						const { cleanDetails, taskId } = parseLogDetails(log.details);
 
 						const targetSlug = log.projectSlug || log.projectId;
-						const targetHref = targetSlug
-							? `/projects/${targetSlug}`
-							: "/projects";
+						let targetHref = "/projects";
+
+						if (targetSlug && taskId) {
+							targetHref = `/projects/${targetSlug}?task=${taskId}`;
+						} else if (targetSlug) {
+							targetHref = `/projects/${targetSlug}`;
+						}
 
 						return (
 							<div
@@ -145,9 +161,9 @@ export function ActivityArchive({ activities }: ActivityArchiveProps) {
 										</span>
 									</div>
 
-									{displayDetails && (
+									{cleanDetails && (
 										<p className="text-[11px] font-sans text-[#D7B05C]/70 mt-0.5 italic break-words leading-relaxed">
-											{displayDetails}
+											{cleanDetails}
 										</p>
 									)}
 

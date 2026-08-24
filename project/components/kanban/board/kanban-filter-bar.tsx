@@ -44,28 +44,32 @@ export function KanbanFilterBar() {
 			<div className="flex items-center gap-2 shrink-0">
 				{/* Priority Dropdown Container */}
 				<div className="relative flex items-center">
-					{/* Left Filter Funnel Icon */}
+					{/* Filter Funnel Icon */}
 					<Filter
 						size={14}
 						className="absolute left-3 top-1/2 -translate-y-1/2 text-[#D7B05C] pointer-events-none z-10"
 					/>
 
-					{/* Native Select with Hidden Browser Arrow */}
+					{/* Select Dropdown with Proper Padding & Hidden Default Arrow */}
 					<select
-						value={selectedPriority || ""}
-						onChange={(e) => setSelectedPriority(e.target.value || null)}
-						className="appearance-none pl-8 pr-10 py-2 bg-[#2D1B10] border border-[#8F6236] rounded-xs text-xs font-sans font-bold text-[#D7B05C] focus:outline-none focus:border-[#D7B05C] cursor-pointer"
+						value={selectedPriority || "all"}
+						onChange={(e) =>
+							setSelectedPriority(
+								e.target.value === "all" ? null : e.target.value,
+							)
+						}
+						className="pl-8 pr-8 py-2 bg-[#2D1B10] border border-[#8F6236] text-[#D7B05C] text-xs font-bold uppercase rounded-xs cursor-pointer appearance-none focus:outline-none focus:border-[#D7B05C]"
 					>
-						<option value="">All Priorities</option>
+						<option value="all">All Priorities</option>
 						<option value="High">High Priority</option>
 						<option value="Medium">Medium Priority</option>
 						<option value="Low">Low Priority</option>
 					</select>
 
-					{/* Perfectly Centered Custom Chevron Arrow */}
+					{/* Custom Dropdown Chevron */}
 					<ChevronDown
 						size={14}
-						className="absolute right-3 top-1/2 -translate-y-1/2 text-[#D7B05C] pointer-events-none"
+						className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#D7B05C] pointer-events-none z-10"
 					/>
 				</div>
 
