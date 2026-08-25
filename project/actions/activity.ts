@@ -1,8 +1,8 @@
-"server-only";
+"use server";
 
-import { desc, eq, like, or } from "drizzle-orm";
+import { desc, like } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { activityLogs, projects, users } from "@/lib/db/schema";
+import { activityLogs } from "@/lib/db/schema";
 
 export interface TaskActivityLog {
 	id: string;
@@ -17,76 +17,63 @@ export interface TaskActivityLog {
 	} | null;
 }
 
-export async function getTaskActivityLogs(taskId: string, taskTitle?: string) {
+export async function getTaskActivityLogs(taskId: string, _taskTitle?: string) {
 	try {
-		const conditions = [
-			like(activityLogs.details, `%[TASK:${taskId}]%`),
-			eq(activityLogs.entityName, taskId),
-		];
-
-		if (taskTitle) {
-			conditions.push(eq(activityLogs.entityName, taskTitle));
-		}
-
-		const logs = await db
+		// Query activity logs referencing the task ID in details
+		const rawLogs = await db
 			.select({
 				id: activityLogs.id,
+				userId: activityLogs.userId,
 				action: activityLogs.action,
 				entityType: activityLogs.entityType,
 				details: activityLogs.details,
 				createdAt: activityLogs.createdAt,
-				user: {
-					name: users.name,
-					email: users.email,
-					imageUrl: users.imageUrl,
-				},
 			})
 			.from(activityLogs)
-			.leftJoin(users, eq(activityLogs.userId, users.id))
-			.where(or(...conditions))
+			.where(like(activityLogs.details, `%[TASK:${taskId}]%`))
 			.orderBy(desc(activityLogs.createdAt));
 
-		const sanitizedLogs = logs.map((log) => ({
-			...log,
-			details: log.details
-				? log.details.replace(/\[TASK:[^\]]+\]\s*/g, "").trim()
-				: null,
-		}));
+		if (rawLogs.length === 0) return { success: true, data: [] };
+
+		// Fetch associated users in-memory on the server
+		const userIds = Array.from(
+			new Set(rawLogs.map((l) => l.userId).filter(Boolean)),
+		);
+
+		const userRows =
+			userIds.length > 0
+				? await db.query.users.findMany({
+						where: (u, { inArray, or }) =>
+							or(inArray(u.id, userIds), inArray(u.clerkId, userIds)),
+					})
+				: [];
+
+		const sanitizedLogs = rawLogs.map((log) => {
+			const matchingUser = userRows.find(
+				(u) => u.id === log.userId || u.clerkId === log.userId,
+			);
+
+			return {
+				id: log.id,
+				action: log.action,
+				entityType: log.entityType,
+				details: log.details
+					? log.details.replace(/\[TASK:[^\]]+\]\s*/g, "").trim()
+					: null,
+				createdAt: log.createdAt,
+				user: matchingUser
+					? {
+							name: matchingUser.name,
+							email: matchingUser.email,
+							imageUrl: matchingUser.imageUrl,
+						}
+					: null,
+			};
+		});
 
 		return { success: true, data: sanitizedLogs };
 	} catch (error) {
-		console.error("Failed to fetch task activity logs:", error);
-		return { success: false, data: [] };
-	}
-}
-
-export async function getRecentActivities(limit = 20) {
-	try {
-		const logs = await db
-			.select({
-				id: activityLogs.id,
-				action: activityLogs.action,
-				entityType: activityLogs.entityType,
-				entityName: activityLogs.entityName,
-				details: activityLogs.details,
-				createdAt: activityLogs.createdAt,
-				projectId: activityLogs.projectId,
-				projectSlug: projects.slug,
-				user: {
-					name: users.name,
-					email: users.email,
-					imageUrl: users.imageUrl,
-				},
-			})
-			.from(activityLogs)
-			.leftJoin(users, eq(activityLogs.userId, users.id))
-			.leftJoin(projects, eq(activityLogs.projectId, projects.id))
-			.orderBy(desc(activityLogs.createdAt))
-			.limit(limit);
-
-		return { success: true, data: logs };
-	} catch (error) {
-		console.error("Failed to fetch recent workspace activities:", error);
+		console.error("❌ Failed to fetch task activity logs:", error);
 		return { success: false, data: [] };
 	}
 }

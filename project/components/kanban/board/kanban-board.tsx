@@ -13,7 +13,7 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
 import {
 	useCallback,
@@ -52,6 +52,11 @@ export function KanbanBoard({
 	projectId,
 	initialLists = [],
 }: KanbanBoardProps) {
+	const router = useRouter();
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const taskIdParam = searchParams.get("task");
+
 	const [listsState, setListsState] = useState<List[]>(initialLists);
 	const [activeTask, setActiveTask] = useState<TaskCardData | null>(null);
 	const [newListName, setNewListName] = useState("");
@@ -60,14 +65,12 @@ export function KanbanBoard({
 	const [isMounted, setIsMounted] = useState(false);
 	const [, startTransition] = useTransition();
 
-	const searchParams = useSearchParams();
-	const taskIdParam = searchParams.get("task");
-
 	const {
 		searchQuery,
 		selectedPriority,
 		openCreateTaskModal,
 		openTaskDetailModal,
+		closeTaskDetailModal,
 	} = useKanbanStore();
 
 	useEffect(() => {
@@ -80,7 +83,10 @@ export function KanbanBoard({
 
 	// Auto-open target task modal when deep-linked via URL parameter (?task=...)
 	useEffect(() => {
-		if (!taskIdParam) return;
+		if (!taskIdParam) {
+			closeTaskDetailModal();
+			return;
+		}
 
 		const searchLists = listsState.length > 0 ? listsState : initialLists;
 		if (searchLists.length === 0) return;
@@ -97,7 +103,13 @@ export function KanbanBoard({
 				break;
 			}
 		}
-	}, [taskIdParam, initialLists, listsState, openTaskDetailModal]);
+	}, [
+		taskIdParam,
+		initialLists,
+		listsState,
+		openTaskDetailModal,
+		closeTaskDetailModal,
+	]);
 
 	useKeyboardShortcuts();
 
@@ -224,6 +236,11 @@ export function KanbanBoard({
 		});
 	};
 
+	const handleTaskClick = (task: TaskCardData) => {
+		openTaskDetailModal(task);
+		router.push(`${pathname}?task=${task.id}`, { scroll: false });
+	};
+
 	const handleDragStart = useCallback((event: DragStartEvent) => {
 		const taskData = event.active.data.current?.task as
 			| TaskCardData
@@ -345,7 +362,7 @@ export function KanbanBoard({
 					setTaskInputs={setTaskInputs}
 					deleteList={deleteList}
 					handleAddTask={handleAddTask}
-					onTaskClick={(task) => openTaskDetailModal(task)}
+					onTaskClick={handleTaskClick}
 				/>
 
 				<DragOverlay dropAnimation={null}>

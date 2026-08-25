@@ -9,7 +9,7 @@ const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
 
 async function seed() {
-	console.log("⚔️ Starting database reset & seed...");
+	console.log("⚔️ Starting presentation database reset & seed...");
 
 	// 1. Fetch existing users to preserve them
 	const existingUsers = await db.query.users.findMany();
@@ -29,7 +29,7 @@ async function seed() {
 	const ownerUser = existingUsers[0];
 	const secondUser = existingUsers[1] || existingUsers[0];
 
-	// 2. Clear all tables EXCEPT users & user_settings
+	// 2. Clear project data tables
 	console.log("🧹 Clearing existing project data...");
 	await db.delete(schema.taskComments);
 	await db.delete(schema.tasks);
@@ -39,7 +39,7 @@ async function seed() {
 	await db.delete(schema.notifications);
 	await db.delete(schema.projects);
 
-	console.log("🌱 Seeding sample projects & Kanban boards...");
+	console.log("🌱 Seeding presentation projects & tasks...");
 
 	// 3. Create Projects
 	const [project1] = await db
@@ -96,84 +96,105 @@ async function seed() {
 
 	const listMap1 = new Map(createdLists1.map((l) => [l.name, l.id]));
 
-	// Explicit August 2026 dates for calendar alignment
-	const aug1 = new Date("2026-08-01T09:00:00.000Z");
-	const aug20 = new Date("2026-08-20T10:00:00.000Z");
-	const aug24 = new Date("2026-08-24T14:00:00.000Z");
-	const aug27 = new Date("2026-08-27T16:00:00.000Z");
-	const aug30 = new Date("2026-08-30T18:00:00.000Z");
+	// Dynamic relative dates relative to today
+	const now = new Date();
+	const overdueDate1 = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000); // 2 days ago
+	const overdueDate2 = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000); // 1 day ago
+	const todayDate = new Date(now);
+	const tomorrowDate = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000); // Tomorrow
+	const upcomingDate = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000); // 4 days later
 
-	// 6. Seed Tasks for August 2026 Calendar Grid
+	// 6. Seed Tasks across all urgency buckets for Tasks Requiring Attention
 	const createdTasks1 = await db
 		.insert(schema.tasks)
 		.values([
+			// OVERDUE Tasks
 			{
-				title: "Setup Initial Project Charter",
-				description:
-					"Kickoff workspace charter and define operational objectives.",
-				position: 0,
-				listId: listMap1.get("Done")!,
-				userId: ownerUser.id,
-				priority: "High",
-				dueDate: aug1,
-			},
-			{
-				title: "Database Schema Migrations",
-				description: "Setup Neon Drizzle ORM foreign keys and cascade rules.",
-				position: 1,
-				listId: listMap1.get("Done")!,
-				userId: ownerUser.id,
-				priority: "High",
-				dueDate: aug20,
-			},
-			{
-				title: "Refactor Navigation Drawer Layout",
-				description:
-					"Implement smooth mobile-first drawer container with backdrop blur.",
+				title: "Critical Security Patch & Audit",
+				description: "Fix CSRF vulnerability in Server Actions.",
 				position: 0,
 				listId: listMap1.get("In Progress")!,
 				userId: ownerUser.id,
-				priority: "High",
-				dueDate: aug24,
+				priority: "Urgent",
+				dueDate: overdueDate1,
 			},
 			{
-				title: "Configure Clerk Webhook Sync",
-				description:
-					"Automatically provision user records on invitation acceptance.",
+				title: "Database Migration Review",
+				description: "Verify foreign key constraints on cascade delete.",
+				position: 1,
+				listId: listMap1.get("To Do")!,
+				userId: ownerUser.id,
+				priority: "High",
+				dueDate: overdueDate2,
+			},
+			// DUE TODAY Tasks
+			{
+				title: "Deploy Vercel Production Build",
+				description: "Verify edge routing and environment variables.",
 				position: 0,
 				listId: listMap1.get("To Do")!,
-				userId: secondUser.id,
+				userId: ownerUser.id,
 				priority: "Urgent",
-				dueDate: aug27,
+				dueDate: todayDate,
 			},
 			{
-				title: "Design Kingdom Analytics Dashboard",
-				description:
-					"Build velocity meters and active task distribution charts.",
+				title: "Refactor Navigation Drawer Layout",
+				description: "Implement smooth mobile-first drawer container.",
+				position: 0,
+				listId: listMap1.get("In Review")!,
+				userId: ownerUser.id,
+				priority: "High",
+				dueDate: todayDate,
+			},
+			// DUE TOMORROW Tasks
+			{
+				title: "Configure Clerk Webhook Sync",
+				description: "Automatically provision user records on invite.",
 				position: 1,
 				listId: listMap1.get("To Do")!,
 				userId: ownerUser.id,
 				priority: "Medium",
-				dueDate: aug30,
+				dueDate: tomorrowDate,
+			},
+			// UPCOMING Tasks
+			{
+				title: "Design Kingdom Analytics Dashboard",
+				description:
+					"Build velocity meters and active task distribution charts.",
+				position: 2,
+				listId: listMap1.get("Backlog")!,
+				userId: ownerUser.id,
+				priority: "Low",
+				dueDate: upcomingDate,
+			},
+			// DONE Tasks
+			{
+				title: "Setup Initial Project Charter",
+				description: "Kickoff workspace charter and define objectives.",
+				position: 0,
+				listId: listMap1.get("Done")!,
+				userId: ownerUser.id,
+				priority: "High",
+				dueDate: overdueDate1,
 			},
 		])
 		.returning();
 
-	// 7. Seed Task Comments
+	// 7. Seed Comments
 	await db.insert(schema.taskComments).values([
 		{
-			taskId: createdTasks1[2].id,
+			taskId: createdTasks1[0].id,
 			userId: secondUser.id,
-			content: "Drawer layout tested on mobile screens, looks solid!",
+			content: "I reviewed the patch and verified it on staging.",
 		},
 		{
 			taskId: createdTasks1[3].id,
 			userId: ownerUser.id,
-			content: "Webhook endpoint configured and verified.",
+			content: "Drawer layout tested on mobile screens, looks solid!",
 		},
 	]);
 
-	// 8. Seed Completed Project (Project 2 - All Tasks in Done)
+	// 8. Seed Completed Project (Project 2)
 	const createdLists2 = await db
 		.insert(schema.lists)
 		.values([
@@ -195,7 +216,7 @@ async function seed() {
 			listId: listMap2.get("Done")!,
 			userId: ownerUser.id,
 			priority: "High",
-			dueDate: aug20,
+			dueDate: overdueDate1,
 		},
 		{
 			title: "Deploy Vercel Edge Router",
@@ -204,11 +225,11 @@ async function seed() {
 			listId: listMap2.get("Done")!,
 			userId: ownerUser.id,
 			priority: "Urgent",
-			dueDate: aug24,
+			dueDate: overdueDate2,
 		},
 	]);
 
-	// 9. Seed Activity Logs & Notifications for all preserved users
+	// 9. Seed Activity Logs & Notifications
 	const notificationsData = [];
 	const activityLogsData = [];
 
@@ -224,7 +245,7 @@ async function seed() {
 			{
 				userId: user.id,
 				title: "New Task Appointed",
-				description: `"Refactor Navigation Drawer Layout" created by ${ownerUser.name || "Officer"}. [SLUG:${project1.slug}]`,
+				description: `"Critical Security Patch & Audit" created by ${ownerUser.name || "Officer"}. [SLUG:${project1.slug}] [TASK:${createdTasks1[0].id}]`,
 				type: "task",
 				read: false,
 			},
@@ -244,8 +265,8 @@ async function seed() {
 				userId: user.id,
 				action: "COMMENTED",
 				entityType: "task",
-				entityName: createdTasks1[2].title,
-				details: `[TASK:${createdTasks1[2].id}] Posted dispatch comment on task: "${createdTasks1[2].title}"`,
+				entityName: createdTasks1[0].title,
+				details: `[TASK:${createdTasks1[0].id}] Posted dispatch comment on task: "${createdTasks1[0].title}"`,
 			},
 			{
 				projectId: project2.id,
@@ -261,9 +282,7 @@ async function seed() {
 	await db.insert(schema.notifications).values(notificationsData);
 	await db.insert(schema.activityLogs).values(activityLogsData);
 
-	console.log(
-		"✨ Seed completed successfully! August 2026 calendar dates populated.",
-	);
+	console.log("✨ Seed completed successfully with demo tasks!");
 	process.exit(0);
 }
 

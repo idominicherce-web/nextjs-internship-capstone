@@ -16,6 +16,7 @@ interface ProjectPageProps {
 	params: Promise<{ slug: string }>;
 }
 
+// Ensure "default" is explicitly present here:
 export default async function ProjectPage({ params }: ProjectPageProps) {
 	const { slug } = await params;
 	const dbUser = await getOrCreateDbUser();

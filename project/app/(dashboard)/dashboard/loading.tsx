@@ -26,14 +26,14 @@ export default function DashboardLoading() {
 						{/* Main Dashboard Title Placeholder */}
 						<div className="h-8 sm:h-12 w-56 sm:w-72 bg-gradient-to-b from-[#FFF5D6]/20 via-[#D7B05C]/20 to-[#B78B3E]/10 rounded-xs" />
 
-						{/* Welcome Subtitle Placeholder */}
-						<div className="h-4 w-44 bg-[#F8EEDB]/15 rounded-xs" />
+						{/* Welcome Back Subtitle Placeholder */}
+						<div className="h-4 w-48 bg-[#F8EEDB]/20 rounded-xs" />
 
 						{/* Description Placeholder */}
 						<div className="h-3.5 w-64 sm:w-96 bg-[#D7B05C]/15 rounded-xs mt-1" />
 					</div>
 
-					{/* Button Placeholder */}
+					{/* Create Project Button Placeholder */}
 					<div className="shrink-0 h-10 w-full sm:w-36 bg-[#3B2415] border border-[#8F6236]/60 rounded-xs shadow-md mt-2 sm:mt-0" />
 				</div>
 
@@ -46,7 +46,7 @@ export default function DashboardLoading() {
 						</div>
 						<div className="h-3 w-16 bg-[#E3C279]/20 rounded-xs" />
 					</div>
-					<div className="h-12 w-full bg-[#15100C] border border-[#4A2C1D]/60 rounded-xs" />
+					<div className="h-10 w-full bg-[#15100C] border border-[#4A2C1D]/60 rounded-xs" />
 				</div>
 
 				{/* 3. SKELETON KINGDOM OVERVIEW STATS STRIP */}
@@ -72,7 +72,7 @@ export default function DashboardLoading() {
 						<div className="h-3.5 w-36 bg-[#D7B05C]/20 rounded-xs" />
 						<div className="h-3 w-20 bg-[#D7B05C]/15 rounded-xs" />
 					</div>
-					<div className="grid grid-cols-4 gap-2">
+					<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 						{[1, 2, 3, 4].map((i) => (
 							<div
 								key={`my-work-skel-${i}`}

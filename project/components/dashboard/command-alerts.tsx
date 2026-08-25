@@ -32,10 +32,12 @@ export function CommandAlerts({
 	completedProjectsList = [],
 	firstActiveProjectSlug,
 }: CommandAlertsProps) {
-	const [isExpanded, setIsExpanded] = useState(true);
-	const targetHref = firstActiveProjectSlug
+	const [isExpanded, setIsExpanded] = useState(false);
+
+	// Direct link target for resolving overdue tasks
+	const overdueHref = firstActiveProjectSlug
 		? `/projects/${firstActiveProjectSlug}`
-		: "/projects";
+		: "#tasks-requiring-attention";
 
 	return (
 		<div className="space-y-2 rounded-xs border border-[#8F6236]/60 bg-[#1A120C] p-3 sm:p-3.5 shadow-md font-serif min-w-0">
@@ -54,7 +56,7 @@ export function CommandAlerts({
 					<h2 className="text-xs font-extrabold truncate">Command Alerts</h2>
 
 					{!isExpanded && (
-						<div className="ml-1 sm:ml-2 flex items-center gap-1.5 text-[10px] font-bold normal-case tracking-normal">
+						<div className="ml-1 sm:ml-2 flex flex-wrap items-center gap-1.5 text-[10px] font-bold normal-case tracking-normal">
 							{overdueCount > 0 ? (
 								<span className="inline-flex items-center gap-1 rounded-xs border border-rose-800/80 bg-rose-950/60 px-2 py-0.5 text-rose-300">
 									<AlertTriangle size={11} /> {overdueCount} Overdue
@@ -83,10 +85,10 @@ export function CommandAlerts({
 							<div className="flex items-start gap-2.5 min-w-0">
 								<Trophy className="size-5 text-emerald-400 shrink-0 mt-0.5" />
 								<div className="min-w-0 flex-1">
-									<h3 className="font-sans font-black text-xs sm:text-sm uppercase tracking-wider text-emerald-300">
+									<h3 className="font-sans font-black text-xs sm:text-sm uppercase tracking-wider text-emerald-300 break-words">
 										Quest Complete: {completedProjectsList[0].name}
 									</h3>
-									<p className="text-[11px] sm:text-xs font-sans text-emerald-200/90 mt-0.5 leading-relaxed">
+									<p className="text-[11px] sm:text-xs font-sans text-emerald-200/90 mt-0.5 leading-relaxed break-words">
 										100% of campaign objectives have been fulfilled!
 									</p>
 								</div>
@@ -106,31 +108,31 @@ export function CommandAlerts({
 							<div className="flex items-start gap-2.5 min-w-0">
 								<AlertTriangle className="size-5 text-rose-400 shrink-0 mt-0.5" />
 								<div className="min-w-0 flex-1">
-									<h3 className="font-sans font-black text-xs sm:text-sm uppercase tracking-wider text-rose-300">
+									<h3 className="font-sans font-black text-xs sm:text-sm uppercase tracking-wider text-rose-300 break-words">
 										Overdue Objectives: {overdueCount} Requiring Attention
 									</h3>
-									<p className="text-[11px] sm:text-xs font-sans text-rose-200/90 mt-0.5 leading-relaxed">
+									<p className="text-[11px] sm:text-xs font-sans text-rose-200/90 mt-0.5 leading-relaxed break-words">
 										{overdueCount}{" "}
 										{overdueCount === 1 ? "task has" : "tasks have"} passed
 										their scheduled due date.
 									</p>
 								</div>
 							</div>
-							<Link
-								href={targetHref}
+							<a
+								href={overdueHref}
 								className="w-full sm:w-auto text-center px-3 py-1.5 border border-rose-700 bg-rose-950 text-rose-200 hover:bg-rose-900 text-[10px] font-sans font-black uppercase rounded-xs shrink-0 cursor-pointer"
 							>
 								Resolve Tasks
-							</Link>
+							</a>
 						</div>
 					) : (
 						<div className="p-3 sm:p-3.5 rounded-xs border border-emerald-800/80 bg-gradient-to-r from-emerald-950/90 via-[#10241A] to-[#0A1A12] text-emerald-200 shadow-md flex items-start gap-2.5 min-w-0">
 							<ShieldCheck className="size-5 text-emerald-400 shrink-0 mt-0.5" />
 							<div className="min-w-0 flex-1">
-								<h3 className="font-sans font-black text-xs sm:text-sm uppercase tracking-wider text-emerald-300">
+								<h3 className="font-sans font-black text-xs sm:text-sm uppercase tracking-wider text-emerald-300 break-words">
 									All Objectives On Schedule
 								</h3>
-								<p className="text-[11px] sm:text-xs font-sans text-emerald-200/90 mt-0.5 leading-relaxed">
+								<p className="text-[11px] sm:text-xs font-sans text-emerald-200/90 mt-0.5 leading-relaxed break-words">
 									No overdue tasks detected across active campaign boards.
 								</p>
 							</div>
@@ -141,7 +143,7 @@ export function CommandAlerts({
 					<div className="p-3 sm:p-3.5 rounded-xs border border-[#8F6236]/80 bg-[#15100C] text-[#FFF5D6] shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 min-w-0">
 						<div className="flex items-start sm:items-center gap-2.5 min-w-0">
 							<CheckCircle2 className="size-4 text-[#D7B05C] shrink-0 mt-0.5 sm:mt-0" />
-							<span className="text-xs font-sans font-bold text-[#F8EEDB] leading-relaxed">
+							<span className="text-xs font-sans font-bold text-[#F8EEDB] leading-relaxed break-words">
 								Active Pipelines: {pendingTasks} tasks in progress out of{" "}
 								{totalTasks} total.
 							</span>
