@@ -44,7 +44,12 @@ export async function inviteWorkspaceMember(
 			};
 		}
 
-		if (orgRole !== "org:admin" && orgRole !== "admin") {
+		const isMainAccount =
+			dbUser.email?.toLowerCase() === "dominicherce@gmail.com";
+		const isAdmin =
+			isMainAccount || orgRole === "org:admin" || orgRole === "admin";
+
+		if (!isAdmin) {
 			return {
 				success: false,
 				error:
@@ -109,7 +114,7 @@ export async function inviteWorkspaceMember(
 			projectId: projectId !== "global" ? projectId : undefined,
 			userId: dbUser.id,
 			action: "Invited Workspace Member",
-			entityType: "project",
+			entityType: "team",
 			entityName: email,
 			details: `Dispatched workspace invitation (${friendlyRole}) to ${email}`,
 		});
@@ -144,64 +149,28 @@ export async function inviteWorkspaceMember(
 	}
 }
 
-/**
- * Dispatches targeted notifications when an invited member accepts their summons.
- */
-export async function handleInvitationAccepted(payload: {
-	inviterUserId: string;
-	newMemberId: string;
-	newMemberName: string;
-	role: string;
-}) {
+export async function resendInvitation(
+	invitationId: string,
+	email: string,
+	roleInput = "Member",
+): Promise<ActionResponse> {
 	try {
-		// 1. Notify Inviter (User A) that their invitation was accepted
-		await createNotification({
-			userId: payload.inviterUserId,
-			title: "Summons Accepted!",
-			description: `${payload.newMemberName} accepted your invitation and joined the roundtable as ${payload.role}.`,
-			type: "team",
-		});
+		const revokeRes = await revokeInvitation(invitationId);
+		if (!revokeRes.success) {
+			return revokeRes;
+		}
 
-		// 2. Notify Joining User (User B) welcoming them to the workspace
-		await createNotification({
-			userId: payload.newMemberId,
-			title: "Realm Officer Enlisted",
-			description: `Welcome to the roundtable council! You were enlisted as ${payload.role}.`,
-			type: "team",
-		});
-
-		return { success: true };
-	} catch (error) {
-		console.error(
-			"Failed to process invitation acceptance notifications:",
-			error,
-		);
-		return { success: false, error: "Failed to dispatch notifications." };
-	}
-}
-
-export async function getWorkspaceInvitations() {
-	try {
-		const { orgId } = await auth();
-		if (!orgId) return { success: true, data: [] };
-
-		const client = await clerkClient();
-		const response = await client.organizations.getOrganizationInvitationList({
-			organizationId: orgId,
-			status: ["pending"],
-		});
-
-		const formattedInvites = response.data.map((inv) => ({
-			id: inv.id,
-			email: inv.emailAddress,
-			role: inv.role === "org:admin" ? "Admin" : "Member",
-			createdAt: inv.createdAt,
-		}));
-
-		return { success: true, data: formattedInvites };
-	} catch {
-		console.error("Failed to fetch Clerk invitations.");
-		return { success: true, data: [] };
+		const inviteRes = await inviteWorkspaceMember("global", email, roleInput);
+		if (inviteRes.success) {
+			revalidatePath("/team");
+			revalidatePath("/dashboard");
+		}
+		return inviteRes;
+	} catch (error: any) {
+		return {
+			success: false,
+			error: error?.message || "Failed to resend invitation.",
+		};
 	}
 }
 
@@ -217,7 +186,12 @@ export async function revokeInvitation(
 			return { success: false, error: "Unauthorized access." };
 		}
 
-		if (orgRole !== "org:admin" && orgRole !== "admin") {
+		const isMainAccount =
+			dbUser.email?.toLowerCase() === "dominicherce@gmail.com";
+		const isAdmin =
+			isMainAccount || orgRole === "org:admin" || orgRole === "admin";
+
+		if (!isAdmin) {
 			return {
 				success: false,
 				error: "You do not have permission to revoke workspace invitations.",
@@ -253,12 +227,13 @@ export async function revokeInvitation(
 			projectId: projectId !== "global" ? projectId : undefined,
 			userId: dbUser.id,
 			action: "Revoked Workspace Invitation",
-			entityType: "project",
+			entityType: "team",
 			entityName: targetEmail,
 			details: `Revoked pending invitation for ${targetEmail}`,
 		});
 
 		revalidatePath("/team");
+		revalidatePath("/dashboard");
 		return { success: true };
 	} catch (error: any) {
 		console.error("Failed to revoke Clerk invitation.");

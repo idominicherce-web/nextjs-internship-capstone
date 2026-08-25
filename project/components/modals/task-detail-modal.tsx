@@ -14,6 +14,7 @@ import {
 	User as UserIcon,
 	X,
 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { updateTask, updateTaskPosition } from "@/actions/tasks";
@@ -59,6 +60,9 @@ export function TaskDetailModal({
 	lists = [],
 	onClose,
 }: TaskDetailModalProps) {
+	const router = useRouter();
+	const pathname = usePathname();
+
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [dueDate, setDueDate] = useState("");
@@ -80,7 +84,6 @@ export function TaskDetailModal({
 				task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
 			);
 			setAssignedUserId(task.userId || "");
-			// Normalize Urgent to High priority
 			const rawPriority = task.priority || "Medium";
 			setPriority(rawPriority === "Urgent" ? "High" : rawPriority);
 			setSelectedListId(task.listId || "");
@@ -98,6 +101,13 @@ export function TaskDetailModal({
 			document.body.style.overflow = "unset";
 		};
 	}, [isOpen, task]);
+
+	// Clean close handler stripping ?task=... from URL
+	const handleClose = () => {
+		onClose();
+		// Overwrite history entry to prevent duplicate query parameter stack
+		router.replace(pathname, { scroll: false });
+	};
 
 	if (!isOpen || !task) return null;
 
@@ -126,7 +136,7 @@ export function TaskDetailModal({
 			setSuccessMsg("Task decree updated successfully!");
 			setTimeout(() => {
 				setSuccessMsg("");
-				onClose();
+				handleClose();
 			}, 1000);
 		}
 	};
@@ -149,7 +159,7 @@ export function TaskDetailModal({
 					<div className="flex items-center space-x-2 lg:space-x-3">
 						<button
 							type="button"
-							onClick={onClose}
+							onClick={handleClose}
 							className="lg:hidden p-1 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
 						>
 							<ArrowLeft size={16} />
@@ -179,7 +189,7 @@ export function TaskDetailModal({
 						</button>
 						<button
 							type="button"
-							onClick={onClose}
+							onClick={handleClose}
 							className="hidden lg:block p-1.5 text-[#D7B05C] hover:text-white transition-colors cursor-pointer"
 						>
 							<X size={20} />
@@ -292,22 +302,6 @@ export function TaskDetailModal({
 											<span>Priority</span>
 										</label>
 
-										<div className="relative flex items-center sm:hidden">
-											<select
-												value={priority}
-												onChange={(e) => setPriority(e.target.value)}
-												className="w-full appearance-none pl-2 pr-6 py-1 bg-[#FAF0D7] border border-[#8F6236] rounded-xs text-[11px] font-sans font-extrabold text-[#1A120C] focus:outline-none focus:border-[#D7B05C] shadow-inner cursor-pointer"
-											>
-												<option value="Low">Low</option>
-												<option value="Medium">Medium</option>
-												<option value="High">High</option>
-											</select>
-											<ChevronDown
-												size={14}
-												className="absolute right-2 text-[#1A120C] pointer-events-none"
-											/>
-										</div>
-
 										<div className="hidden sm:grid grid-cols-3 gap-0.5 p-0.5 bg-[#1A120C] border border-[#8F6236] rounded-xs">
 											{[
 												{ label: "Low", icon: "⚔" },
@@ -394,7 +388,7 @@ export function TaskDetailModal({
 				<div className="sticky bottom-0 z-20 flex-none flex items-center justify-end gap-2 sm:gap-3 px-3 lg:px-[clamp(1rem,2vw,2rem)] py-2 lg:py-3 border-t-2 border-[#4A2C1D] bg-[#15100C] shadow-2xl">
 					<button
 						type="button"
-						onClick={onClose}
+						onClick={handleClose}
 						className="flex-1 max-w-[160px] py-1.5 lg:py-2 border border-[#8F6236] bg-[#15100C] text-[#D7B05C] hover:text-white rounded-xs text-[11px] sm:text-xs font-sans font-black uppercase tracking-wider transition-colors cursor-pointer text-center"
 					>
 						Cancel

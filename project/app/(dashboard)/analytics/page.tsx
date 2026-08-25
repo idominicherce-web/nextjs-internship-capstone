@@ -2,6 +2,7 @@ import { desc, eq, inArray, or } from "drizzle-orm";
 import { Shield } from "lucide-react";
 import { ActivityArchive } from "@/components/analytics/activity-archive";
 import { IntelligenceStats } from "@/components/analytics/intelligence-stats";
+import type { ModalTaskItem } from "@/components/analytics/task-list-modal";
 import { VisualPerformanceCharts } from "@/components/analytics/visual-performance-charts";
 import { WorkspaceHealthScore } from "@/components/analytics/workspace-health-score";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
@@ -53,7 +54,11 @@ export default async function AnalyticsPage() {
 		with: {
 			lists: {
 				with: {
-					tasks: true,
+					tasks: {
+						with: {
+							user: true,
+						},
+					},
 				},
 			},
 		},
@@ -63,7 +68,7 @@ export default async function AnalyticsPage() {
 		new Set([...userProjects.map((p) => p.id), ...assignedProjectIds]),
 	);
 
-	// 3. Fetch recent activity logs across all accessible projects (or logged by user)
+	// 3. Fetch recent activity logs
 	const activityCondition =
 		allUserProjectIds.length > 0
 			? or(
@@ -78,11 +83,15 @@ export default async function AnalyticsPage() {
 		limit: 6,
 	});
 
-	// 4. Compute primary operational metrics
+	// 4. Categorize tasks for metrics and modal breakdowns
 	let totalTasks = 0;
 	let completedTasks = 0;
 	let overdueTasks = 0;
 	const today = new Date(new Date().setHours(0, 0, 0, 0));
+
+	const completedTasksList: ModalTaskItem[] = [];
+	const activeTasksList: ModalTaskItem[] = [];
+	const overdueTasksList: ModalTaskItem[] = [];
 
 	const projectAnalytics = userProjects.map((proj) => {
 		let projTotalTasks = 0;
@@ -97,11 +106,26 @@ export default async function AnalyticsPage() {
 				projTotalTasks++;
 				totalTasks++;
 
+				const formattedItem: ModalTaskItem = {
+					id: task.id,
+					title: task.title,
+					projectName: proj.name,
+					projectSlug: proj.slug || proj.id,
+					dueDate: task.dueDate,
+					assigneeName: task.user?.name || task.user?.email || null,
+					priority: task.priority,
+				};
+
 				if (isDoneList) {
 					projCompletedTasks++;
 					completedTasks++;
-				} else if (task.dueDate && new Date(task.dueDate) < today) {
-					overdueTasks++;
+					completedTasksList.push(formattedItem);
+				} else {
+					activeTasksList.push(formattedItem);
+					if (task.dueDate && new Date(task.dueDate) < today) {
+						overdueTasks++;
+						overdueTasksList.push(formattedItem);
+					}
 				}
 			});
 		});
@@ -148,10 +172,13 @@ export default async function AnalyticsPage() {
 				{/* KPI Cards */}
 				<IntelligenceStats
 					overallEfficiency={overallCompletionRate}
-					completedTasks={completedTasks}
-					totalTasks={totalTasks}
-					inProgressTasks={inProgressTasks}
-					overdueTasks={overdueTasks}
+					completedTasksCount={completedTasks}
+					totalTasksCount={totalTasks}
+					inProgressTasksCount={inProgressTasks}
+					overdueTasksCount={overdueTasks}
+					completedTasksList={completedTasksList}
+					activeTasksList={activeTasksList}
+					overdueTasksList={overdueTasksList}
 				/>
 
 				{/* Health Panel */}

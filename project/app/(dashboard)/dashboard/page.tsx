@@ -125,7 +125,13 @@ export default async function DashboardPage() {
 			},
 		})
 		.from(activityLogs)
-		.leftJoin(users, eq(activityLogs.userId, users.id))
+		.leftJoin(
+			users,
+			or(
+				eq(activityLogs.userId, users.id),
+				eq(activityLogs.userId, users.clerkId),
+			),
+		)
 		.leftJoin(projects, eq(activityLogs.projectId, projects.id))
 		.where(activityCondition)
 		.orderBy(desc(activityLogs.createdAt))
@@ -136,7 +142,7 @@ export default async function DashboardPage() {
 		projectSlug: act.projectSlug || act.projectId,
 	}));
 
-	// 5. Tasks Data Pipeline & Strict Personal Filtering
+	// 5. Tasks Data Pipeline
 	const totalProjects = userProjects.length;
 	let totalTasks = 0;
 	let completedTasks = 0;
@@ -167,6 +173,9 @@ export default async function DashboardPage() {
 		let projTotalTasks = 0;
 		let projCompletedTasks = 0;
 
+		const isProjectOwner =
+			proj.userId === dbUser.id || proj.userId === dbUser.clerkId;
+
 		for (const list of proj.lists) {
 			const listName = list.name.toLowerCase();
 			const isDoneList =
@@ -179,6 +188,7 @@ export default async function DashboardPage() {
 
 				const isAssignedToMe =
 					task.userId === dbUser.id || task.userId === dbUser.clerkId;
+				const shouldShowTask = isAssignedToMe || isProjectOwner;
 
 				if (isDoneList) {
 					projCompletedTasks++;
@@ -196,18 +206,18 @@ export default async function DashboardPage() {
 
 						if (isOverdue) {
 							overdueTasks++;
-							if (isAssignedToMe) myOverdueTasks++;
+							if (shouldShowTask) myOverdueTasks++;
 						} else if (isToday) {
-							if (isAssignedToMe) myTodayTasks++;
+							if (shouldShowTask) myTodayTasks++;
 						} else {
-							if (isAssignedToMe) myUpcomingTasks++;
+							if (shouldShowTask) myUpcomingTasks++;
 						}
 
-						if (isReviewList && isAssignedToMe) {
+						if (isReviewList && shouldShowTask) {
 							myReviewTasks++;
 						}
 
-						if (isAssignedToMe) {
+						if (shouldShowTask) {
 							let groupLabel: "OVERDUE" | "TODAY" | "TOMORROW" | "UPCOMING" =
 								"UPCOMING";
 							let semanticDate = taskDueDate.toLocaleDateString("en-US", {
@@ -241,7 +251,7 @@ export default async function DashboardPage() {
 								priority: task.priority || "Medium",
 								projectName: proj.name,
 								projectSlug: proj.slug || proj.id,
-								assignedTo: myDisplayName,
+								assignedTo: isAssignedToMe ? myDisplayName : "Assigned Officer",
 								groupLabel,
 								semanticDate,
 							});

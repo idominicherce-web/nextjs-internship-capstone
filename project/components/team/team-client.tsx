@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { revokeInvitation } from "@/actions/invitations";
+import { resendInvitation, revokeInvitation } from "@/actions/invitations";
 import { removeMemberAction } from "@/actions/team";
 import { DashboardLayoutContainer } from "@/components/layout/dashboard-layout-container";
 import { InviteMemberModal } from "@/components/modals/invite-member-modal";
@@ -144,12 +144,26 @@ export function TeamClient({
 				description: "Member removed from workspace.",
 				type: "team",
 			});
+		} else {
+			addNotification({
+				title: "Action Failed",
+				description: res.error || "Could not remove member.",
+				type: "system",
+			});
 		}
 	};
 
-	const handleResendInvite = (invitationId: string) => {
+	const handleResendInvite = async (invitationId: string) => {
 		const targetInvite = pendingInvites.find((i) => i.id === invitationId);
-		if (targetInvite) {
+		if (!targetInvite) return;
+
+		const res = await resendInvitation(
+			invitationId,
+			targetInvite.email,
+			targetInvite.role || "Member",
+		);
+
+		if (res.success) {
 			appendActivity(
 				"Admin",
 				`resent invitation dispatch to ${targetInvite.email}`,
@@ -159,6 +173,12 @@ export function TeamClient({
 				title: "Invitation Resent",
 				description: `Dispatch resent to ${targetInvite.email}.`,
 				type: "team",
+			});
+		} else {
+			addNotification({
+				title: "Resend Failed",
+				description: res.error || "Could not resend invitation.",
+				type: "system",
 			});
 		}
 	};
@@ -181,6 +201,12 @@ export function TeamClient({
 					type: "team",
 				});
 			}
+		} else {
+			addNotification({
+				title: "Revoke Failed",
+				description: res.error || "Could not revoke invitation.",
+				type: "system",
+			});
 		}
 	};
 

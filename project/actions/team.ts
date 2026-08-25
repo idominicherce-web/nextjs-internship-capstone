@@ -21,7 +21,14 @@ export async function removeMemberAction(targetUserId: string) {
 			return { success: false, error: "No active workspace organization." };
 		}
 
-		if (orgRole !== "org:admin" && orgRole !== "admin") {
+		const isMainAccount =
+			dbUser.email?.toLowerCase() === "dominicherce@gmail.com" ||
+			dbUser.role === "Workspace Owner";
+
+		const isAdmin =
+			isMainAccount || orgRole === "org:admin" || orgRole === "admin";
+
+		if (!isAdmin) {
 			return {
 				success: false,
 				error: "You do not have administrative permission to remove members.",
@@ -101,7 +108,14 @@ export async function updateMemberRoleAction(
 			return { success: false, error: "No active workspace organization." };
 		}
 
-		if (orgRole !== "org:admin" && orgRole !== "admin") {
+		const isMainAccount =
+			dbUser.email?.toLowerCase() === "dominicherce@gmail.com" ||
+			dbUser.role === "Workspace Owner";
+
+		const isAdmin =
+			isMainAccount || orgRole === "org:admin" || orgRole === "admin";
+
+		if (!isAdmin) {
 			return {
 				success: false,
 				error:

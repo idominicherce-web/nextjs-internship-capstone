@@ -287,9 +287,16 @@ export default async function TeamPage() {
 		};
 	});
 
+	// Ensure dominicherce@gmail.com or primary account has Workspace Owner permissions
+	const isMainAccount =
+		dbUser?.email?.toLowerCase() === "dominicherce@gmail.com";
+	const effectiveRole = isMainAccount
+		? "Workspace Owner"
+		: dbUser?.role || "Member";
+
 	return (
 		<TeamClient
-			currentUserRole={dbUser?.role || "Member"}
+			currentUserRole={effectiveRole}
 			initialMembers={mappedMembers}
 			activities={formattedActivities}
 			pendingInvitations={mappedPendingInvites}
